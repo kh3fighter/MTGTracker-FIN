@@ -1,0 +1,3854 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>FIN Binder Tracker</title>
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FIN Binder">
+<!-- Android PWA -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e1e2e">
+<!-- General mobile -->
+<meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Theme variables ── */
+  [data-theme="dark"] {
+    --bg: #1e1e2e;
+    --surface: #313244;
+    --surface2: #45475a;
+    --surface3: #585b70;
+    --accent: #f38ba8;
+    --accent2: #cba6f7;
+    --text: #cdd6f4;
+    --text-muted: #a6adc8;
+    --owned-border: #a6e3a1;
+    --slot-bg: #181825;
+    --shadow: rgba(17,17,27,0.5);
+    --modal-bg: rgba(17,17,27,0.85);
+    --chart-empty: #45475a;
+  }
+  [data-theme="light"] {
+    --bg: #eff1f5;
+    --surface: #e6e9ef;
+    --surface2: #ccd0da;
+    --surface3: #bcc0cc;
+    --accent: #d20f39;
+    --accent2: #8839ef;
+    --text: #4c4f69;
+    --text-muted: #6c6f85;
+    --owned-border: #40a02b;
+    --slot-bg: #dce0e8;
+    --shadow: rgba(220,224,232,0.5);
+    --modal-bg: rgba(76,79,105,0.5);
+    --chart-empty: #ccd0da;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    transition: background 0.3s, color 0.3s;
+    cursor: default;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  input, textarea {
+    -webkit-user-select: text; user-select: text; cursor: text;
+    -webkit-appearance: none; appearance: none;
+    border-radius: 8px; font-size: 16px; /* prevents iOS zoom on focus */
+  }
+  button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+  #app {
+    max-width: 1200px; margin: 0 auto;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom, 0px)));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center; padding: 24px 0 20px;
+    border-bottom: 1px solid var(--surface2);
+    margin-bottom: 20px;
+  }
+  .header-brand {
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(8px, 2vw, 14px); margin-bottom: 6px;
+  }
+  .brand-icon {
+    width: clamp(32px, 6vw, 52px); height: clamp(32px, 6vw, 52px);
+    border-radius: clamp(6px, 1.2vw, 10px);
+    background: var(--slot-bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; padding: clamp(4px, 0.8vw, 6px);
+    border: 1px solid var(--surface2);
+  }
+  .brand-icon img {
+    width: 100%; height: 100%; object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+  [data-theme="light"] .brand-icon img {
+    filter: brightness(0);
+  }
+  .brand-text { text-align: left; }
+  .brand-title {
+    font-size: clamp(1rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.1;
+  }
+  .brand-title .ff {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .brand-title .tcg { color: var(--text); font-weight: 600; }
+  .brand-title .ver {
+    font-size: clamp(0.4rem, 1vw, 0.55rem); color: var(--text-muted);
+    font-weight: 600; vertical-align: super;
+  }
+  .brand-set {
+    font-size: clamp(0.5rem, 1.3vw, 0.72rem); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: clamp(0.8px, 0.2vw, 1.5px);
+    font-weight: 600; margin-top: 2px;
+  }
+  .subtitle {
+    color: var(--text-muted); font-size: clamp(0.65rem, 1.5vw, 0.82rem);
+    margin-bottom: clamp(10px, 2vw, 16px);
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(4px, 1vw, 6px);
+  }
+  .subtitle .sep {
+    width: clamp(3px, 0.5vw, 4px); height: clamp(3px, 0.5vw, 4px);
+    border-radius: 50%; background: var(--surface3); display: inline-block;
+  }
+
+  /* Floating utility buttons */
+  .fab-utilities {
+    position: fixed;
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    z-index: 899;
+    display: flex; flex-direction: column; gap: 10px;
+    align-items: center;
+  }
+  .fab-util-btn {
+    width: clamp(36px, 5vw, 42px); height: clamp(36px, 5vw, 42px);
+    border-radius: 50%; border: none;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--surface2);
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.3s; line-height: 1; padding: 0;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .fab-util-btn:hover {
+    transform: scale(1.1);
+    background: var(--surface2);
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+  .fab-util-btn .sync-dot {
+    position: absolute; bottom: 0px; right: 0px;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--surface3);
+    transition: background 0.3s;
+  }
+  .fab-util-btn .sync-dot.connected { background: var(--owned-border); }
+  .fab-util-btn .sync-dot.syncing { background: #f9e2af; animation: pulse-dot 0.6s ease infinite; }
+  .fab-util-btn .sync-dot.error { background: var(--accent); }
+  .fab-util-btn.spinning svg { animation: spin 0.8s linear infinite; }
+  .fab-util-btn { position: relative; }
+
+  /* Sync modal */
+  .sync-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    z-index: 1001; justify-content: center; align-items: center;
+  }
+  .sync-modal-overlay.visible { display: flex; }
+  .sync-modal-overlay::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--modal-bg);
+    animation: overlay-fade-in 0.3s ease both;
+  }
+  .sync-modal {
+    background: var(--surface); border-radius: 16px;
+    padding: 24px; max-width: 400px; width: 90%;
+    position: relative; z-index: 1;
+    animation: modal-in 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .sync-modal h3 { font-size: 1.1rem; margin-bottom: 4px; }
+  .sync-modal .sync-desc {
+    font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;
+  }
+  .sync-modal .sync-desc a { color: var(--accent2); text-decoration: none; }
+  .sync-modal .sync-desc a:hover { text-decoration: underline; }
+  .sync-modal label {
+    font-size: 0.78rem; color: var(--text-muted); font-weight: 600;
+    display: block; margin-bottom: 4px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sync-modal input[type="text"] {
+    width: 100%; padding: 10px 12px; font-size: 0.9rem;
+    background: var(--slot-bg); border: 2px solid var(--surface2);
+    border-radius: 8px; color: var(--text); outline: none;
+    margin-bottom: 12px; font-family: monospace;
+    transition: border-color 0.2s;
+  }
+  .sync-modal input[type="text"]:focus { border-color: var(--accent); }
+  .sync-modal .sync-actions {
+    display: flex; gap: 8px; margin-top: 16px;
+  }
+  .sync-modal .sync-actions .btn { flex: 1; padding: 10px; font-size: 0.9rem; }
+  .sync-modal .sync-status-msg {
+    font-size: 0.8rem; margin-top: 10px; padding: 8px 12px;
+    border-radius: 8px; background: var(--slot-bg);
+    animation: card-enter 0.3s ease;
+  }
+  .sync-modal .gist-info {
+    font-size: 0.75rem; color: var(--text-muted); margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--surface2);
+  }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    display: flex; align-items: center; gap: 12px;
+    max-width: 500px; margin: 0 auto;
+  }
+  .progress-bar {
+    flex: 1; height: 12px; background: var(--slot-bg);
+    border-radius: 6px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 6px; transition: width 0.4s ease;
+  }
+  .progress-text { font-size: clamp(0.75rem, 1.8vw, 0.9rem); white-space: nowrap; font-weight: 600; }
+
+  .stats-row {
+    display: flex; justify-content: center; gap: 16px;
+    margin-top: 12px; flex-wrap: wrap;
+  }
+  .stat-badge {
+    font-size: clamp(0.65rem, 1.5vw, 0.75rem); padding: clamp(3px, 0.5vw, 4px) clamp(6px, 1.2vw, 10px);
+    border-radius: 12px; background: var(--surface);
+  }
+  .stat-badge.mythic { border: 1px solid #e8702a; color: #e8702a; }
+  .stat-badge.rare { border: 1px solid #c9a14e; color: #c9a14e; }
+  .stat-badge.uncommon { border: 1px solid #a8c4c4; color: #a8c4c4; }
+  .stat-badge.common { border: 1px solid #888; color: #888; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 0; margin-bottom: 20px;
+    border-bottom: 2px solid var(--surface2);
+  }
+  .tab-btn {
+    padding: clamp(8px, 1.5vw, 10px) clamp(10px, 2.5vw, 24px);
+    background: none; border: none;
+    color: var(--text-muted); font-size: clamp(0.78rem, 1.8vw, 1rem); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.25s ease; position: relative;
+    white-space: nowrap;
+  }
+  .tab-btn svg {
+    width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px);
+    vertical-align: -2px; margin-right: clamp(3px, 0.8vw, 6px);
+  }
+  .tab-btn:hover { color: var(--text); transform: translateY(-1px); }
+  .tab-btn.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+    text-shadow: 0 0 12px var(--accent);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: tab-enter 0.4s ease both; }
+  @keyframes tab-enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Dashboard ── */
+  .dashboard { max-width: 900px; margin: 0 auto; }
+  .dash-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 600px) { .dash-grid { grid-template-columns: 1fr; } }
+
+  .dash-card {
+    background: var(--surface); border-radius: clamp(8px, 1.5vw, 12px);
+    padding: clamp(14px, 2.5vw, 20px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    border: 1px solid transparent;
+    animation: card-enter 0.4s ease both;
+  }
+  .dash-card:nth-child(1) { animation-delay: 0s; }
+  .dash-card:nth-child(2) { animation-delay: 0.06s; }
+  .dash-card:nth-child(3) { animation-delay: 0.12s; }
+  .dash-card:nth-child(4) { animation-delay: 0.18s; }
+  .dash-card:nth-child(5) { animation-delay: 0.24s; }
+  .dash-card:nth-child(6) { animation-delay: 0.3s; }
+  .dash-card:nth-child(7) { animation-delay: 0.36s; }
+  .dash-card:nth-child(8) { animation-delay: 0.42s; }
+  .dash-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--shadow);
+    border-color: var(--surface2);
+  }
+  @keyframes card-enter {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .dash-card h3 {
+    font-size: clamp(0.72rem, 1.5vw, 0.85rem); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+  }
+  .dash-big-num {
+    font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .dash-sub { font-size: clamp(0.75rem, 1.6vw, 0.85rem); color: var(--text-muted); margin-top: 4px; }
+
+  .donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .donut-chart {
+    width: 100px; height: 100px; border-radius: 50%;
+    position: relative; flex-shrink: 0;
+  }
+  .donut-center {
+    position: absolute; inset: 18px;
+    background: var(--surface); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem;
+  }
+  .donut-legend { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .rarity-bars { display: flex; flex-direction: column; gap: 10px; }
+  .rarity-row { display: flex; align-items: center; gap: 10px; }
+  .rarity-label { width: 80px; font-size: 0.82rem; text-transform: capitalize; font-weight: 600; }
+  .rarity-label.mythic { color: #e8702a; }
+  .rarity-label.rare { color: #c9a14e; }
+  .rarity-label.uncommon { color: #a8c4c4; }
+  .rarity-label.common { color: #888; }
+  .rarity-track { flex: 1; height: 14px; background: var(--chart-empty); border-radius: 7px; overflow: hidden; }
+  .rarity-fill { height: 100%; border-radius: 7px; transition: width 0.5s ease; }
+  .rarity-fill.mythic { background: #e8702a; }
+  .rarity-fill.rare { background: #c9a14e; }
+  .rarity-fill.uncommon { background: #a8c4c4; }
+  .rarity-fill.common { background: #888; }
+  .rarity-count { font-size: 0.8rem; color: var(--text-muted); min-width: 50px; text-align: right; }
+
+  .binder-fill-grid { display: grid; grid-template-columns: repeat(auto-fill, 18px); gap: 3px; }
+  .fill-cell { width: 18px; height: 18px; border-radius: 3px; background: var(--chart-empty); transition: background 0.2s; }
+  .fill-cell.owned { background: var(--owned-border); }
+  .fill-cell.mythic.owned { background: #e8702a; }
+  .fill-cell.rare.owned { background: #c9a14e; }
+  .fill-cell.uncommon.owned { background: #72b5b5; }
+  .fill-cell.common.owned { background: #777; }
+
+  .recent-list { display: flex; flex-direction: column; gap: 6px; }
+  .recent-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.85rem; padding: 6px 0;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .recent-item img { width: 36px; border-radius: 3px; }
+  .recent-item .rname { font-weight: 600; }
+  .recent-item .rnum { color: var(--text-muted); }
+  .dash-card-full { grid-column: 1 / -1; }
+
+  /* Price source badges */
+  .price-sources {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin: 8px 0 14px;
+  }
+  .price-source {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.7rem; color: var(--text-muted);
+    background: var(--slot-bg); padding: 4px 10px;
+    border-radius: 12px; line-height: 1.3;
+  }
+  .price-source a {
+    color: var(--accent2); text-decoration: none; font-weight: 600;
+  }
+  .price-source a:hover { text-decoration: underline; }
+  .price-source .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--owned-border);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Value grid */
+  .value-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .value-box {
+    background: var(--slot-bg); border-radius: 10px;
+    padding: 12px; text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .value-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
+  .value-box .value-label {
+    font-size: 0.7rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .value-box .value-amount {
+    font-size: 1.3rem; font-weight: 800;
+  }
+  .value-box .value-amount.usd { color: var(--owned-border); }
+  .value-box .value-amount.myr { color: var(--accent); }
+  .value-box .value-sub {
+    font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
+  }
+
+  /* Animated counter */
+  .anim-counter { transition: all 0.3s; }
+
+  /* Value chart */
+  .value-chart-wrap {
+    position: relative; width: 100%; height: 120px;
+    margin-top: 10px;
+  }
+  .value-chart {
+    width: 100%; height: 100%;
+  }
+  .value-chart-bar {
+    fill: var(--accent);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .value-chart-bar:hover { opacity: 1; }
+  .value-chart-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .value-chart-area {
+    fill: url(#chart-gradient);
+    opacity: 0.3;
+  }
+  .value-chart-dot {
+    fill: var(--accent);
+    transition: r 0.2s;
+  }
+  .value-chart-dot:hover { r: 5; }
+  .chart-anim-line {
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+    animation: draw-line 1.5s ease forwards;
+  }
+  .chart-anim-area {
+    animation: fade-up-area 1s 0.5s ease both;
+  }
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes fade-up-area {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 0.3; transform: translateY(0); }
+  }
+  .chart-labels {
+    display: flex; justify-content: space-between;
+    font-size: 0.65rem; color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Top cards list */
+  .top-cards { display: flex; flex-direction: column; gap: 6px; }
+  .top-card-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.82rem; padding: 6px 8px;
+    background: var(--slot-bg); border-radius: 8px;
+    animation: card-enter 0.3s ease both;
+    transition: transform 0.2s;
+  }
+  .top-card-item:hover { transform: translateX(4px); }
+  .top-card-item:nth-child(1) { animation-delay: 0.05s; }
+  .top-card-item:nth-child(2) { animation-delay: 0.1s; }
+  .top-card-item:nth-child(3) { animation-delay: 0.15s; }
+  .top-card-item:nth-child(4) { animation-delay: 0.2s; }
+  .top-card-item:nth-child(5) { animation-delay: 0.25s; }
+  .top-card-item img { width: 32px; border-radius: 3px; }
+  .top-card-item .rank {
+    width: 20px; font-weight: 800; color: var(--accent);
+    text-align: center; flex-shrink: 0;
+  }
+  .top-card-item .tc-name { flex: 1; font-weight: 600; }
+  .top-card-item .tc-price { font-weight: 700; color: var(--owned-border); white-space: nowrap; }
+
+  /* ── Timeline ── */
+  .milestone-track {
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; padding: 20px 0 10px;
+  }
+  .milestone-track::before {
+    content: ''; position: absolute; top: 34px;
+    left: 24px; right: 24px; height: 3px;
+    background: var(--surface2); border-radius: 2px;
+  }
+  .milestone-fill {
+    position: absolute; top: 34px; left: 24px; height: 3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px; transition: width 0.6s ease;
+  }
+  .milestone {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; z-index: 1; min-width: 60px;
+  }
+  .milestone-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface2); border: 3px solid var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 800; color: var(--text-muted);
+    transition: all 0.3s;
+  }
+  .milestone.achieved .milestone-dot {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 12px var(--accent);
+    animation: badge-pop 0.4s ease both;
+  }
+  .milestone-label { font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+  .milestone.achieved .milestone-label { color: var(--text); font-weight: 600; }
+  .milestone-date { font-size: 0.6rem; color: var(--text-muted); }
+
+  /* Heatmap */
+  .heatmap-wrap { overflow-x: auto; padding-bottom: 4px; }
+  .heatmap-grid {
+    display: grid; grid-template-rows: repeat(7, 14px);
+    grid-auto-flow: column; grid-auto-columns: 14px;
+    gap: 3px;
+  }
+  .heatmap-cell {
+    width: 14px; height: 14px; border-radius: 3px;
+    background: var(--chart-empty);
+    transition: background 0.2s;
+    position: relative;
+  }
+  .heatmap-cell.l1 { background: color-mix(in srgb, var(--accent) 25%, var(--chart-empty)); }
+  .heatmap-cell.l2 { background: color-mix(in srgb, var(--accent) 50%, var(--chart-empty)); }
+  .heatmap-cell.l3 { background: color-mix(in srgb, var(--accent) 75%, var(--chart-empty)); }
+  .heatmap-cell.l4 { background: var(--accent); }
+  .heatmap-cell::before {
+    content: attr(data-tip); position: absolute; bottom: 20px; left: 50%;
+    transform: translateX(-50%) scale(0.8); background: var(--surface);
+    color: var(--text); padding: 3px 8px; border-radius: 5px;
+    font-size: 0.65rem; white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: all 0.15s; z-index: 10;
+    box-shadow: 0 2px 6px var(--shadow); border: 1px solid var(--surface2);
+  }
+  .heatmap-cell:hover::before { opacity: 1; transform: translateX(-50%) scale(1); }
+  .heatmap-labels {
+    display: flex; font-size: 0.6rem; color: var(--text-muted);
+    margin-top: 4px; gap: 3px; padding-left: 2px;
+  }
+
+  /* Activity feed */
+  .activity-feed { display: flex; flex-direction: column; gap: 0; }
+  .activity-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--surface2);
+    animation: card-enter 0.3s ease both;
+    font-size: 0.82rem;
+  }
+  .activity-item:nth-child(1) { animation-delay: 0s; }
+  .activity-item:nth-child(2) { animation-delay: 0.03s; }
+  .activity-item:nth-child(3) { animation-delay: 0.06s; }
+  .activity-item:nth-child(4) { animation-delay: 0.09s; }
+  .activity-item:nth-child(5) { animation-delay: 0.12s; }
+  .activity-item img { width: 32px; border-radius: 3px; flex-shrink: 0; }
+  .activity-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .activity-dot.add { background: var(--owned-border); }
+  .activity-dot.remove { background: var(--accent); }
+  .activity-name { flex: 1; font-weight: 600; }
+  .activity-meta { font-size: 0.72rem; color: var(--text-muted); text-align: right; white-space: nowrap; }
+
+  /* ── Confirm Dialog ── */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0;
+    z-index: 1100; justify-content: center; align-items: center;
+  }
+  .confirm-overlay.visible { display: flex; }
+  .confirm-overlay::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--modal-bg);
+    animation: overlay-fade-in 0.3s ease both;
+  }
+  .confirm-dialog {
+    background: var(--surface); border-radius: 16px;
+    padding: clamp(18px, 3vw, 24px); max-width: 340px; width: 90%;
+    text-align: center; position: relative; z-index: 1;
+    animation: modal-in 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .confirm-dialog h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .confirm-dialog p {
+    font-size: 0.85rem; color: var(--text-muted);
+    margin-bottom: 18px; line-height: 1.4;
+  }
+  .confirm-dialog .confirm-actions {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .confirm-dialog .btn { padding: 10px 20px; min-height: 44px; font-size: 0.9rem; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 6px 14px; border: none; border-radius: 6px;
+    cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+  }
+  .btn-clear { background: var(--surface2); color: var(--text-muted); }
+  .btn-clear:hover { background: var(--accent); color: #fff; }
+  .btn-danger { background: #c0392b; color: #fff; }
+  .btn-danger:hover { background: #e74c3c; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary { background: var(--surface2); color: var(--text); }
+  .btn-secondary:hover { opacity: 0.9; }
+
+  /* ── Binder View ── */
+  .binder-top-controls {
+    display: flex; justify-content: center; align-items: center;
+    gap: 12px; margin-bottom: 16px;
+    animation: card-enter 0.3s ease both;
+    position: relative; z-index: 200;
+  }
+  /* Page navigator — pill with label + slider track */
+  .page-nav-widget {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    min-width: 280px;
+  }
+  .page-nav-label {
+    font-size: 1rem; font-weight: 700;
+    color: var(--text);
+    transition: all 0.3s;
+  }
+  .page-nav-label span { color: var(--accent); }
+
+  /* Slider track */
+  .page-slider-wrap {
+    width: 100%; position: relative; padding: 4px 0;
+  }
+  .page-slider-track {
+    width: 100%; height: 6px; background: var(--surface2);
+    border-radius: 3px; position: relative; cursor: pointer;
+    overflow: visible;
+  }
+  .page-slider-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute; top: 0; left: 0;
+  }
+  .page-slider-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--surface);
+    box-shadow: 0 2px 8px var(--shadow);
+    position: absolute; top: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: grab; z-index: 2;
+  }
+  .page-slider-thumb:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 0 2px 12px var(--accent);
+  }
+  .page-slider-thumb:active { cursor: grabbing; }
+  .page-slider-thumb.dragging {
+    transform: translate(-50%, -50%) scale(1.3);
+    box-shadow: 0 0 16px var(--accent);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  /* Page dot markers on the track */
+  .page-slider-dots {
+    display: flex; justify-content: space-between;
+    padding: 6px 0 0;
+  }
+  .page-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--surface2);
+    transition: all 0.25s;
+    cursor: pointer;
+    position: relative;
+  }
+  .page-dot:hover { background: var(--text-muted); transform: scale(1.3); }
+  .page-dot.active { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .page-dot.filled { background: var(--owned-border); }
+  .page-dot.filled.active { background: var(--accent); }
+
+  /* Tooltip on hover */
+  .page-dot::before {
+    content: attr(data-label);
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%) scale(0.8);
+    background: var(--surface); color: var(--text);
+    padding: 4px 8px; border-radius: 6px; font-size: 0.72rem;
+    white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: all 0.2s;
+    box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid var(--surface2);
+  }
+  .page-dot:hover::before {
+    opacity: 1; transform: translateX(-50%) scale(1);
+  }
+
+  .binder-layout {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .binder-nav {
+    width: 48px; height: 48px; border-radius: 50%; border: none;
+    background: var(--surface2); color: var(--text);
+    font-size: 1.4rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .binder-nav:hover { background: var(--accent); color: #fff; }
+  .binder-nav:disabled { opacity: 0.2; cursor: default; }
+  .binder-nav:disabled:hover { background: var(--surface2); color: var(--text); }
+
+  .binder-spread-wrapper {
+    flex: 1; perspective: 1800px; position: relative;
+  }
+
+  .binder-spread {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    position: relative;
+  }
+
+  /* Page flip overlay — full 180deg turn like a real page */
+  .page-flip-overlay {
+    position: absolute; top: 0; z-index: 10;
+    height: 100%;
+    pointer-events: none;
+    transform-style: preserve-3d;
+  }
+  .page-flip-overlay .flip-front,
+  .page-flip-overlay .flip-back {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .page-flip-overlay .flip-back {
+    transform: rotateY(180deg);
+    background: var(--surface);
+  }
+
+  .page-flip-overlay.flip-forward {
+    transform-origin: left center;
+    animation: book-forward 0.65s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  }
+  @keyframes book-forward {
+    0%   { transform: rotateY(0deg); }
+    100% { transform: rotateY(-180deg); }
+  }
+
+  .page-flip-overlay.flip-backward {
+    transform-origin: right center;
+    animation: book-backward 0.65s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  }
+  @keyframes book-backward {
+    0%   { transform: rotateY(0deg); }
+    100% { transform: rotateY(180deg); }
+  }
+
+  /* Shadow on the spread during flip */
+  .page-flip-shadow {
+    position: absolute; top: 0; height: 100%; width: 50%;
+    z-index: 5; pointer-events: none;
+  }
+  .page-flip-shadow.forward {
+    left: 0;
+    animation: shadow-forward 0.65s ease both;
+  }
+  @keyframes shadow-forward {
+    0%   { background: transparent; }
+    40%  { background: linear-gradient(to right, rgba(0,0,0,0.12), transparent); }
+    100% { background: transparent; }
+  }
+  .page-flip-shadow.backward {
+    right: 0;
+    animation: shadow-backward 0.65s ease both;
+  }
+  @keyframes shadow-backward {
+    0%   { background: transparent; }
+    40%  { background: linear-gradient(to left, rgba(0,0,0,0.12), transparent); }
+    100% { background: transparent; }
+  }
+
+  @media (max-width: 700px) {
+    #app {
+      padding: 10px;
+      padding-top: max(10px, env(safe-area-inset-top, 0px));
+      padding-bottom: max(160px, calc(160px + env(safe-area-inset-bottom, 0px)));
+    }
+    header { padding: 14px 0 12px; }
+    /* Tabs horizontal scroll on mobile */
+    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 0; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { flex-shrink: 0; }
+
+    /* Binder */
+    .binder-spread { grid-template-columns: 1fr; }
+    .binder-nav { width: 40px; height: 40px; font-size: 1.2rem; min-height: 44px; }
+    .binder-layout { gap: 6px; }
+    .page-nav-widget { min-width: 160px; }
+
+    /* FAB & utilities */
+    .fab-util-btn { min-height: 44px; min-width: 44px; }
+
+    /* Modal */
+    .modal { padding: 18px; max-width: 92vw; }
+    .modal h3 { font-size: 1rem; }
+    .sync-modal { padding: 18px; max-width: 92vw; }
+
+    /* Mobile slide animation */
+    .binder-spread.slide-left { animation: slide-out-left 0.35s ease both; }
+    .binder-spread.slide-right { animation: slide-out-right 0.35s ease both; }
+    .binder-spread.slide-in-left { animation: slide-in-left 0.35s ease both; }
+    .binder-spread.slide-in-right { animation: slide-in-right 0.35s ease both; }
+
+    /* Toast - smaller on mobile */
+    .add-toast { padding: 20px 24px; min-width: 240px; max-width: 300px; }
+    .add-toast img { width: 120px; }
+    .toast-rarity-badge { font-size: 0.75rem; padding: 4px 14px; }
+  }
+
+  /* Small phones — value grid single column */
+  @media (max-width: 380px) {
+    .value-grid { grid-template-columns: 1fr; }
+  }
+  @keyframes slide-out-left {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-30px); opacity: 0; }
+  }
+  @keyframes slide-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(30px); opacity: 0; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slide-in-right {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .binder-page {
+    background: var(--surface); border-radius: 10px; padding: 10px;
+    animation: card-enter 0.4s ease both;
+  }
+  .binder-page:nth-child(1) { animation-delay: 0.05s; }
+  .binder-page:nth-child(2) { animation-delay: 0.12s; }
+  .page-label { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+  .page-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+
+  .card-slot {
+    aspect-ratio: 5 / 7; background: var(--slot-bg);
+    border-radius: 6px; border: 2px solid transparent;
+    overflow: hidden; position: relative; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .card-slot:hover { transform: scale(1.03); z-index: 2; }
+  .card-slot.owned { border-color: var(--owned-border); }
+  .card-slot.just-added {
+    border-color: #f1c40f;
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.4);
+  }
+  .card-slot.highlighted {
+    border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent);
+  }
+  .card-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+  .card-slot .placeholder {
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    height: 100%; padding: 4px; text-align: center;
+  }
+  .card-slot .placeholder .num { font-size: 1.1rem; font-weight: 700; color: var(--text-muted); }
+  .card-slot .placeholder .pname {
+    font-size: 0.55rem; color: var(--text-muted); margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+
+  /* ── Card Visualizer Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: var(--modal-bg); z-index: 1000;
+    justify-content: center; align-items: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-overlay.show { }
+  .modal-overlay.visible .modal {
+    animation: modal-in 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .modal-overlay.closing .modal {
+    animation: modal-out 0.25s ease both;
+  }
+  .modal-overlay.visible::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--modal-bg);
+    animation: overlay-fade-in 0.3s ease both;
+  }
+  .modal-overlay.closing::before {
+    animation: overlay-fade-out 0.25s ease both;
+  }
+  @keyframes overlay-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes overlay-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  .modal {
+    background: var(--surface); border-radius: 16px;
+    padding: 24px; max-width: 420px; width: 92%;
+    text-align: center; position: relative;
+  }
+  @keyframes modal-in {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes modal-out {
+    from { transform: scale(1) translateY(0); opacity: 1; }
+    to { transform: scale(0.9) translateY(10px); opacity: 0; }
+  }
+  .card-visualizer {
+    perspective: 1000px; margin-bottom: 16px;
+    cursor: grab; -webkit-user-select: none; user-select: none;
+    position: relative;
+  }
+  .card-visualizer:active { cursor: grabbing; }
+
+  /* Drag hint overlay */
+  .drag-hint {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .card-visualizer:not(.interacted) .drag-hint {
+    animation: hint-fade 3s 0.8s ease both;
+  }
+  @keyframes hint-fade {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .drag-hint-icon {
+    width: 48px; height: 48px;
+    background: rgba(0,0,0,0.5); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+    animation: hint-drag 2s 1s ease-in-out infinite;
+  }
+  @keyframes hint-drag {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-16px) rotate(-8deg); }
+    75% { transform: translateX(16px) rotate(8deg); }
+  }
+  .drag-hint-icon svg { stroke: #fff; }
+  .drag-hint-text {
+    font-size: 0.75rem; color: #fff;
+    background: rgba(0,0,0,0.5); padding: 4px 12px;
+    border-radius: 12px;
+  }
+  .card-3d {
+    width: 100%; aspect-ratio: 5 / 7;
+    transform-style: preserve-3d;
+    transition: none;
+    position: relative; border-radius: 12px;
+    will-change: transform;
+  }
+  .card-3d img {
+    width: 100%; height: 100%; object-fit: cover;
+    border-radius: 12px; backface-visibility: hidden;
+    box-shadow: 0 8px 32px var(--shadow);
+  }
+  .card-3d .card-back {
+    position: absolute; inset: 0; transform: rotateY(180deg);
+    backface-visibility: hidden;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 32px var(--shadow);
+  }
+  .card-back img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+  .card-shine {
+    position: absolute; inset: 0; border-radius: 12px;
+    background: linear-gradient(115deg, transparent 0%, transparent 40%,
+      rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.06) 50%, transparent 55%, transparent 100%);
+    pointer-events: none; backface-visibility: hidden; transition: opacity 0.2s;
+  }
+  .viz-controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+  .viz-controls .btn { font-size: 0.78rem; padding: 5px 12px; }
+  .modal h3 { margin-bottom: 4px; font-size: 1.1rem; }
+  .modal .detail { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 14px; }
+  .modal .modal-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .modal .btn { padding: 8px 20px; }
+  .scryfall-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.78rem; color: var(--text-muted);
+    text-decoration: none; padding: 6px 14px;
+    background: var(--slot-bg); border-radius: 8px;
+    transition: all 0.2s; margin-bottom: 10px;
+  }
+  .scryfall-link:hover {
+    color: var(--accent); background: var(--surface2);
+    transform: translateY(-1px);
+  }
+  .scryfall-link svg { flex-shrink: 0; }
+
+  /* ── FAB (Floating Action Button) ── */
+  .fab-search {
+    position: fixed;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    z-index: 900;
+  }
+
+  .fab-btn {
+    width: 56px; height: 56px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 1.8rem; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(243, 139, 168, 0.4);
+    transition: all 0.3s; display: flex;
+    align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .fab-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(243, 139, 168, 0.5); }
+  .fab-btn.open { transform: rotate(45deg); }
+  .fab-btn.open:hover { transform: rotate(45deg) scale(1.1); }
+
+  .fab-panel {
+    position: absolute; bottom: 68px; right: 0;
+    width: 380px; max-height: 520px;
+    background: var(--surface); border: 1px solid var(--surface2);
+    border-radius: 16px; box-shadow: 0 12px 40px var(--shadow);
+    overflow: hidden;
+    transform: scale(0.9) translateY(10px); opacity: 0;
+    pointer-events: none; transition: all 0.25s ease;
+    transform-origin: bottom right;
+    display: flex; flex-direction: column;
+  }
+  .fab-panel.show {
+    transform: scale(1) translateY(0); opacity: 1;
+    pointer-events: auto;
+  }
+  @media (max-width: 500px) {
+    .fab-panel { width: calc(100vw - 32px); right: -8px; max-height: 70vh; }
+    .fab-search { right: max(18px, env(safe-area-inset-right, 18px)); }
+    .fab-btn { width: 50px; height: 50px; font-size: 1.6rem; }
+  }
+
+  .fab-panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 18px 12px; border-bottom: 1px solid var(--surface2);
+  }
+  .fab-panel-header h3 { font-size: 1rem; }
+  .fab-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1.4rem; cursor: pointer; padding: 2px 6px;
+    border-radius: 6px; transition: all 0.2s;
+  }
+  .fab-close:hover { color: var(--accent); background: var(--surface2); }
+
+  .fab-panel .search-wrap { padding: 12px 18px 8px; position: relative; margin-bottom: 0; }
+  .fab-panel .search-wrap input {
+    width: 100%; padding: 10px 14px; font-size: 0.95rem;
+    background: var(--slot-bg); border: 2px solid var(--surface2);
+    border-radius: 8px; color: var(--text); outline: none;
+    transition: border-color 0.2s;
+  }
+  .fab-panel .search-wrap input:focus { border-color: var(--accent); }
+  .fab-panel .search-wrap input::placeholder { color: var(--text-muted); }
+
+  .fab-panel .autocomplete {
+    position: absolute; top: 100%; left: 18px; right: 18px;
+    background: var(--surface); border: 1px solid var(--surface2);
+    border-radius: 0 0 8px 8px; max-height: 220px; overflow-y: auto;
+    z-index: 110; display: none;
+  }
+  .fab-panel .autocomplete.show { display: block; }
+  .ac-item {
+    padding: 8px 14px; cursor: pointer; display: flex;
+    justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--surface2); transition: background 0.15s;
+  }
+  .ac-item:hover, .ac-item.hl { background: var(--surface2); }
+  .ac-item .card-name { font-size: 0.9rem; }
+  .ac-item .card-num { color: var(--text-muted); font-size: 0.78rem; }
+  .ac-item .owned-tag {
+    font-size: 0.68rem; color: var(--owned-border);
+    padding: 2px 6px; border: 1px solid var(--owned-border); border-radius: 4px;
+  }
+
+  /* FAB recent list */
+  .fab-recent {
+    flex: 1; overflow-y: auto; padding: 8px 18px 14px;
+  }
+  .fab-recent-title {
+    font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin: 8px 0 6px; display: flex;
+    justify-content: space-between; align-items: center;
+  }
+  .fab-recent-title .btn { font-size: 0.7rem; padding: 2px 8px; }
+  .fab-recent-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--surface2);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .fab-recent-item img { width: 40px; border-radius: 4px; }
+  .fab-recent-item .info { flex: 1; }
+  .fab-recent-item .name { font-weight: 600; font-size: 0.85rem; }
+  .fab-recent-item .placement { font-size: 0.75rem; color: var(--owned-border); margin-top: 1px; }
+  .fab-recent-item .remove-btn {
+    background: none; border: none; color: var(--text-muted);
+    cursor: pointer; font-size: 1rem; padding: 4px;
+  }
+  .fab-recent-item .remove-btn:hover { color: var(--accent); }
+  .fab-empty { text-align: center; padding: 20px 0; color: var(--text-muted); font-size: 0.85rem; }
+
+  /* FAB mode toggle */
+  .fab-mode-toggle {
+    display: flex; margin: 0 18px 8px; padding: 3px;
+    background: var(--slot-bg); border-radius: 10px;
+    position: relative;
+  }
+  .fab-mode-btn {
+    flex: 1; padding: 7px 0; border: none; background: none;
+    color: var(--text-muted); font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; border-radius: 8px; transition: all 0.25s;
+    position: relative; z-index: 1;
+  }
+  .fab-mode-btn.active { color: var(--text); }
+  .fab-mode-slider {
+    position: absolute; top: 3px; bottom: 3px;
+    width: 50%; background: var(--surface2); border-radius: 8px;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    left: 0;
+  }
+  .fab-mode-slider.right { left: 50%; }
+
+  /* Pack mode styles */
+  .pack-step {
+    padding: 14px 18px;
+    animation: slideIn 0.3s ease;
+  }
+  .pack-price-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+  .pack-price-label {
+    font-weight: 700; font-size: 0.95rem; color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .pack-price-input {
+    flex: 1; padding: 10px 12px; font-size: 1rem;
+    background: var(--slot-bg); border: 2px solid var(--surface2);
+    border-radius: 8px; color: var(--text); outline: none;
+    transition: border-color 0.2s;
+  }
+  .pack-price-input:focus { border-color: var(--accent); }
+  .pack-start-btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .pack-start-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--shadow); }
+
+  /* Pack card list */
+  .pack-card-list {
+    flex: 1; overflow-y: auto; padding: 0 18px 8px;
+  }
+  .pack-counter {
+    text-align: center; padding: 8px 0;
+    font-size: 0.85rem; color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .pack-counter span {
+    font-weight: 800; font-size: 1.1rem; color: var(--accent);
+    display: inline-block;
+  }
+  .pack-counter span.bump {
+    animation: counter-bump 0.3s ease;
+  }
+  @keyframes counter-bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  .pack-card-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--surface2);
+    animation: pack-card-in 0.3s ease both;
+  }
+  @keyframes pack-card-in {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .pack-card-entry .pack-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface2); color: var(--text);
+    font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pack-card-entry img { width: 32px; border-radius: 3px; }
+  .pack-card-entry .pack-card-name { flex: 1; font-size: 0.82rem; font-weight: 600; }
+  .pack-card-entry .pack-card-rarity {
+    font-size: 0.68rem; padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .pack-card-entry .pack-card-rarity.mythic { background: #e8702a22; color: #e8702a; }
+  .pack-card-entry .pack-card-rarity.rare { background: #c9a14e22; color: #c9a14e; }
+  .pack-card-entry .pack-card-rarity.uncommon { background: #72b5b522; color: #72b5b5; }
+  .pack-card-entry .pack-card-rarity.common { background: #88888822; color: #888; }
+
+  .pack-done-row {
+    padding: 10px 18px; border-top: 1px solid var(--surface2);
+    display: flex; gap: 8px;
+  }
+  .pack-done-btn {
+    flex: 1; padding: 10px; border: none; border-radius: 10px;
+    background: var(--owned-border); color: #1e1e2e;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pack-done-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
+  .pack-cancel-btn {
+    padding: 10px 14px; border: none; border-radius: 10px;
+    background: var(--surface2); color: var(--text-muted);
+    font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+  }
+  .pack-cancel-btn:hover { color: var(--accent); }
+
+  /* Pack summary toast */
+  .pack-summary-overlay {
+    position: fixed; inset: 0; z-index: 960;
+    display: flex; justify-content: center; align-items: center;
+    pointer-events: none;
+  }
+  .pack-summary {
+    background: var(--surface); border-radius: 20px;
+    padding: 28px 32px; text-align: center;
+    border: 2px solid var(--owned-border);
+    box-shadow: 0 0 40px rgba(166,227,161,0.3), 0 16px 48px var(--shadow);
+    animation: toast-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    pointer-events: auto; min-width: 280px; max-width: 360px;
+  }
+  .pack-summary.removing { animation: toast-out 0.4s ease both; }
+  .pack-summary h2 { font-size: 1.3rem; margin-bottom: 8px; }
+  .pack-summary .pack-summary-cards {
+    display: flex; gap: 4px; justify-content: center;
+    flex-wrap: wrap; margin: 12px 0;
+  }
+  .pack-summary .pack-summary-cards img {
+    width: 48px; border-radius: 4px;
+    animation: pack-card-in 0.2s ease both;
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+  .pack-summary .pack-stats {
+    font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;
+  }
+  .pack-summary .pack-stats span { color: var(--accent); font-weight: 700; }
+
+  /* ── Celebration FX ── */
+  .fx-container {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden;
+  }
+
+  /* Screen flash */
+  .screen-flash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+    animation: flash-pulse 0.6s ease-out forwards;
+  }
+  @keyframes flash-pulse {
+    0% { opacity: 0.7; }
+    100% { opacity: 0; }
+  }
+
+  /* Firework burst */
+  .firework-spark {
+    position: absolute; border-radius: 50%;
+  }
+
+  /* Sparkle particles */
+  .sparkle {
+    position: absolute; width: 6px; height: 6px;
+    background: #fff; border-radius: 50%;
+  }
+
+  /* Golden shower particles */
+  .gold-particle {
+    position: absolute; width: 4px; height: 12px;
+    border-radius: 2px;
+  }
+
+  /* Pulsing glow ring behind toast */
+  .glow-ring {
+    position: fixed; top: 50%; left: 50%;
+    width: 500px; height: 500px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%; pointer-events: none;
+    z-index: 949;
+    animation: glow-ring-pulse 2s ease-out forwards;
+  }
+  @keyframes glow-ring-pulse {
+    0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.3); }
+    50% { opacity: 0.3; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+  }
+
+  /* ── Toast ── */
+  .toast-container {
+    position: fixed; inset: 0;
+    z-index: 950; display: flex;
+    justify-content: center; align-items: center;
+    pointer-events: none;
+  }
+  .add-toast {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--surface);
+    border-radius: 20px; padding: 28px 32px 24px;
+    box-shadow: 0 0 40px var(--toast-glow, rgba(233,69,96,0.3)),
+                0 16px 48px var(--shadow);
+    border: 2px solid var(--toast-glow-color, var(--accent));
+    animation: toast-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    pointer-events: auto; min-width: 280px; max-width: 340px;
+    text-align: center;
+  }
+  .add-toast.removing { animation: toast-out 0.4s ease forwards; }
+
+  /* Rarity badge */
+  .toast-rarity-badge {
+    font-weight: 900; text-transform: uppercase;
+    letter-spacing: 2px; padding: 5px 18px;
+    border-radius: 20px; margin-bottom: 14px;
+    font-size: 0.85rem;
+    animation: badge-pop 0.4s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .toast-rarity-badge.mythic {
+    background: linear-gradient(135deg, #e8702a, #ff4500);
+    color: #fff; font-size: 1rem; letter-spacing: 3px; padding: 7px 22px;
+    box-shadow: 0 0 20px rgba(232,112,42,0.6);
+    animation: badge-pop 0.4s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+               badge-mythic-glow 1.5s 0.6s ease-in-out infinite;
+  }
+  .toast-rarity-badge.rare {
+    background: linear-gradient(135deg, #c9a14e, #ffd700);
+    color: #1a1a2e;
+    box-shadow: 0 0 14px rgba(201,161,78,0.5);
+  }
+  .toast-rarity-badge.uncommon {
+    background: linear-gradient(135deg, #5a9e9e, #88d8d8);
+    color: #1a1a2e;
+  }
+  .toast-rarity-badge.common {
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+  @keyframes badge-pop {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes badge-mythic-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(232,112,42,0.6); }
+    50% { box-shadow: 0 0 35px rgba(255,69,0,0.8), 0 0 60px rgba(232,112,42,0.3); }
+  }
+
+  .add-toast img {
+    width: 160px; border-radius: 10px;
+    box-shadow: 0 6px 20px var(--shadow);
+    margin-bottom: 14px;
+  }
+  .add-toast .toast-name {
+    font-weight: 800; font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .add-toast .toast-msg {
+    font-size: 1.05rem; font-weight: 600;
+    text-shadow: 0 0 12px var(--toast-glow, rgba(233,69,96,0.4));
+  }
+  .add-toast .toast-msg.mythic { color: #e8702a; }
+  .add-toast .toast-msg.rare { color: #c9a14e; }
+  .add-toast .toast-msg.uncommon { color: #a8c4c4; }
+  .add-toast .toast-msg.common { color: #999; }
+  .add-toast .toast-placement {
+    font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;
+  }
+
+  @keyframes toast-in {
+    0% { transform: scale(0.4); opacity: 0; }
+    70% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes toast-out {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(0.85); opacity: 0; }
+  }
+
+  /* ── Loading ── */
+  .loading { text-align: center; padding: 60px; }
+  .spinner {
+    width: 40px; height: 40px; border: 4px solid var(--surface2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Data actions ── */
+  .data-actions {
+    display: flex; gap: 8px; justify-content: center;
+    margin-top: 20px; padding-top: 16px;
+    padding-bottom: 16px;
+    border-top: 1px solid var(--surface2); flex-wrap: wrap;
+    position: relative; z-index: 1;
+  }
+  .data-actions .btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 16px;
+  }
+</style>
+<script>
+// Generate PWA manifest inline
+const pwaManifest = {
+  name: 'FIN Binder Tracker',
+  short_name: 'FIN Binder',
+  start_url: '.',
+  display: 'standalone',
+  background_color: '#1e1e2e',
+  theme_color: '#1e1e2e',
+  icons: []
+};
+const manifestBlob = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
+const manifestLink = document.createElement('link');
+manifestLink.rel = 'manifest';
+manifestLink.href = URL.createObjectURL(manifestBlob);
+document.head.appendChild(manifestLink);
+
+// Generate app icon via canvas
+(function generateIcon() {
+  const sizes = [180, 192, 512];
+  sizes.forEach(size => {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    // Background
+    ctx.fillStyle = '#1e1e2e';
+    ctx.fillRect(0, 0, size, size);
+    // Border accent
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#cba6f7');
+    grad.addColorStop(1, '#f38ba8');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = size * 0.04;
+    ctx.strokeRect(size * 0.08, size * 0.08, size * 0.84, size * 0.84);
+    // "FIN" text
+    const textGrad = ctx.createLinearGradient(0, size * 0.3, 0, size * 0.7);
+    textGrad.addColorStop(0, '#f38ba8');
+    textGrad.addColorStop(1, '#cba6f7');
+    ctx.fillStyle = textGrad;
+    ctx.font = `900 ${size * 0.32}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FIN', size / 2, size * 0.45);
+    // Subtitle
+    ctx.fillStyle = '#a6adc8';
+    ctx.font = `600 ${size * 0.1}px -apple-system, sans-serif`;
+    ctx.fillText('BINDER', size / 2, size * 0.72);
+
+    const url = c.toDataURL('image/png');
+    if (size === 180) {
+      const link = document.createElement('link');
+      link.rel = 'apple-touch-icon';
+      link.sizes = '180x180';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+    pwaManifest.icons.push({ src: url, sizes: `${size}x${size}`, type: 'image/png' });
+  });
+  // Update manifest with icons
+  const newBlob = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
+  manifestLink.href = URL.createObjectURL(newBlob);
+})();
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="loading-screen" class="loading">
+    <div class="spinner"></div>
+    <p>Loading FIN set data from Scryfall...</p>
+  </div>
+
+  <div id="main-content" style="display:none;">
+    <header>
+      <div class="header-brand">
+        <div class="brand-icon"><img src="https://svgs.scryfall.io/sets/fin.svg" alt="FIN"></div>
+        <div class="brand-text">
+          <div class="brand-title"><span class="ff">Final Fantasy</span> <span class="tcg">MTG Tracker</span> <span class="ver">v1.0</span></div>
+          <div class="brand-set">Main Set &mdash; 300 Cards via Play Boosters</div>
+        </div>
+      </div>
+      <p class="subtitle">
+        <span>ClearEdge 360</span>
+        <span class="sep"></span>
+        <span>9-Pocket Binder</span>
+        <span class="sep"></span>
+        <span>34 Pages</span>
+      </p>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">0 / 0</div>
+      </div>
+      <div class="stats-row" id="stats-row"></div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Main Dashboard</button>
+      <button class="tab-btn" data-tab="portfolio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Portfolio</button>
+      <button class="tab-btn" data-tab="timeline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
+      <button class="tab-btn" data-tab="binder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Binder View</button>
+    </div>
+
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="dashboard" id="dashboard"></div>
+    </div>
+
+    <div id="tab-portfolio" class="tab-content">
+      <div class="dashboard" id="portfolio"></div>
+    </div>
+
+    <div id="tab-timeline" class="tab-content">
+      <div class="dashboard" id="timeline"></div>
+    </div>
+
+    <div id="tab-binder" class="tab-content">
+      <div class="binder-top-controls">
+        <div class="page-nav-widget" id="page-nav-widget">
+          <div class="page-nav-label" id="page-nav-label">Pages <span>1–2</span></div>
+          <div class="page-slider-wrap">
+            <div class="page-slider-track" id="page-slider-track">
+              <div class="page-slider-fill" id="page-slider-fill"></div>
+              <div class="page-slider-thumb" id="page-slider-thumb"></div>
+            </div>
+          </div>
+          <div class="page-slider-dots" id="page-slider-dots"></div>
+        </div>
+      </div>
+      <div class="binder-layout">
+        <button class="binder-nav" id="prev-page">&lsaquo;</button>
+        <div class="binder-spread-wrapper">
+          <div class="binder-spread" id="binder-spread"></div>
+        </div>
+        <button class="binder-nav" id="next-page">&rsaquo;</button>
+      </div>
+    </div>
+
+    <div class="data-actions">
+      <button class="btn btn-secondary" id="export-btn">Export Collection</button>
+      <button class="btn btn-secondary" id="import-btn">Import Collection</button>
+      <button class="btn btn-danger" id="reset-btn">Reset All</button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+  </div>
+</div>
+
+<!-- Floating Utility Buttons -->
+<div class="fab-utilities">
+  <button class="fab-util-btn" id="theme-toggle" title="Toggle theme"></button>
+  <button class="fab-util-btn" id="sync-btn" title="Cloud Sync">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+    <span class="sync-dot" id="sync-dot"></span>
+  </button>
+</div>
+
+<!-- Floating Add Cards Button -->
+<div class="fab-search" id="fab-search">
+  <div class="fab-panel" id="fab-panel">
+    <div class="fab-panel-header">
+      <h3>Add Cards</h3>
+      <button class="fab-close" id="fab-close">&times;</button>
+    </div>
+    <div class="fab-mode-toggle">
+      <div class="fab-mode-slider" id="fab-mode-slider"></div>
+      <button class="fab-mode-btn active" data-mode="quick">Quick Add</button>
+      <button class="fab-mode-btn" data-mode="pack">Booster Pack</button>
+    </div>
+    <!-- Quick Add mode -->
+    <div id="fab-quick-mode">
+      <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search by name or collector #..." autocomplete="off">
+        <div class="autocomplete" id="autocomplete"></div>
+      </div>
+      <div class="fab-recent" id="fab-recent"></div>
+    </div>
+    <!-- Booster Pack mode -->
+    <div id="fab-pack-mode" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div id="pack-step-container"></div>
+    </div>
+  </div>
+  <button class="fab-btn" id="fab-btn" title="Add Cards">+</button>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <h3 id="confirm-title"></h3>
+    <p id="confirm-msg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-danger" id="confirm-yes">Reset</button>
+      <button class="btn btn-secondary" id="confirm-no">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync Modal -->
+<div class="sync-modal-overlay" id="sync-modal-overlay">
+  <div class="sync-modal" id="sync-modal">
+    <h3>Cloud Sync</h3>
+    <div class="sync-desc">
+      Sync your collection across browsers using a private GitHub Gist.<br>
+      <a href="https://github.com/settings/tokens/new?scopes=gist&description=FIN+Binder+Tracker" target="_blank" rel="noopener">Generate a token here</a> (select only the <strong>gist</strong> scope).
+    </div>
+    <label>GitHub Personal Access Token</label>
+    <input type="text" id="sync-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <div id="sync-modal-body"></div>
+    <div class="sync-actions">
+      <button class="btn btn-primary" id="sync-save-btn">Save &amp; Sync</button>
+      <button class="btn btn-secondary" id="sync-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Card Visualizer Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="card-visualizer" id="card-visualizer">
+      <div class="drag-hint" id="drag-hint">
+        <div class="drag-hint-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/><polyline points="9 18 15 12 9 6" transform="translate(6,0)"/>
+          </svg>
+        </div>
+        <span class="drag-hint-text">Drag to rotate</span>
+      </div>
+      <div class="card-3d" id="card-3d">
+        <img id="modal-img" src="" alt="">
+        <div class="card-shine" id="card-shine"></div>
+        <div class="card-back">
+          <img id="modal-back-img" src="" alt="Card back">
+        </div>
+      </div>
+    </div>
+    <div class="viz-controls">
+      <button class="btn btn-secondary" id="viz-reset"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Reset</button>
+      <button class="btn btn-secondary" id="viz-flip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Flip</button>
+    </div>
+    <h3 id="modal-name"></h3>
+    <p class="detail" id="modal-detail"></p>
+    <a class="scryfall-link" id="scryfall-link" href="#" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      View on Scryfall
+    </a>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modal-toggle"></button>
+      <button class="btn btn-secondary" id="modal-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ── State ──
+  const CACHE_KEY = 'fin-card-data-v4';
+  const COLLECTION_KEY = 'fin-collection';
+  const THEME_KEY = 'fin-theme';
+  const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  const PACKS_KEY = 'fin-booster-packs';
+  const TIMELINE_KEY = 'fin-timeline';
+  const MTG_CARD_BACK = 'https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg';
+  const FX_KEY = 'fin-fx-rate';
+  const FX_TTL = 12 * 60 * 60 * 1000; // 12 hours
+  const GIST_KEY = 'fin-gist-config';
+  let USD_TO_MYR = 4.40; // fallback
+  let fxFetchedAt = null;
+  let fxIsLive = false;
+
+  async function loadFxRate() {
+    // Check cache
+    try {
+      const cached = JSON.parse(localStorage.getItem(FX_KEY) || '{}');
+      if (cached.rate && cached.fetchedAt && Date.now() - cached.fetchedAt < FX_TTL) {
+        USD_TO_MYR = cached.rate;
+        fxFetchedAt = cached.fetchedAt;
+        fxIsLive = true;
+        return;
+      }
+    } catch {}
+    // Fetch live rate
+    try {
+      const resp = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.result === 'success' && data.rates?.MYR) {
+          USD_TO_MYR = data.rates.MYR;
+          fxFetchedAt = Date.now();
+          fxIsLive = true;
+          localStorage.setItem(FX_KEY, JSON.stringify({ rate: USD_TO_MYR, fetchedAt: fxFetchedAt }));
+        }
+      }
+    } catch {
+      // Use fallback silently
+    }
+  }
+
+  let allCards = [];
+  let ownedSet = new Set();
+  let packSession = [];
+  let currentPage = 0;
+  let totalPages = 0;
+  let highlightedCN = null;
+  let boosterPacks = [];
+  let currentPack = null; // { price, cards: [] }
+  let fabMode = 'quick'; // 'quick' or 'pack'
+  let dataFetchedAt = null;
+  let timelineEvents = [];
+  let gistConfig = { token: '', gistId: '' };
+  let syncTimer = null;
+  let isSyncing = false;
+
+  // ── Theme ──
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY) || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeIcon();
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(THEME_KEY, next);
+    updateThemeIcon();
+  }
+  function updateThemeIcon() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.getElementById('theme-toggle').innerHTML = isDark
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    // Update status bar color for PWA
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = isDark ? '#1e1e2e' : '#eff1f5';
+  }
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  initTheme();
+
+  // ── Cloud Sync (GitHub Gist) ──
+  function loadGistConfig() {
+    try {
+      const data = JSON.parse(localStorage.getItem(GIST_KEY) || '{}');
+      return { token: data.token || '', gistId: data.gistId || '' };
+    } catch { return { token: '', gistId: '' }; }
+  }
+
+  function saveGistConfig() {
+    localStorage.setItem(GIST_KEY, JSON.stringify(gistConfig));
+  }
+
+  function updateSyncDot(status) {
+    const dot = document.getElementById('sync-dot');
+    const btn = document.getElementById('sync-btn');
+    dot.className = 'sync-dot' + (status ? ' ' + status : '');
+    btn.classList.toggle('spinning', status === 'syncing');
+  }
+
+  function buildSyncPayload() {
+    return {
+      version: 1,
+      lastSync: new Date().toISOString(),
+      collection: { owned: [...ownedSet] },
+      packs: { packs: boosterPacks },
+      timeline: { events: timelineEvents },
+    };
+  }
+
+  async function gistPush() {
+    if (!gistConfig.token || isSyncing) return;
+    isSyncing = true;
+    updateSyncDot('syncing');
+
+    const payload = buildSyncPayload();
+    const body = {
+      description: 'FIN Binder Tracker — Collection Data',
+      public: false,
+      files: { 'fin-binder-data.json': { content: JSON.stringify(payload, null, 2) } }
+    };
+
+    try {
+      let resp;
+      if (gistConfig.gistId) {
+        resp = await fetch(`https://api.github.com/gists/${gistConfig.gistId}`, {
+          method: 'PATCH',
+          headers: { Authorization: `token ${gistConfig.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } else {
+        resp = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: { Authorization: `token ${gistConfig.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      }
+
+      if (!resp.ok) throw new Error(`GitHub API: ${resp.status}`);
+      const data = await resp.json();
+
+      if (!gistConfig.gistId) {
+        gistConfig.gistId = data.id;
+        saveGistConfig();
+      }
+      updateSyncDot('connected');
+    } catch (err) {
+      console.error('Sync push failed:', err);
+      updateSyncDot('error');
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  async function gistPull() {
+    if (!gistConfig.token || !gistConfig.gistId || isSyncing) return false;
+    isSyncing = true;
+    updateSyncDot('syncing');
+
+    try {
+      const resp = await fetch(`https://api.github.com/gists/${gistConfig.gistId}`, {
+        headers: { Authorization: `token ${gistConfig.token}` },
+      });
+      if (!resp.ok) throw new Error(`GitHub API: ${resp.status}`);
+      const data = await resp.json();
+
+      const file = data.files?.['fin-binder-data.json'];
+      if (!file) throw new Error('No data file in Gist');
+
+      const payload = JSON.parse(file.content);
+      if (payload.collection?.owned) ownedSet = new Set(payload.collection.owned);
+      if (payload.packs?.packs) boosterPacks = payload.packs.packs;
+      if (payload.timeline?.events) timelineEvents = payload.timeline.events;
+
+      saveCollection();
+      savePacks();
+      saveTimeline();
+      renderAll();
+      updateSyncDot('connected');
+      return true;
+    } catch (err) {
+      console.error('Sync pull failed:', err);
+      updateSyncDot('error');
+      return false;
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  function scheduleSyncPush() {
+    if (!gistConfig.token) return;
+    clearTimeout(syncTimer);
+    updateSyncDot('syncing');
+    syncTimer = setTimeout(gistPush, 5000);
+  }
+
+  // Sync button click
+  document.getElementById('sync-btn').addEventListener('click', () => {
+    openSyncModal();
+  });
+
+  // Sync modal
+  function openSyncModal() {
+    const overlay = document.getElementById('sync-modal-overlay');
+    const tokenInput = document.getElementById('sync-token-input');
+    tokenInput.value = gistConfig.token;
+    renderSyncModalBody();
+    overlay.classList.add('visible');
+  }
+
+  function closeSyncModal() {
+    document.getElementById('sync-modal-overlay').classList.remove('visible');
+  }
+
+  function renderSyncModalBody() {
+    const body = document.getElementById('sync-modal-body');
+    if (gistConfig.gistId) {
+      body.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--owned-border);flex-shrink:0"></span>
+          <span style="font-size:0.82rem;font-weight:600">Connected</span>
+          <span style="font-size:0.7rem;color:var(--text-muted);margin-left:auto">Gist: ${gistConfig.gistId.slice(0, 8)}...</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary" id="sync-pull-btn" style="width:100%;padding:12px;font-size:0.9rem;min-height:44px">
+            Pull from Cloud
+          </button>
+          <button class="btn btn-secondary" id="sync-push-btn" style="width:100%;padding:12px;font-size:0.9rem;min-height:44px">
+            Push Local to Cloud
+          </button>
+          <button class="btn btn-danger" id="sync-disconnect-btn" style="width:100%;padding:10px;font-size:0.82rem;min-height:44px;margin-top:4px">
+            Disconnect
+          </button>
+        </div>
+      `;
+      document.getElementById('sync-pull-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.target;
+        btn.textContent = 'Pulling...';
+        btn.disabled = true;
+        const ok = await gistPull();
+        btn.textContent = ok ? 'Pulled!' : 'Failed';
+        setTimeout(() => {
+          if (ok) closeSyncModal();
+          else renderSyncModalBody();
+        }, 1000);
+      });
+      document.getElementById('sync-push-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.target;
+        btn.textContent = 'Pushing...';
+        btn.disabled = true;
+        await gistPush();
+        btn.textContent = 'Pushed!';
+        setTimeout(closeSyncModal, 1000);
+      });
+      document.getElementById('sync-disconnect-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        gistConfig = { token: '', gistId: '' };
+        saveGistConfig();
+        updateSyncDot('');
+        document.getElementById('sync-token-input').value = '';
+        renderSyncModalBody();
+      });
+    } else {
+      body.innerHTML = '';
+    }
+  }
+
+  document.getElementById('sync-save-btn').addEventListener('click', async () => {
+    const token = document.getElementById('sync-token-input').value.trim();
+    if (!token) return;
+
+    gistConfig.token = token;
+
+    // Try to find existing Gist if we don't have an ID
+    if (!gistConfig.gistId) {
+      try {
+        updateSyncDot('syncing');
+        const resp = await fetch('https://api.github.com/gists?per_page=100', {
+          headers: { Authorization: `token ${token}` },
+        });
+        if (resp.ok) {
+          const gists = await resp.json();
+          const existing = gists.find(g => g.files?.['fin-binder-data.json']);
+          if (existing) {
+            gistConfig.gistId = existing.id;
+            // Existing Gist found — ask to pull
+            saveGistConfig();
+            const body = document.getElementById('sync-modal-body');
+            body.innerHTML = `<div class="sync-status-msg" style="color:var(--accent)">
+              Found existing collection in cloud!
+              <button class="btn btn-primary" id="sync-pull-found" style="margin-top:6px;font-size:0.78rem">Pull Cloud Data</button>
+              <button class="btn btn-secondary" id="sync-push-found" style="margin-top:6px;margin-left:6px;font-size:0.78rem">Overwrite with Local</button>
+            </div>`;
+            document.getElementById('sync-pull-found').addEventListener('click', async () => {
+              await gistPull();
+              closeSyncModal();
+            });
+            document.getElementById('sync-push-found').addEventListener('click', async () => {
+              await gistPush();
+              closeSyncModal();
+            });
+            return;
+          }
+        }
+      } catch {}
+    }
+
+    saveGistConfig();
+    await gistPush();
+    renderSyncModalBody();
+    const body = document.getElementById('sync-modal-body');
+    body.insertAdjacentHTML('beforeend', '<div class="sync-status-msg" style="color:var(--owned-border)">Synced successfully!</div>');
+  });
+
+  document.getElementById('sync-close-btn').addEventListener('click', closeSyncModal);
+  document.getElementById('sync-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeSyncModal();
+  });
+
+  // Init sync dot on load
+  gistConfig = loadGistConfig();
+  if (gistConfig.token) updateSyncDot('connected');
+
+  // ── Collector number sorting ──
+  function collectorKey(cn) {
+    const m = cn.match(/^(\d+)(.*)$/);
+    return m ? [parseInt(m[1]), m[2]] : [9999, cn];
+  }
+  function compareCollector(a, b) {
+    const [na, sa] = collectorKey(a);
+    const [nb, sb] = collectorKey(b);
+    return na !== nb ? na - nb : sa.localeCompare(sb);
+  }
+
+  // ── Data loading ──
+  async function fetchFromScryfall() {
+    const cards = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const resp = await fetch(
+        `https://api.scryfall.com/cards/search?q=set:fin+is:booster+game:paper&page=${page}`
+      );
+      if (!resp.ok) throw new Error(`Scryfall API error: ${resp.status}`);
+      const data = await resp.json();
+      for (const c of data.data) {
+        cards.push({
+          collector_number: c.collector_number,
+          name: c.name,
+          rarity: c.rarity,
+          type_line: c.type_line,
+          mana_cost: c.mana_cost || '',
+          image_small: c.image_uris?.small || c.card_faces?.[0]?.image_uris?.small || '',
+          image_normal: c.image_uris?.normal || c.card_faces?.[0]?.image_uris?.normal || '',
+          image_back_small: c.card_faces?.[1]?.image_uris?.small || '',
+          image_back_normal: c.card_faces?.[1]?.image_uris?.normal || '',
+          price_usd: parseFloat(c.prices?.usd) || 0,
+          price_usd_foil: parseFloat(c.prices?.usd_foil) || 0,
+          scryfall_uri: c.scryfall_uri || '',
+        });
+      }
+      hasMore = data.has_more;
+      page++;
+      if (hasMore) await new Promise(r => setTimeout(r, 100));
+    }
+    cards.sort((a, b) => compareCollector(a.collector_number, b.collector_number));
+    return cards;
+  }
+
+  async function loadCards() {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.fetchedAt < CACHE_TTL && parsed.cards?.length > 0) {
+          dataFetchedAt = parsed.fetchedAt;
+          return parsed.cards;
+        }
+      } catch {}
+    }
+    const cards = await fetchFromScryfall();
+    dataFetchedAt = Date.now();
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: dataFetchedAt, cards }));
+    return cards;
+  }
+
+  function loadCollection() {
+    try {
+      const data = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}');
+      return new Set(data.owned || []);
+    } catch { return new Set(); }
+  }
+
+  function saveCollection() {
+    localStorage.setItem(COLLECTION_KEY, JSON.stringify({ owned: [...ownedSet] }));
+    scheduleSyncPush();
+  }
+
+  function loadPacks() {
+    try {
+      const data = JSON.parse(localStorage.getItem(PACKS_KEY) || '{}');
+      return data.packs || [];
+    } catch { return []; }
+  }
+
+  function savePacks() {
+    localStorage.setItem(PACKS_KEY, JSON.stringify({ packs: boosterPacks }));
+    scheduleSyncPush();
+  }
+
+  function loadTimeline() {
+    try {
+      const data = JSON.parse(localStorage.getItem(TIMELINE_KEY) || '{}');
+      return data.events || [];
+    } catch { return []; }
+  }
+
+  function saveTimeline() {
+    localStorage.setItem(TIMELINE_KEY, JSON.stringify({ events: timelineEvents }));
+    scheduleSyncPush();
+  }
+
+  function logTimelineEvent(type, cn, source) {
+    timelineEvents.push({ type, cn, date: new Date().toISOString(), source: source || 'quick' });
+    saveTimeline();
+  }
+
+  // ── Binder placement ──
+  function getPlacement(card) {
+    const idx = allCards.indexOf(card);
+    const page = Math.floor(idx / 9) + 1;
+    const slot = (idx % 9) + 1;
+    const row = Math.floor((slot - 1) / 3) + 1;
+    const col = ((slot - 1) % 3) + 1;
+    return { page, slot, row, col, idx };
+  }
+
+  function getCardByNumber(cn) {
+    return allCards.find(c => c.collector_number === cn);
+  }
+
+  // ── Celebration: Rarity-Tiered Fanfare ──
+  const rarityConfig = {
+    common: {
+      colors: ['#aaa', '#ccc', '#ddd'],
+      glow: 'rgba(136,136,136,0.3)', border: '#888',
+      flash: false, fireworks: 0, sparkles: 0, goldShower: false, glowRing: false,
+      msgs: ['Collected!', 'Got it!', 'Added!'],
+    },
+    uncommon: {
+      colors: ['#a8c4c4', '#72b5b5', '#88d8d8', '#b0e0e6'],
+      glow: 'rgba(114,181,181,0.4)', border: '#72b5b5',
+      flash: false, fireworks: 0, sparkles: 20, goldShower: false, glowRing: false,
+      msgs: ['Nice find!', 'Sparkly!', 'Got it!', 'Into the binder!'],
+    },
+    rare: {
+      colors: ['#c9a14e', '#f5d060', '#daa520', '#ffd700'],
+      glow: 'rgba(201,161,78,0.5)', border: '#c9a14e',
+      flash: 'rgba(201,161,78,0.15)', fireworks: 2, sparkles: 30, goldShower: false, glowRing: true,
+      msgs: ['Rare pull!', 'Now we\'re talking!', 'Golden!', 'Sweet pull!'],
+    },
+    mythic: {
+      colors: ['#e8702a', '#f5a623', '#ff6b35', '#ffd700', '#ff4500'],
+      glow: 'rgba(232,112,42,0.6)', border: '#e8702a',
+      flash: 'rgba(232,112,42,0.25)', fireworks: 4, sparkles: 50, goldShower: true, glowRing: true,
+      msgs: ['MYTHIC PULL!', 'LEGENDARY!', 'INCREDIBLE!', 'JACKPOT!'],
+    },
+  };
+
+  function screenFlash(color) {
+    const el = document.createElement('div');
+    el.className = 'screen-flash';
+    el.style.background = `radial-gradient(circle, ${color}, transparent 70%)`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  }
+
+  function spawnFireworks(count, colors) {
+    const container = document.createElement('div');
+    container.className = 'fx-container';
+    document.body.appendChild(container);
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+
+    for (let b = 0; b < count; b++) {
+      const bx = cx + (Math.random() - 0.5) * 300;
+      const by = cy + (Math.random() - 0.5) * 200;
+      const delay = b * 250;
+      const sparkCount = 30 + Math.floor(Math.random() * 20);
+
+      setTimeout(() => {
+        for (let i = 0; i < sparkCount; i++) {
+          const spark = document.createElement('div');
+          spark.className = 'firework-spark';
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.3;
+          const dist = 80 + Math.random() * 160;
+          const size = 3 + Math.random() * 4;
+          spark.style.cssText = `
+            left: ${bx}px; top: ${by}px;
+            width: ${size}px; height: ${size}px;
+            background: ${color};
+            box-shadow: 0 0 ${size + 4}px ${color};
+          `;
+          spark.animate([
+            { transform: 'translate(0,0) scale(1)', opacity: 1 },
+            { transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist + 60}px) scale(0.2)`, opacity: 0 },
+          ], {
+            duration: 800 + Math.random() * 500,
+            easing: 'cubic-bezier(0.25, 0, 0.3, 1)',
+            fill: 'forwards',
+          });
+          container.appendChild(spark);
+        }
+      }, delay);
+    }
+    setTimeout(() => container.remove(), count * 250 + 1500);
+  }
+
+  function spawnSparkles(count, colors) {
+    const container = document.createElement('div');
+    container.className = 'fx-container';
+    document.body.appendChild(container);
+
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const x = 20 + Math.random() * 60;
+      const y = 20 + Math.random() * 60;
+      const size = 3 + Math.random() * 5;
+      s.style.cssText = `
+        left: ${x}%; top: ${y}%;
+        width: ${size}px; height: ${size}px;
+        background: ${color};
+        box-shadow: 0 0 ${size + 6}px ${color}, 0 0 ${size + 12}px ${color};
+      `;
+      s.animate([
+        { transform: 'scale(0) rotate(0deg)', opacity: 0 },
+        { transform: 'scale(1.5) rotate(180deg)', opacity: 1, offset: 0.3 },
+        { transform: 'scale(0) rotate(360deg)', opacity: 0 },
+      ], {
+        duration: 600 + Math.random() * 800,
+        delay: Math.random() * 600,
+        easing: 'ease-out',
+        fill: 'forwards',
+      });
+      container.appendChild(s);
+    }
+    setTimeout(() => container.remove(), 2000);
+  }
+
+  function spawnGoldShower() {
+    const container = document.createElement('div');
+    container.className = 'fx-container';
+    document.body.appendChild(container);
+    const golds = ['#ffd700', '#f5a623', '#e8702a', '#ff8c42', '#ffb347'];
+
+    for (let i = 0; i < 60; i++) {
+      const p = document.createElement('div');
+      p.className = 'gold-particle';
+      const color = golds[Math.floor(Math.random() * golds.length)];
+      const x = Math.random() * 100;
+      const w = 3 + Math.random() * 4;
+      const h = 8 + Math.random() * 14;
+      p.style.cssText = `
+        left: ${x}%; top: -20px;
+        width: ${w}px; height: ${h}px;
+        background: ${color};
+        box-shadow: 0 0 6px ${color};
+      `;
+      const drift = (Math.random() - 0.5) * 100;
+      p.animate([
+        { transform: `translateY(0) translateX(0) rotate(0deg)`, opacity: 0.9 },
+        { transform: `translateY(${window.innerHeight + 40}px) translateX(${drift}px) rotate(${360 + Math.random() * 360}deg)`, opacity: 0 },
+      ], {
+        duration: 1500 + Math.random() * 1500,
+        delay: Math.random() * 800,
+        easing: 'cubic-bezier(0.2, 0, 0.8, 1)',
+        fill: 'forwards',
+      });
+      container.appendChild(p);
+    }
+    setTimeout(() => container.remove(), 3500);
+  }
+
+  function spawnGlowRing(color) {
+    const ring = document.createElement('div');
+    ring.className = 'glow-ring';
+    ring.style.background = `radial-gradient(circle, ${color} 0%, transparent 70%)`;
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 2200);
+  }
+
+  function showAddToast(card, cfg) {
+    const container = document.getElementById('toast-container');
+    container.querySelectorAll('.add-toast').forEach(t => t.remove());
+
+    const msg = cfg.msgs[Math.floor(Math.random() * cfg.msgs.length)];
+    const p = getPlacement(card);
+
+    const toast = document.createElement('div');
+    toast.className = 'add-toast';
+    toast.style.setProperty('--toast-glow', cfg.glow);
+    toast.style.setProperty('--toast-glow-color', cfg.border);
+    const rarityLabels = { mythic: 'MYTHIC RARE', rare: 'RARE', uncommon: 'UNCOMMON', common: 'COMMON' };
+    toast.innerHTML = `
+      <div class="toast-rarity-badge ${card.rarity}">${rarityLabels[card.rarity] || card.rarity}</div>
+      <img src="${card.image_normal || card.image_small}" alt="${card.name}">
+      <div class="toast-name">#${card.collector_number} ${card.name}</div>
+      <div class="toast-msg ${card.rarity}">${msg}</div>
+      <div class="toast-placement">Page ${p.page}, Slot ${p.slot}${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}</div>
+    `;
+    container.appendChild(toast);
+
+    const dismissTime = card.rarity === 'mythic' ? 4000 : card.rarity === 'rare' ? 3500 : 3000;
+    setTimeout(() => {
+      toast.classList.add('removing');
+      setTimeout(() => toast.remove(), 400);
+    }, dismissTime);
+  }
+
+  function celebrateAdd(card) {
+    if (!card) return;
+    const cfg = rarityConfig[card.rarity] || rarityConfig.common;
+
+    // Screen flash (rare + mythic)
+    if (cfg.flash) screenFlash(cfg.flash);
+
+    // Glow ring (rare + mythic)
+    if (cfg.glowRing) spawnGlowRing(cfg.glow);
+
+    // Fireworks (rare: 2 bursts, mythic: 4 bursts)
+    if (cfg.fireworks > 0) spawnFireworks(cfg.fireworks, cfg.colors);
+
+    // Sparkles (uncommon+)
+    if (cfg.sparkles > 0) spawnSparkles(cfg.sparkles, cfg.colors);
+
+    // Golden particle shower (mythic only)
+    if (cfg.goldShower) spawnGoldShower();
+
+    // Toast (always)
+    showAddToast(card, cfg);
+  }
+
+  // ── Core: addCard / removeCard ──
+  function addCard(cn) {
+    const card = getCardByNumber(cn);
+    ownedSet.add(cn);
+    if (!packSession.includes(cn)) packSession.push(cn);
+    saveCollection();
+    logTimelineEvent('add', cn, currentPack ? 'pack' : 'quick');
+    renderProgress();
+    renderFabRecent();
+    celebrateAdd(card);
+
+    if (document.getElementById('tab-binder').classList.contains('active')) {
+      if (card) {
+        const idx = allCards.indexOf(card);
+        const pageIdx = Math.floor(idx / 9);
+        currentPage = isMobile() ? pageIdx : Math.floor(pageIdx / 2);
+        highlightedCN = cn;
+      }
+      renderBinder();
+    }
+    if (document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+    if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
+    if (document.getElementById('tab-timeline').classList.contains('active')) renderTimeline();
+  }
+
+  function removeCard(cn) {
+    ownedSet.delete(cn);
+    packSession = packSession.filter(c => c !== cn);
+    saveCollection();
+    logTimelineEvent('remove', cn);
+    renderProgress();
+    renderFabRecent();
+    if (document.getElementById('tab-binder').classList.contains('active')) renderBinder();
+    if (document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+    if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
+    if (document.getElementById('tab-timeline').classList.contains('active')) renderTimeline();
+  }
+
+  // ── FAB (Floating Action Button) ──
+  const fabBtn = document.getElementById('fab-btn');
+  const fabPanel = document.getElementById('fab-panel');
+  const fabClose = document.getElementById('fab-close');
+  const searchInput = document.getElementById('search-input');
+  const acList = document.getElementById('autocomplete');
+  let acHighlight = -1;
+
+  function toggleFab() {
+    const isOpen = fabPanel.classList.contains('show');
+    if (isOpen) closeFab();
+    else openFab();
+  }
+
+  function openFab() {
+    fabPanel.classList.add('show');
+    fabBtn.classList.add('open');
+    setTimeout(() => searchInput.focus(), 100);
+  }
+
+  function closeFab() {
+    fabPanel.classList.remove('show');
+    fabBtn.classList.remove('open');
+    searchInput.value = '';
+    acList.classList.remove('show');
+  }
+
+  fabBtn.addEventListener('click', toggleFab);
+  fabClose.addEventListener('click', closeFab);
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.fab-search') && fabPanel.classList.contains('show')) {
+      closeFab();
+    }
+  });
+
+  // Keyboard shortcut: Escape closes FAB
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fabPanel.classList.contains('show')) closeFab();
+  });
+
+  // ── Search autocomplete ──
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    if (q.length < 1) { acList.classList.remove('show'); return; }
+
+    const matches = allCards.filter(c =>
+      c.name.toLowerCase().includes(q) || c.collector_number === q
+    ).slice(0, 15);
+
+    acHighlight = -1;
+    if (matches.length === 0) { acList.classList.remove('show'); return; }
+
+    acList.innerHTML = matches.map((c, i) => {
+      const isOwned = ownedSet.has(c.collector_number);
+      return `<div class="ac-item" data-cn="${c.collector_number}" data-index="${i}">
+        <span>
+          <span class="card-name">${c.name}</span>
+          <span class="card-num"> #${c.collector_number}</span>
+        </span>
+        ${isOwned ? '<span class="owned-tag">owned</span>' : ''}
+      </div>`;
+    }).join('');
+    acList.classList.add('show');
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    const items = acList.querySelectorAll('.ac-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      acHighlight = Math.min(acHighlight + 1, items.length - 1);
+      updateAcHighlight(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      acHighlight = Math.max(acHighlight - 1, 0);
+      updateAcHighlight(items);
+    } else if (e.key === 'Enter' && acHighlight >= 0) {
+      e.preventDefault();
+      items[acHighlight].click();
+    }
+  });
+
+  function updateAcHighlight(items) {
+    items.forEach((el, i) => {
+      el.classList.toggle('hl', i === acHighlight);
+    });
+  }
+
+  acList.addEventListener('click', (e) => {
+    const item = e.target.closest('.ac-item');
+    if (!item) return;
+    const cn = item.dataset.cn;
+    if (fabMode === 'pack' && currentPack) {
+      addCardToPack(cn);
+    } else {
+      addCard(cn);
+    }
+    searchInput.value = '';
+    acList.classList.remove('show');
+    searchInput.focus();
+  });
+
+  // ── FAB Recent List ──
+  function renderFabRecent() {
+    const container = document.getElementById('fab-recent');
+    const recent = packSession.slice(-5).reverse();
+
+    if (recent.length === 0) {
+      container.innerHTML = '<div class="fab-empty">No cards added this session</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="fab-recent-title">
+        <span>Recently Added</span>
+        <button class="btn btn-clear" id="clear-recent">Clear</button>
+      </div>
+      ${recent.map(cn => {
+        const card = getCardByNumber(cn);
+        if (!card) return '';
+        const p = getPlacement(card);
+        return `<div class="fab-recent-item">
+          <img src="${card.image_small}" alt="${card.name}" loading="lazy">
+          <div class="info">
+            <div class="name">#${card.collector_number} ${card.name}</div>
+            <div class="placement">Page ${p.page}, Slot ${p.slot}</div>
+          </div>
+          <button class="remove-btn" data-cn="${cn}" title="Remove">\u2715</button>
+        </div>`;
+      }).join('')}
+    `;
+
+    container.querySelector('#clear-recent')?.addEventListener('click', () => {
+      packSession = [];
+      renderFabRecent();
+    });
+    container.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => removeCard(btn.dataset.cn));
+    });
+  }
+
+  // ── Booster Pack Mode ──
+  const fabModeSlider = document.getElementById('fab-mode-slider');
+  const fabQuickMode = document.getElementById('fab-quick-mode');
+  const fabPackMode = document.getElementById('fab-pack-mode');
+  const packStepContainer = document.getElementById('pack-step-container');
+
+  document.querySelectorAll('.fab-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.fab-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fabMode = btn.dataset.mode;
+      fabModeSlider.classList.toggle('right', fabMode === 'pack');
+      if (fabMode === 'quick') {
+        fabQuickMode.style.display = '';
+        fabPackMode.style.display = 'none';
+      } else {
+        fabQuickMode.style.display = 'none';
+        fabPackMode.style.display = 'flex';
+        renderPackMode();
+      }
+    });
+  });
+
+  function renderPackMode() {
+    if (currentPack) {
+      renderPackStep2();
+    } else {
+      renderPackStep1();
+    }
+  }
+
+  function renderPackStep1() {
+    packStepContainer.innerHTML = `
+      <div class="pack-step">
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;">
+          Log a new booster pack opening
+        </p>
+        <div class="pack-price-row">
+          <span class="pack-price-label">RM</span>
+          <input type="number" class="pack-price-input" id="pack-price" placeholder="0.00" step="0.10" min="0">
+        </div>
+        <button class="pack-start-btn" id="pack-start-btn">Start Opening</button>
+      </div>
+    `;
+    document.getElementById('pack-start-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const priceInput = document.getElementById('pack-price');
+      const price = parseFloat(priceInput.value) || 0;
+      startPack(price);
+    });
+    // Allow Enter key on price input
+    document.getElementById('pack-price').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('pack-start-btn').click();
+    });
+  }
+
+  function startPack(price) {
+    currentPack = { price, cards: [] };
+    renderPackStep2();
+  }
+
+  function renderPackStep2() {
+    // Show search + card list + done button
+    packStepContainer.innerHTML = `
+      <div class="search-wrap" style="padding:12px 18px 8px;">
+        <input type="text" id="pack-search-input" placeholder="Search cards to add to pack..." autocomplete="off">
+        <div class="autocomplete" id="pack-autocomplete"></div>
+      </div>
+      <div class="pack-counter">
+        <span id="pack-count-num">${currentPack.cards.length}</span> cards in this pack
+        ${currentPack.price > 0 ? ` \u00B7 RM ${currentPack.price.toFixed(2)}` : ''}
+      </div>
+      <div class="pack-card-list" id="pack-card-list"></div>
+      <div class="pack-done-row">
+        <button class="pack-done-btn" id="pack-done-btn">Done \u2014 Save Pack</button>
+        <button class="pack-cancel-btn" id="pack-cancel-btn">Cancel</button>
+      </div>
+    `;
+
+    renderPackCardList();
+
+    // Pack search autocomplete
+    const packSearchInput = document.getElementById('pack-search-input');
+    const packAcList = document.getElementById('pack-autocomplete');
+    let packAcHl = -1;
+
+    packSearchInput.addEventListener('input', () => {
+      const q = packSearchInput.value.trim().toLowerCase();
+      if (q.length < 1) { packAcList.classList.remove('show'); return; }
+      const matches = allCards.filter(c =>
+        c.name.toLowerCase().includes(q) || c.collector_number === q
+      ).slice(0, 15);
+      packAcHl = -1;
+      if (matches.length === 0) { packAcList.classList.remove('show'); return; }
+      packAcList.innerHTML = matches.map((c, i) => {
+        const isOwned = ownedSet.has(c.collector_number);
+        const inPack = currentPack.cards.includes(c.collector_number);
+        return `<div class="ac-item" data-cn="${c.collector_number}">
+          <span>
+            <span class="card-name">${c.name}</span>
+            <span class="card-num"> #${c.collector_number}</span>
+          </span>
+          ${inPack ? '<span class="owned-tag">in pack</span>' : isOwned ? '<span class="owned-tag">owned</span>' : ''}
+        </div>`;
+      }).join('');
+      packAcList.classList.add('show');
+    });
+
+    packSearchInput.addEventListener('keydown', (e) => {
+      const items = packAcList.querySelectorAll('.ac-item');
+      if (!items.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); packAcHl = Math.min(packAcHl + 1, items.length - 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); packAcHl = Math.max(packAcHl - 1, 0); }
+      else if (e.key === 'Enter' && packAcHl >= 0) { e.preventDefault(); items[packAcHl].click(); }
+      items.forEach((el, i) => el.classList.toggle('hl', i === packAcHl));
+    });
+
+    packAcList.addEventListener('click', (e) => {
+      const item = e.target.closest('.ac-item');
+      if (!item) return;
+      addCardToPack(item.dataset.cn);
+      packSearchInput.value = '';
+      packAcList.classList.remove('show');
+      packSearchInput.focus();
+    });
+
+    document.getElementById('pack-done-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      finalizePack();
+    });
+    document.getElementById('pack-cancel-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentPack = null;
+      renderPackMode();
+    });
+
+    setTimeout(() => packSearchInput.focus(), 100);
+  }
+
+  function addCardToPack(cn) {
+    if (!currentPack) return;
+    currentPack.cards.push(cn);
+    addCard(cn);
+    renderPackCardList();
+    // Bump counter animation
+    const counter = document.getElementById('pack-count-num');
+    if (counter) {
+      counter.textContent = currentPack.cards.length;
+      counter.classList.remove('bump');
+      void counter.offsetWidth;
+      counter.classList.add('bump');
+    }
+  }
+
+  function renderPackCardList() {
+    const container = document.getElementById('pack-card-list');
+    if (!container || !currentPack) return;
+    if (currentPack.cards.length === 0) {
+      container.innerHTML = '<div class="fab-empty">Search and add cards from your pack</div>';
+      return;
+    }
+    container.innerHTML = currentPack.cards.map((cn, i) => {
+      const card = getCardByNumber(cn);
+      if (!card) return '';
+      return `<div class="pack-card-entry" style="animation-delay:${i * 0.05}s">
+        <div class="pack-num">${i + 1}</div>
+        <img src="${card.image_small}" alt="${card.name}">
+        <span class="pack-card-name">${card.name}</span>
+        <span class="pack-card-rarity ${card.rarity}">${card.rarity}</span>
+      </div>`;
+    }).join('');
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function finalizePack() {
+    if (!currentPack || currentPack.cards.length === 0) return;
+
+    const pack = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      price: currentPack.price,
+      cards: [...currentPack.cards],
+    };
+    boosterPacks.push(pack);
+    savePacks();
+
+    // Find best rarity in the pack for celebration
+    const rarityOrder = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
+    let bestRarity = 'common';
+    for (const cn of pack.cards) {
+      const card = getCardByNumber(cn);
+      if (card && (rarityOrder[card.rarity] || 0) > (rarityOrder[bestRarity] || 0)) {
+        bestRarity = card.rarity;
+      }
+    }
+
+    // Show pack summary celebration
+    showPackSummary(pack, bestRarity);
+
+    currentPack = null;
+    renderPackMode();
+    if (document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+    if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
+  }
+
+  function showPackSummary(pack, bestRarity) {
+    const cfg = rarityConfig[bestRarity] || rarityConfig.common;
+
+    // Celebration effects based on best pull
+    if (cfg.flash) screenFlash(cfg.flash);
+    if (cfg.fireworks > 0) spawnFireworks(cfg.fireworks, cfg.colors);
+    if (cfg.sparkles > 0) spawnSparkles(cfg.sparkles, cfg.colors);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'pack-summary-overlay';
+
+    const cardImgs = pack.cards.map((cn, i) => {
+      const card = getCardByNumber(cn);
+      return card ? `<img src="${card.image_small}" alt="${card.name}" style="animation-delay:${i * 0.08}s">` : '';
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="pack-summary">
+        <h2>Pack #${boosterPacks.length} Opened!</h2>
+        <div class="pack-summary-cards">${cardImgs}</div>
+        <div class="pack-stats">
+          <span>${pack.cards.length}</span> cards added
+          ${pack.price > 0 ? ` \u00B7 <span>RM ${pack.price.toFixed(2)}</span>` : ''}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      const summary = overlay.querySelector('.pack-summary');
+      if (summary) summary.classList.add('removing');
+      setTimeout(() => overlay.remove(), 400);
+    }, 3500);
+  }
+
+  // ── Rendering: Progress ──
+  function renderProgress() {
+    const total = allCards.length;
+    const owned = ownedSet.size;
+    const pct = total ? (owned / total * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct.toFixed(1) + '%';
+    document.getElementById('progress-text').textContent = `${owned} / ${total} (${pct.toFixed(1)}%)`;
+
+    const rarities = ['mythic', 'rare', 'uncommon', 'common'];
+    document.getElementById('stats-row').innerHTML = rarities.map(r => {
+      const tot = allCards.filter(c => c.rarity === r).length;
+      const own = allCards.filter(c => c.rarity === r && ownedSet.has(c.collector_number)).length;
+      return `<span class="stat-badge ${r}">${r}: ${own}/${tot}</span>`;
+    }).join('');
+  }
+
+  // ── Rendering: Dashboard ──
+  function renderDashboard() {
+    const dash = document.getElementById('dashboard');
+    const total = allCards.length;
+    const owned = ownedSet.size;
+    const missing = total - owned;
+    const pct = total ? (owned / total * 100) : 0;
+
+    const rarities = ['mythic', 'rare', 'uncommon', 'common'];
+    const rarityCounts = {};
+    for (const r of rarities) {
+      rarityCounts[r] = {
+        total: allCards.filter(c => c.rarity === r).length,
+        owned: allCards.filter(c => c.rarity === r && ownedSet.has(c.collector_number)).length,
+      };
+    }
+
+    const totalBinderPages = Math.ceil(total / 9);
+    const fullPages = [...Array(totalBinderPages)].filter((_, i) => {
+      const pageCards = allCards.slice(i * 9, i * 9 + 9);
+      return pageCards.length > 0 && pageCards.every(c => ownedSet.has(c.collector_number));
+    }).length;
+
+    const recentCNs = packSession.slice(-10).reverse();
+
+    const donutSegments = [];
+    let deg = 0;
+    const colors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
+    for (const r of rarities) {
+      const slice = total > 0 ? (rarityCounts[r].owned / total * 360) : 0;
+      if (slice > 0) {
+        donutSegments.push(`${colors[r]} ${deg}deg ${deg + slice}deg`);
+        deg += slice;
+      }
+    }
+    if (deg < 360) donutSegments.push(`var(--chart-empty) ${deg}deg 360deg`);
+    const donutGradient = donutSegments.length ? `conic-gradient(${donutSegments.join(', ')})` : `var(--chart-empty)`;
+
+    dash.innerHTML = `
+      <div class="dash-grid">
+        <div class="dash-card">
+          <h3>Collection Progress</h3>
+          <div class="dash-big-num">${pct.toFixed(1)}%</div>
+          <div class="dash-sub">${owned} of ${total} cards collected</div>
+          <div class="dash-sub">${missing} cards remaining</div>
+        </div>
+        <div class="dash-card">
+          <h3>Rarity Breakdown</h3>
+          <div class="donut-wrap">
+            <div class="donut-chart" style="background: ${donutGradient}">
+              <div class="donut-center">${owned}</div>
+            </div>
+            <div class="donut-legend">
+              ${rarities.map(r => `<div class="legend-item">
+                <div class="legend-dot" style="background:${colors[r]}"></div>
+                <span>${r}: ${rarityCounts[r].owned}/${rarityCounts[r].total}</span>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-full">
+          <h3>Rarity Completion</h3>
+          <div class="rarity-bars">
+            ${rarities.map(r => {
+              const rc = rarityCounts[r];
+              const rpct = rc.total > 0 ? (rc.owned / rc.total * 100) : 0;
+              return `<div class="rarity-row">
+                <span class="rarity-label ${r}">${r}</span>
+                <div class="rarity-track"><div class="rarity-fill ${r}" style="width:${rpct.toFixed(1)}%"></div></div>
+                <span class="rarity-count">${rc.owned}/${rc.total}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="dash-card">
+          <h3>Binder Stats</h3>
+          <div class="dash-big-num">${totalBinderPages}</div>
+          <div class="dash-sub">total binder pages</div>
+          <div class="dash-sub" style="margin-top:8px">${fullPages} pages complete</div>
+        </div>
+        <div class="dash-card">
+          <h3>Booster Packs</h3>
+          ${(() => {
+            const totalPacks = boosterPacks.length;
+            const totalSpent = boosterPacks.reduce((s, p) => s + (p.price || 0), 0);
+            const totalPackCards = boosterPacks.reduce((s, p) => s + p.cards.length, 0);
+            const avgPerCard = totalPackCards > 0 ? (totalSpent / totalPackCards) : 0;
+            const lastPack = boosterPacks[boosterPacks.length - 1];
+            return totalPacks > 0 ? `
+              <div class="dash-big-num">${totalPacks}</div>
+              <div class="dash-sub">packs opened</div>
+              <div class="dash-sub" style="margin-top:8px">
+                Total spent: <strong>RM ${totalSpent.toFixed(2)}</strong>
+              </div>
+              <div class="dash-sub">
+                Avg per card: <strong>RM ${avgPerCard.toFixed(2)}</strong>
+              </div>
+              ${lastPack ? `<div class="dash-sub" style="margin-top:6px;font-size:0.78rem">
+                Last pack: ${new Date(lastPack.date).toLocaleDateString()} \u00B7 ${lastPack.cards.length} cards
+              </div>` : ''}
+            ` : `
+              <div class="dash-sub" style="padding:20px 0">No packs opened yet</div>
+            `;
+          })()}
+        </div>
+        <div class="dash-card">
+          <h3>Session Activity</h3>
+          ${recentCNs.length > 0 ? `<div class="recent-list">
+            ${recentCNs.map(cn => {
+              const card = getCardByNumber(cn);
+              if (!card) return '';
+              return `<div class="recent-item">
+                <img src="${card.image_small}" alt="${card.name}" loading="lazy">
+                <span class="rname">${card.name}</span>
+                <span class="rnum">#${card.collector_number}</span>
+              </div>`;
+            }).join('')}
+          </div>` : `<div class="dash-sub" style="padding:20px 0">No cards added this session</div>`}
+        </div>
+        <div class="dash-card dash-card-full">
+          <h3>Collection Heatmap (each cell = 1 card, by collector #)</h3>
+          <div class="binder-fill-grid">
+            ${allCards.map(c => {
+              const isOwned = ownedSet.has(c.collector_number);
+              return `<div class="fill-cell ${c.rarity} ${isOwned ? 'owned' : ''}"
+                title="#${c.collector_number} ${c.name}${isOwned ? ' (owned)' : ''}"></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Rendering: Portfolio ──
+  function renderPortfolio() {
+    const el = document.getElementById('portfolio');
+    const total = allCards.length;
+    const owned = ownedSet.size;
+
+    const ownedCards = allCards.filter(c => ownedSet.has(c.collector_number));
+    const collectionValueUSD = ownedCards.reduce((s, c) => s + c.price_usd, 0);
+    const collectionValueMYR = collectionValueUSD * USD_TO_MYR;
+    const fullSetValueUSD = allCards.reduce((s, c) => s + c.price_usd, 0);
+    const fullSetValueMYR = fullSetValueUSD * USD_TO_MYR;
+    const missingValueUSD = fullSetValueUSD - collectionValueUSD;
+    const totalSpentPacks = boosterPacks.reduce((s, p) => s + (p.price || 0), 0);
+
+    // Top 5 most valuable owned
+    const topOwned = [...ownedCards].sort((a, b) => b.price_usd - a.price_usd).slice(0, 5);
+    // Top 5 most valuable missing
+    const topMissing = allCards.filter(c => !ownedSet.has(c.collector_number))
+      .sort((a, b) => b.price_usd - a.price_usd).slice(0, 5);
+
+    // Value by rarity
+    const rarities = ['mythic', 'rare', 'uncommon', 'common'];
+    const rarityValues = {};
+    for (const r of rarities) {
+      const cards = ownedCards.filter(c => c.rarity === r);
+      rarityValues[r] = cards.reduce((s, c) => s + c.price_usd, 0);
+    }
+
+
+
+    const rarityColors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
+
+    el.innerHTML = `
+      <div class="dash-grid">
+        <div class="dash-card dash-card-full">
+          <h3>Collection Valuation</h3>
+          <div class="price-sources">
+            <div class="price-source">
+              <span class="dot"></span>
+              USD via <a href="https://scryfall.com/sets/fin" target="_blank" rel="noopener">Scryfall</a>
+              from <a href="https://www.tcgplayer.com" target="_blank" rel="noopener">TCGPlayer</a>
+              ${dataFetchedAt ? ` \u00B7 ${new Date(dataFetchedAt).toLocaleDateString()}` : ''}
+            </div>
+            <div class="price-source">
+              <span class="dot" style="${fxIsLive ? '' : 'background:var(--accent);'}"></span>
+              1 USD = ${USD_TO_MYR.toFixed(2)} MYR
+              ${fxIsLive
+                ? ` via <a href="https://open.er-api.com" target="_blank" rel="noopener">ExchangeRate-API</a>`
+                : ' (offline)'}
+            </div>
+          </div>
+          <div class="value-grid">
+            <div class="value-box">
+              <div class="value-label">Owned (USD)</div>
+              <div class="value-amount usd">$${collectionValueUSD.toFixed(2)}</div>
+              <div class="value-sub">${owned} cards</div>
+            </div>
+            <div class="value-box">
+              <div class="value-label">Owned (MYR)</div>
+              <div class="value-amount myr">RM ${collectionValueMYR.toFixed(2)}</div>
+              <div class="value-sub">${fxIsLive ? 'live rate' : 'fallback rate'}</div>
+            </div>
+            <div class="value-box">
+              <div class="value-label">Full Set (USD)</div>
+              <div class="value-amount usd" style="font-size:1rem">$${fullSetValueUSD.toFixed(2)}</div>
+              <div class="value-sub">${total} cards total</div>
+            </div>
+            <div class="value-box">
+              <div class="value-label">Still Need</div>
+              <div class="value-amount myr" style="font-size:1rem">$${missingValueUSD.toFixed(2)}</div>
+              <div class="value-sub">${total - owned} cards</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Pack ROI</h3>
+          ${totalSpentPacks > 0 ? `
+            <div class="dash-big-num">${collectionValueMYR >= totalSpentPacks ? '+' : ''}RM ${(collectionValueMYR - totalSpentPacks).toFixed(2)}</div>
+            <div class="dash-sub">Collection: RM ${collectionValueMYR.toFixed(2)}</div>
+            <div class="dash-sub">Spent: RM ${totalSpentPacks.toFixed(2)}</div>
+            <div class="dash-sub" style="margin-top:6px;font-weight:700;color:${collectionValueMYR >= totalSpentPacks ? 'var(--owned-border)' : 'var(--accent)'}">
+              ${((collectionValueMYR / totalSpentPacks) * 100).toFixed(0)}% return
+            </div>
+          ` : `<div class="dash-sub" style="padding:20px 0">Open packs to track ROI</div>`}
+        </div>
+
+        <div class="dash-card">
+          <h3>Value by Rarity</h3>
+          <div class="rarity-bars">
+            ${rarities.map(r => {
+              const val = rarityValues[r];
+              const maxRarVal = Math.max(...Object.values(rarityValues), 1);
+              const pct = (val / maxRarVal) * 100;
+              return `<div class="rarity-row">
+                <span class="rarity-label ${r}">${r}</span>
+                <div class="rarity-track"><div class="rarity-fill ${r}" style="width:${pct.toFixed(1)}%"></div></div>
+                <span class="rarity-count">$${val.toFixed(2)}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Most Valuable (Owned)</h3>
+          ${topOwned.length > 0 ? `<div class="top-cards">
+            ${topOwned.map((c, i) => `<div class="top-card-item">
+              <span class="rank">${i + 1}</span>
+              <img src="${c.image_small}" alt="${c.name}">
+              <span class="tc-name">${c.name}</span>
+              <span class="tc-price">$${c.price_usd.toFixed(2)}</span>
+            </div>`).join('')}
+          </div>` : '<div class="dash-sub" style="padding:20px 0">No cards yet</div>'}
+        </div>
+
+        <div class="dash-card">
+          <h3>Most Valuable (Missing)</h3>
+          ${topMissing.length > 0 ? `<div class="top-cards">
+            ${topMissing.map((c, i) => `<div class="top-card-item">
+              <span class="rank">${i + 1}</span>
+              <img src="${c.image_small}" alt="${c.name}">
+              <span class="tc-name">${c.name}</span>
+              <span class="tc-price" style="color:var(--accent)">$${c.price_usd.toFixed(2)}</span>
+            </div>`).join('')}
+          </div>` : '<div class="dash-sub" style="padding:20px 0">Full set complete!</div>'}
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Rendering: Timeline ──
+  function renderTimeline() {
+    const el = document.getElementById('timeline');
+    const total = allCards.length;
+    const owned = ownedSet.size;
+    const addEvents = timelineEvents.filter(e => e.type === 'add');
+
+    // Milestones
+    const milestones = [
+      { target: 75, label: '25%' },
+      { target: 150, label: '50%' },
+      { target: 225, label: '75%' },
+      { target: 300, label: '100%' },
+    ];
+    // Walk through add events to find when each milestone was hit
+    const seen = new Set();
+    for (const evt of addEvents) {
+      seen.add(evt.cn);
+      for (const m of milestones) {
+        if (!m.date && seen.size >= m.target) m.date = evt.date;
+      }
+    }
+    const lastAchievedIdx = milestones.filter(m => m.date).length - 1;
+    const milestoneFillPct = milestones.length > 1
+      ? Math.min(100, ((lastAchievedIdx + 1) / milestones.length) * 100)
+      : 0;
+
+    // Pace calculations
+    const firstEvent = addEvents[0];
+    const daysSinceFirst = firstEvent
+      ? Math.max(1, Math.floor((Date.now() - new Date(firstEvent.date).getTime()) / 86400000))
+      : 0;
+    const cardsPerDay = daysSinceFirst > 0 ? owned / daysSinceFirst : 0;
+    const cardsPerWeek = cardsPerDay * 7;
+    const remaining = total - owned;
+    const daysToComplete = cardsPerDay > 0 ? Math.ceil(remaining / cardsPerDay) : 0;
+    const completionDate = daysToComplete > 0
+      ? new Date(Date.now() + daysToComplete * 86400000).toLocaleDateString()
+      : null;
+    const totalPackCards = boosterPacks.reduce((s, p) => s + p.cards.length, 0);
+    const cardsPerPack = boosterPacks.length > 0 ? (totalPackCards / boosterPacks.length).toFixed(1) : 0;
+
+    // Growth chart data — cumulative by date
+    const dailyCounts = {};
+    const seenForChart = new Set();
+    for (const evt of addEvents) {
+      seenForChart.add(evt.cn);
+      const day = evt.date.slice(0, 10);
+      dailyCounts[day] = seenForChart.size;
+    }
+    const chartDays = Object.keys(dailyCounts).sort();
+
+    let growthChartSVG = '';
+    if (chartDays.length > 1) {
+      const cw = 100, ch = 80;
+      const points = chartDays.map((d, i) => ({
+        x: (i / (chartDays.length - 1)) * cw,
+        y: ch - (dailyCounts[d] / total) * ch,
+      }));
+      const linePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+      const areaPoints = `0,${ch} ${linePoints} ${cw},${ch}`;
+      // Milestone lines
+      const mLines = milestones.map(m => {
+        const y = ch - (m.target / total) * ch;
+        return `<line x1="0" y1="${y}" x2="${cw}" y2="${y}" stroke="var(--surface2)" stroke-width="0.5" stroke-dasharray="2,2"/>
+          <text x="${cw - 1}" y="${y - 2}" fill="var(--text-muted)" font-size="3" text-anchor="end">${m.label}</text>`;
+      }).join('');
+      growthChartSVG = `
+        <svg class="value-chart" viewBox="0 0 ${cw} ${ch}" preserveAspectRatio="none">
+          <defs><linearGradient id="tl-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="transparent"/>
+          </linearGradient></defs>
+          ${mLines}
+          <polygon class="value-chart-area chart-anim-area" points="${areaPoints}" style="fill:url(#tl-grad)"/>
+          <polyline class="value-chart-line chart-anim-line" points="${linePoints}"/>
+          ${points.map((p, i) => `<circle class="value-chart-dot" cx="${p.x}" cy="${p.y}" r="2">
+            <title>${chartDays[i]}: ${dailyCounts[chartDays[i]]} cards</title></circle>`).join('')}
+        </svg>
+        <div class="chart-labels"><span>${chartDays[0]}</span><span>${chartDays[chartDays.length - 1]}</span></div>`;
+    } else {
+      growthChartSVG = '<div class="dash-sub" style="padding:16px 0;text-align:center">Add more cards to see your growth chart</div>';
+    }
+
+    // Heatmap — last 12 weeks
+    const heatmapDays = 84;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const dayCountMap = {};
+    for (const evt of addEvents) {
+      const d = evt.date.slice(0, 10);
+      dayCountMap[d] = (dayCountMap[d] || 0) + 1;
+    }
+    const heatCells = [];
+    for (let i = heatmapDays - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = dayCountMap[key] || 0;
+      const level = count === 0 ? '' : count <= 2 ? 'l1' : count <= 5 ? 'l2' : count <= 10 ? 'l3' : 'l4';
+      const dayName = d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+      heatCells.push(`<div class="heatmap-cell ${level}" data-tip="${dayName}: ${count} cards"></div>`);
+    }
+
+    // Recent activity (last 15)
+    const recentEvents = [...timelineEvents].reverse().slice(0, 15);
+    const activityHTML = recentEvents.length > 0 ? recentEvents.map(evt => {
+      const card = getCardByNumber(evt.cn);
+      if (!card) return '';
+      const ago = timeAgo(new Date(evt.date));
+      return `<div class="activity-item">
+        <div class="activity-dot ${evt.type}"></div>
+        <img src="${card.image_small}" alt="${card.name}">
+        <span class="activity-name">${card.name}</span>
+        <span class="activity-meta">${evt.type === 'add' ? evt.source === 'pack' ? 'pack' : 'quick' : 'removed'} \u00B7 ${ago}</span>
+      </div>`;
+    }).join('') : '<div class="dash-sub" style="padding:20px 0;text-align:center">No activity yet — start adding cards!</div>';
+
+    el.innerHTML = `
+      <div class="dash-grid">
+        <div class="dash-card dash-card-full">
+          <h3>Collection Growth</h3>
+          <div class="value-chart-wrap">${growthChartSVG}</div>
+        </div>
+
+        <div class="dash-card dash-card-full">
+          <h3>Milestones</h3>
+          <div class="milestone-track">
+            <div class="milestone-fill" style="width:${milestoneFillPct}%"></div>
+            ${milestones.map((m, i) => `
+              <div class="milestone ${m.date ? 'achieved' : ''}" style="animation-delay:${i * 0.15}s">
+                <div class="milestone-dot">${m.date ? '\u2713' : m.target}</div>
+                <div class="milestone-label">${m.label} (${m.target})</div>
+                ${m.date ? `<div class="milestone-date">${new Date(m.date).toLocaleDateString()}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Collecting Pace</h3>
+          <div class="dash-big-num">${cardsPerWeek.toFixed(1)}</div>
+          <div class="dash-sub">cards per week</div>
+          <div class="dash-sub" style="margin-top:8px">${cardsPerPack} cards per pack avg</div>
+          <div class="dash-sub">${daysSinceFirst} days collecting</div>
+          ${completionDate ? `<div class="dash-sub" style="margin-top:8px;color:var(--accent);font-weight:600">
+            Est. completion: ${completionDate}
+          </div>` : ''}
+        </div>
+
+        <div class="dash-card">
+          <h3>Stats</h3>
+          <div class="dash-big-num">${owned}</div>
+          <div class="dash-sub">of ${total} collected</div>
+          <div class="dash-sub" style="margin-top:8px">${addEvents.length} total adds</div>
+          <div class="dash-sub">${timelineEvents.filter(e => e.type === 'remove').length} removed</div>
+          <div class="dash-sub">${addEvents.filter(e => e.source === 'pack').length} from packs</div>
+        </div>
+
+        <div class="dash-card dash-card-full">
+          <h3>Activity Heatmap (12 weeks)</h3>
+          <div class="heatmap-wrap">
+            <div class="heatmap-grid">${heatCells.join('')}</div>
+          </div>
+        </div>
+
+        <div class="dash-card dash-card-full">
+          <h3>Recent Activity</h3>
+          <div class="activity-feed">${activityHTML}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function timeAgo(date) {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d ago`;
+    return date.toLocaleDateString();
+  }
+
+  // ── Rendering: Binder ──
+  function isMobile() { return window.innerWidth <= 700; }
+
+  function getPageCount() {
+    // On mobile: 1 page per view. On desktop: 2 pages per spread.
+    return isMobile() ? totalPages : Math.ceil(totalPages / 2);
+  }
+
+  function renderBinder() {
+    totalPages = Math.ceil(allCards.length / 9);
+    renderPageSelector(getPageCount());
+    renderSpread();
+  }
+
+  function renderSpread() {
+    const spread = document.getElementById('binder-spread');
+    const mobile = isMobile();
+    spread.innerHTML = '';
+
+    // On mobile: show 1 page (currentPage is 0-indexed page).
+    // On desktop: show 2 pages (currentPage is spread index).
+    const pageIndices = mobile
+      ? [currentPage]
+      : [currentPage * 2, currentPage * 2 + 1];
+
+    for (const pageIdx of pageIndices) {
+      const pageNum = pageIdx + 1;
+      if (pageNum > totalPages) break;
+      const startIdx = pageIdx * 9;
+      const pageCards = allCards.slice(startIdx, startIdx + 9);
+
+      const pageEl = document.createElement('div');
+      pageEl.className = 'binder-page';
+      pageEl.innerHTML = `<div class="page-label">Page ${pageNum}</div><div class="page-grid"></div>`;
+      const grid = pageEl.querySelector('.page-grid');
+
+      for (let i = 0; i < 9; i++) {
+        const card = pageCards[i];
+        const slot = document.createElement('div');
+        slot.className = 'card-slot';
+        if (!card) {
+          slot.innerHTML = '<div class="placeholder"><span class="num">\u2014</span></div>';
+        } else {
+          const isOwned = ownedSet.has(card.collector_number);
+          const justAdded = packSession.includes(card.collector_number);
+          if (isOwned) slot.classList.add('owned');
+          if (justAdded) slot.classList.add('just-added');
+          if (highlightedCN === card.collector_number) slot.classList.add('highlighted');
+          if (isOwned) {
+            slot.innerHTML = `<img data-src="${card.image_normal || card.image_small}" alt="${card.name}">`;
+          } else {
+            slot.innerHTML = `<div class="placeholder">
+              <span class="num">#${card.collector_number}</span>
+              <span class="pname">${card.name}</span>
+            </div>`;
+          }
+          slot.dataset.cn = card.collector_number;
+          slot.addEventListener('click', () => {
+            highlightedCN = card.collector_number;
+            renderSpread();
+            openModal(card);
+          });
+        }
+        grid.appendChild(slot);
+      }
+      spread.appendChild(pageEl);
+    }
+
+    // Lazy load images
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const img = e.target;
+          if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+          observer.unobserve(img);
+        }
+      });
+    });
+    spread.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+
+    const maxPage = getPageCount();
+    document.getElementById('prev-page').disabled = currentPage === 0;
+    document.getElementById('next-page').disabled = currentPage >= maxPage - 1;
+    updatePageSelectorActive();
+  }
+
+  // Build a single binder page element for a given 0-indexed page number (no DOM side effects)
+  function buildPageEl(pageIdx) {
+    const pageNum = pageIdx + 1;
+    if (pageNum > Math.ceil(allCards.length / 9)) return null;
+    const startIdx = pageIdx * 9;
+    const pageCards = allCards.slice(startIdx, startIdx + 9);
+
+    const pageEl = document.createElement('div');
+    pageEl.className = 'binder-page';
+    pageEl.innerHTML = `<div class="page-label">Page ${pageNum}</div><div class="page-grid"></div>`;
+    const grid = pageEl.querySelector('.page-grid');
+
+    for (let i = 0; i < 9; i++) {
+      const card = pageCards[i];
+      const slot = document.createElement('div');
+      slot.className = 'card-slot';
+      if (!card) {
+        slot.innerHTML = '<div class="placeholder"><span class="num">\u2014</span></div>';
+      } else {
+        const isOwned = ownedSet.has(card.collector_number);
+        if (isOwned) {
+          slot.classList.add('owned');
+          // Use src directly (not data-src) so it shows in the overlay
+          slot.innerHTML = `<img src="${card.image_normal || card.image_small}" alt="${card.name}">`;
+        } else {
+          slot.innerHTML = `<div class="placeholder">
+            <span class="num">#${card.collector_number}</span>
+            <span class="pname">${card.name}</span>
+          </div>`;
+        }
+      }
+      grid.appendChild(slot);
+    }
+    return pageEl;
+  }
+
+  function flipAndRender(direction) {
+    const wrapper = document.querySelector('.binder-spread-wrapper');
+    const spread = document.getElementById('binder-spread');
+    const pages = spread.querySelectorAll('.binder-page');
+
+    // Which page flips: forward = right page, backward = left page
+    const pageToFlip = direction === 'left' ? pages[pages.length - 1] : pages[0];
+    if (!pageToFlip) { renderSpread(); return; }
+
+    const rect = pageToFlip.getBoundingClientRect();
+    const wrapRect = wrapper.getBoundingClientRect();
+
+    // Build the two-sided overlay, positioned exactly over the source page
+    const overlay = document.createElement('div');
+    overlay.className = 'page-flip-overlay ' + (direction === 'left' ? 'flip-forward' : 'flip-backward');
+    overlay.style.top = (rect.top - wrapRect.top) + 'px';
+    overlay.style.left = (rect.left - wrapRect.left) + 'px';
+    overlay.style.width = rect.width + 'px';
+    overlay.style.height = rect.height + 'px';
+
+    // Front side: clone of the old page
+    const front = document.createElement('div');
+    front.className = 'flip-front';
+    const clonedPage = pageToFlip.cloneNode(true);
+    clonedPage.querySelectorAll('img[data-src]').forEach(img => {
+      img.src = img.dataset.src;
+    });
+    front.appendChild(clonedPage);
+
+    // Replace the original page content with card silhouettes
+    pageToFlip.querySelectorAll('.card-slot').forEach(slot => {
+      slot.innerHTML = '';
+      slot.className = 'card-slot';
+      slot.style.background = 'var(--surface2)';
+      slot.style.opacity = '0.5';
+      slot.style.borderColor = 'transparent';
+      slot.style.boxShadow = 'inset 0 0 8px rgba(0,0,0,0.15)';
+    });
+
+    // Back side: silhouette grid matching the binder page layout
+    const back = document.createElement('div');
+    back.className = 'flip-back';
+    const backPage = document.createElement('div');
+    backPage.className = 'binder-page';
+    backPage.innerHTML = '<div class="page-label">&nbsp;</div><div class="page-grid"></div>';
+    const backGrid = backPage.querySelector('.page-grid');
+    for (let i = 0; i < 9; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'card-slot';
+      slot.style.background = 'var(--surface2)';
+      slot.style.opacity = '0.5';
+      slot.style.boxShadow = 'inset 0 0 8px rgba(0,0,0,0.15)';
+      backGrid.appendChild(slot);
+    }
+    back.appendChild(backPage);
+
+    overlay.appendChild(front);
+    overlay.appendChild(back);
+
+    // Add a subtle shadow on the underlying spread
+    const shadow = document.createElement('div');
+    shadow.className = 'page-flip-shadow ' + (direction === 'left' ? 'forward' : 'backward');
+    shadow.style.top = (rect.top - wrapRect.top) + 'px';
+    shadow.style.height = rect.height + 'px';
+
+    wrapper.appendChild(overlay);
+    wrapper.appendChild(shadow);
+
+    // When animation ends, swap to the new content
+    overlay.addEventListener('animationend', () => {
+      overlay.remove();
+      shadow.remove();
+      renderSpread();
+    }, { once: true });
+  }
+
+  document.getElementById('prev-page').addEventListener('click', () => {
+    if (currentPage > 0) {
+      currentPage--;
+      if (isMobile()) mobileSlide('right');
+      else flipAndRender('right');
+    }
+  });
+  document.getElementById('next-page').addEventListener('click', () => {
+    const maxPage = getPageCount();
+    if (currentPage < maxPage - 1) {
+      currentPage++;
+      if (isMobile()) mobileSlide('left');
+      else flipAndRender('left');
+    }
+  });
+
+  function mobileSlide(direction) {
+    const spread = document.getElementById('binder-spread');
+    const outClass = direction === 'left' ? 'slide-left' : 'slide-right';
+    const inClass = direction === 'left' ? 'slide-in-left' : 'slide-in-right';
+    spread.classList.add(outClass);
+    spread.addEventListener('animationend', () => {
+      spread.classList.remove(outClass);
+      renderSpread();
+      spread.classList.add(inClass);
+      spread.addEventListener('animationend', () => {
+        spread.classList.remove(inClass);
+      }, { once: true });
+    }, { once: true });
+  }
+  // ── Page Slider Navigator ──
+  const sliderTrack = document.getElementById('page-slider-track');
+  const sliderFill = document.getElementById('page-slider-fill');
+  const sliderThumb = document.getElementById('page-slider-thumb');
+  const sliderDots = document.getElementById('page-slider-dots');
+  let sliderSpreadCount = 0;
+
+  function renderPageSelector(spreadCount) {
+    sliderSpreadCount = spreadCount;
+    sliderDots.innerHTML = '';
+    for (let i = 0; i < spreadCount; i++) {
+      const p1 = i * 2 + 1;
+      const p2 = Math.min(i * 2 + 2, Math.ceil(allCards.length / 9));
+      const label = p1 === p2 ? `Pg ${p1}` : `Pg ${p1}\u2013${p2}`;
+
+      const startIdx = i * 2 * 9;
+      const spreadCards = allCards.slice(startIdx, startIdx + 18);
+      const ownedCount = spreadCards.filter(c => ownedSet.has(c.collector_number)).length;
+      const isFull = ownedCount === spreadCards.length && spreadCards.length > 0;
+
+      const dot = document.createElement('div');
+      dot.className = 'page-dot' + (i === currentPage ? ' active' : '') + (isFull ? ' filled' : '');
+      dot.dataset.index = i;
+      dot.dataset.label = label;
+      sliderDots.appendChild(dot);
+    }
+    updateSliderPosition();
+  }
+
+  function updatePageSelectorActive() {
+    sliderDots.querySelectorAll('.page-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === currentPage);
+    });
+    updateSliderPosition();
+  }
+
+  function updateSliderPosition() {
+    const max = Math.max(sliderSpreadCount - 1, 1);
+    const pct = (currentPage / max) * 100;
+    sliderFill.style.width = pct + '%';
+    sliderThumb.style.left = pct + '%';
+
+    if (isMobile()) {
+      document.getElementById('page-nav-label').innerHTML =
+        `Page <span>${currentPage + 1}</span> of ${totalPages}`;
+    } else {
+      const p1 = currentPage * 2 + 1;
+      const p2 = Math.min(currentPage * 2 + 2, totalPages);
+      document.getElementById('page-nav-label').innerHTML =
+        p1 === p2 ? `Page <span>${p1}</span> of ${totalPages}` : `Pages <span>${p1}\u2013${p2}</span> of ${totalPages}`;
+    }
+  }
+
+  function navigateToPage(newPage) {
+    if (newPage === currentPage) return;
+    const dir = newPage > currentPage ? 'left' : 'right';
+    currentPage = newPage;
+    if (isMobile()) mobileSlide(dir);
+    else flipAndRender(dir);
+  }
+
+  // Click on track to jump
+  sliderTrack.addEventListener('click', (e) => {
+    const rect = sliderTrack.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    navigateToPage(Math.round(pct * (sliderSpreadCount - 1)));
+  });
+
+  // Click on dots to jump
+  sliderDots.addEventListener('click', (e) => {
+    const dot = e.target.closest('.page-dot');
+    if (!dot) return;
+    navigateToPage(parseInt(dot.dataset.index));
+  });
+
+  // Drag the thumb
+  let sliderDragging = false;
+  sliderThumb.addEventListener('mousedown', (e) => {
+    sliderDragging = true;
+    sliderThumb.classList.add('dragging');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!sliderDragging) return;
+    const rect = sliderTrack.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const newPage = Math.round(pct * (sliderSpreadCount - 1));
+    if (newPage !== currentPage) {
+      const dir = newPage > currentPage ? 'left' : 'right';
+      currentPage = newPage;
+      updatePageSelectorActive();
+      renderSpread();
+    }
+  });
+  document.addEventListener('mouseup', () => {
+    if (sliderDragging) {
+      sliderDragging = false;
+      sliderThumb.classList.remove('dragging');
+    }
+  });
+
+  // Touch drag
+  sliderThumb.addEventListener('touchstart', (e) => {
+    sliderDragging = true;
+    sliderThumb.classList.add('dragging');
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!sliderDragging || !e.touches.length) return;
+    const rect = sliderTrack.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+    const newPage = Math.round(pct * (sliderSpreadCount - 1));
+    if (newPage !== currentPage) {
+      currentPage = newPage;
+      updatePageSelectorActive();
+      renderSpread();
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (sliderDragging) {
+      sliderDragging = false;
+      sliderThumb.classList.remove('dragging');
+    }
+  });
+
+  // Re-render binder on resize (mobile <-> desktop switch)
+  let lastMobile = isMobile();
+  window.addEventListener('resize', () => {
+    const nowMobile = isMobile();
+    if (nowMobile !== lastMobile) {
+      lastMobile = nowMobile;
+      // Convert currentPage between single-page and spread indexing
+      if (nowMobile) {
+        currentPage = currentPage * 2; // spread -> single page (show left page)
+      } else {
+        currentPage = Math.floor(currentPage / 2); // single page -> spread
+      }
+      if (document.getElementById('tab-binder').classList.contains('active')) renderBinder();
+    }
+  });
+
+  // ── Card Visualizer (3D rotation) ──
+  const vizEl = document.getElementById('card-visualizer');
+  const card3d = document.getElementById('card-3d');
+  const shineEl = document.getElementById('card-shine');
+  let isDragging = false;
+  let startX, startY, rotX = 0, rotY = 0;
+  let isFlipped = false;
+
+  vizEl.addEventListener('mousedown', (e) => {
+    isDragging = true; startX = e.clientX; startY = e.clientY; e.preventDefault();
+    card3d.style.transition = 'none';
+    vizEl.classList.add('interacted');
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    rotY += (e.clientX - startX) * 0.5;
+    rotX -= (e.clientY - startY) * 0.5;
+    rotX = Math.max(-60, Math.min(60, rotX));
+    startX = e.clientX; startY = e.clientY;
+    updateCardTransform();
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; });
+
+  vizEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    isDragging = true; startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    card3d.style.transition = 'none';
+    vizEl.classList.add('interacted');
+  }, { passive: false });
+  vizEl.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    rotY += (e.touches[0].clientX - startX) * 0.5;
+    rotX -= (e.touches[0].clientY - startY) * 0.5;
+    rotX = Math.max(-60, Math.min(60, rotX));
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    updateCardTransform();
+  }, { passive: false });
+  document.addEventListener('touchend', () => { isDragging = false; });
+
+  function updateCardTransform() {
+    requestAnimationFrame(() => {
+      card3d.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      shineEl.style.background = `radial-gradient(circle at ${50 + rotY * 0.5}% ${50 - rotX * 0.5}%, rgba(255,255,255,0.18) 0%, transparent 60%)`;
+    });
+  }
+
+  document.getElementById('viz-reset').addEventListener('click', () => {
+    rotX = 0; rotY = 0; isFlipped = false;
+    card3d.style.transition = 'transform 0.5s ease';
+    updateCardTransform();
+    setTimeout(() => { card3d.style.transition = 'none'; }, 500);
+  });
+  document.getElementById('viz-flip').addEventListener('click', () => {
+    isFlipped = !isFlipped;
+    rotY = isFlipped ? 180 : 0; rotX = 0;
+    card3d.style.transition = 'transform 0.6s ease';
+    updateCardTransform();
+    setTimeout(() => { card3d.style.transition = 'none'; }, 600);
+  });
+
+  // ── Modal ──
+  function openModal(card) {
+    const isOwned = ownedSet.has(card.collector_number);
+    const p = getPlacement(card);
+
+    rotX = 0; rotY = 0; isFlipped = false;
+    card3d.style.transition = 'none';
+    updateCardTransform();
+    vizEl.classList.remove('interacted');
+    setTimeout(() => { card3d.style.transition = 'transform 0.1s ease-out'; }, 50);
+
+    document.getElementById('modal-img').src = card.image_normal || card.image_small;
+    document.getElementById('modal-back-img').src = card.image_back_normal || card.image_back_small || MTG_CARD_BACK;
+    document.getElementById('modal-name').textContent = `#${card.collector_number} ${card.name}`;
+    const priceStr = card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)} / RM ${(card.price_usd * USD_TO_MYR).toFixed(2)} (Scryfall)` : '';
+    document.getElementById('modal-detail').textContent =
+      `${card.type_line} \u00B7 ${card.rarity} \u00B7 Page ${p.page}, Slot ${p.slot}${priceStr}`;
+
+    const scryfallLink = document.getElementById('scryfall-link');
+    if (card.scryfall_uri) {
+      scryfallLink.href = card.scryfall_uri;
+      scryfallLink.style.display = '';
+    } else {
+      scryfallLink.style.display = 'none';
+    }
+
+    const toggleBtn = document.getElementById('modal-toggle');
+    toggleBtn.textContent = isOwned ? 'Remove from Collection' : 'Add to Collection';
+    toggleBtn.className = isOwned ? 'btn btn-danger' : 'btn btn-primary';
+    toggleBtn.onclick = () => {
+      if (isOwned) removeCard(card.collector_number);
+      else addCard(card.collector_number);
+      closeModal();
+    };
+    const overlay = document.getElementById('modal-overlay');
+    overlay.classList.remove('closing');
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById('modal-overlay');
+    overlay.classList.add('closing');
+    highlightedCN = null;
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    setTimeout(() => {
+      overlay.classList.remove('visible', 'closing');
+      if (document.getElementById('tab-binder').classList.contains('active')) renderSpread();
+    }, 280);
+  }
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  // ── Tabs ──
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      if (btn.dataset.tab === 'binder') renderBinder();
+      if (btn.dataset.tab === 'dashboard') renderDashboard();
+      if (btn.dataset.tab === 'portfolio') renderPortfolio();
+      if (btn.dataset.tab === 'timeline') renderTimeline();
+    });
+  });
+
+  // ── Export / Import / Reset ──
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const data = JSON.stringify({ owned: [...ownedSet] }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fin-collection.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('import-btn').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+
+  document.getElementById('import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data.owned)) {
+          ownedSet = new Set(data.owned);
+          saveCollection();
+          renderAll();
+          alert(`Imported ${ownedSet.size} cards.`);
+        }
+      } catch { alert('Invalid file format.'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    showConfirmDialog(
+      'Reset Everything?',
+      'This will delete your entire collection, booster pack history, and timeline data. This cannot be undone.',
+      () => {
+        ownedSet = new Set();
+        packSession = [];
+        boosterPacks = [];
+        currentPack = null;
+        timelineEvents = [];
+        saveCollection();
+        savePacks();
+        saveTimeline();
+        renderAll();
+      }
+    );
+  });
+
+  // ── Custom Confirm Dialog ──
+  let confirmCallback = null;
+
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    confirmCallback = onConfirm;
+    document.getElementById('confirm-overlay').classList.add('visible');
+  }
+
+  document.getElementById('confirm-yes').addEventListener('click', () => {
+    document.getElementById('confirm-overlay').classList.remove('visible');
+    if (confirmCallback) confirmCallback();
+    confirmCallback = null;
+  });
+
+  document.getElementById('confirm-no').addEventListener('click', () => {
+    document.getElementById('confirm-overlay').classList.remove('visible');
+    confirmCallback = null;
+  });
+
+  document.getElementById('confirm-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.remove('visible');
+      confirmCallback = null;
+    }
+  });
+
+  function renderAll() {
+    renderProgress();
+    renderFabRecent();
+    if (document.getElementById('tab-binder').classList.contains('active')) renderBinder();
+    if (document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+    if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
+    if (document.getElementById('tab-timeline').classList.contains('active')) renderTimeline();
+  }
+
+  // ── Init ──
+  async function init() {
+    try {
+      await loadFxRate();
+      allCards = await loadCards();
+      ownedSet = loadCollection();
+      boosterPacks = loadPacks();
+      timelineEvents = loadTimeline();
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('main-content').style.display = '';
+      renderProgress();
+      renderFabRecent();
+      renderDashboard();
+    } catch (err) {
+      document.getElementById('loading-screen').innerHTML =
+        `<p style="color:var(--accent)">Failed to load card data: ${err.message}</p>
+         <button onclick="location.reload()" class="btn btn-primary" style="margin-top:12px">Retry</button>`;
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
