@@ -1878,7 +1878,7 @@ document.head.appendChild(manifestLink);
 
   function saveFoil() {
     localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
-    triggerSync();
+    scheduleSyncPush();
   }
 
   function hasFoil(cn) {
