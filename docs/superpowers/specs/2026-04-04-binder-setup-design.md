@@ -179,6 +179,38 @@ Current hardcoded values to replace with config-driven equivalents:
 
 ---
 
+## Mobile Considerations
+
+The existing app is built mobile-first (viewport meta, `100dvh`, `safe-area-inset`, `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`). All new UI must match these existing patterns.
+
+### Wizard (Settings Tab — first run)
+- Steps render full-width, single-column — no sidebars
+- **Back / Next** buttons are full-width, minimum 48px tall (touch target)
+- Preset dropdown uses native `<select>` (iOS/Android keyboard-friendly)
+- Custom row/col inputs use `inputmode="numeric"` to trigger numeric keyboard on mobile
+- Progress indicator is a simple pill bar at the top, not a horizontal stepper (avoids overflow on narrow screens)
+- Step content scrolls vertically if content is tall; buttons are sticky at bottom of viewport
+
+### Settings Form (returning users)
+- All sections stack vertically, full-width
+- Toggle switches minimum 44px tap target (follow existing `.btn` sizing)
+- Page count input uses `inputmode="numeric"`
+- Save Changes button full-width on mobile
+- Danger Zone section collapses behind a tap-to-expand disclosure; destructive buttons are large and clearly separated
+
+### Foil Binder Grid
+- Uses same responsive grid as the existing Binder tab — scales card slot size based on viewport width
+- On narrow screens (< 480px), `slotsPerPage` above 9 may produce very small thumbnails; implementation should enforce a minimum slot size of ~60px and allow horizontal scroll on the spread view if needed
+
+### Tab Bar
+- Adding Settings tab (and conditionally Foil tab) means up to 7 tabs total — tab bar must remain scrollable horizontally on small screens (existing `overflow-x: auto` on `.tabs` handles this, verify it still works with additional tabs)
+
+### Confirmation Dialogs (Danger Zone)
+- Rendered as a bottom sheet on mobile (slides up from bottom), not a centered modal — easier to reach with thumbs
+- On desktop, centered modal is fine
+
+---
+
 ## Verification
 
 1. Fresh load (no localStorage) → auto-navigates to Settings tab, wizard shown
@@ -190,3 +222,5 @@ Current hardcoded values to replace with config-driven equivalents:
 7. Reload → all settings persist via localStorage
 8. Enable Collector Variants → save → Scryfall fetch fires, variant cards appear in Binder
 9. Gist sync → config + foil data included in payload
+10. On a 390px-wide viewport (iPhone): wizard steps are single-column, buttons are full-width and thumb-reachable, tab bar scrolls horizontally when 7 tabs are present
+11. Danger Zone confirmation appears as a bottom sheet on mobile, centered modal on desktop
