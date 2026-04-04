@@ -5051,7 +5051,7 @@ document.head.appendChild(manifestLink);
       </div>`;
 
     // ── Filter bar HTML ──
-    const filterTypes = ['All', 'Traditional', 'Surge', 'Neon Ink', 'Chocobo Track'];
+    const filterTypes = ['All', 'Owned', 'Traditional', 'Surge', 'Neon Ink', 'Chocobo Track'];
     const rarities = ['C', 'U', 'R', 'M'];
     const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
     const variantFilterTypes = ['Surge', 'Neon Ink', 'Chocobo Track'];
@@ -5077,9 +5077,17 @@ document.head.appendChild(manifestLink);
     // ── Determine which cards to show and render grid ──
     function buildGrid() {
       const isVariantFilter = ['Surge', 'Neon Ink', 'Chocobo Track'].includes(activeFilter);
+      const isFirstRender = !el.dataset.foilRendered;
       let cards;
 
-      if (isVariantFilter) {
+      if (activeFilter === 'Owned') {
+        // Show only owned foils: main-set + variant
+        cards = [...allCards]
+          .sort((a, b) => compareCollector(a.collector_number, b.collector_number))
+          .filter(c => hasFoil(c.collector_number));
+        const ownedVariants = variantCards.filter(c => hasFoil(c.collector_number));
+        cards = [...cards, ...ownedVariants];
+      } else if (isVariantFilter) {
         if (variantCards.length === 0) {
           return `<div style="padding:32px;text-align:center;color:var(--text-muted)">No variant cards loaded yet.<br><small>Variant data will be available once the collector booster card list is fetched.</small></div>`;
         }
@@ -5095,8 +5103,8 @@ document.head.appendChild(manifestLink);
         cards = [...allCards].sort((a, b) => compareCollector(a.collector_number, b.collector_number));
       }
 
-      // Rarity filter
-      if (activeRarity) {
+      // Rarity filter (skip for Owned which may include variants of mixed rarity)
+      if (activeRarity && activeFilter !== 'Owned') {
         const rarityFull = rarityMap[activeRarity];
         cards = cards.filter(c => c.rarity === rarityFull);
       }
@@ -5114,12 +5122,12 @@ document.head.appendChild(manifestLink);
       const slotsHTML = cards.map((card, idx) => {
         const owned = hasFoil(card.collector_number);
         const cls = owned ? 'slot-foil-owned' : 'slot-foil-missing';
-        const delay = (idx * 0.015).toFixed(3);
-        const imgOrPlaceholder = owned
-          ? `<img data-src="${card.image_small}" alt="${card.name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px">`
-          : `<div class="placeholder"><span class="num">#${card.collector_number}</span><span class="pname">${card.name}</span></div>`;
+        const delay = (isFirstRender && idx < 20) ? (idx * 0.015).toFixed(3) : '0';
+        const animStyle = isFirstRender ? `animation:card-enter 0.3s ease both;animation-delay:${delay}s` : '';
+        const imgSrc = card.image_normal || card.image_small;
+        const imgOrPlaceholder = `<img data-src="${imgSrc}" alt="${card.name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px${!owned ? ';filter:grayscale(0.7) brightness(0.6)' : ''}">`;
         return `<div class="card-slot ${cls} foil-slot" data-cn="${card.collector_number}"
-          style="position:relative;animation:card-enter 0.3s ease both;animation-delay:${delay}s">
+          style="position:relative;${animStyle}">
           ${imgOrPlaceholder}
           <span class="foil-badge">✦</span>
         </div>`;
@@ -5169,6 +5177,9 @@ document.head.appendChild(manifestLink);
         ${topValueHTML}
       </div>`;
 
+    // Mark as rendered so subsequent re-renders skip animation
+    el.dataset.foilRendered = '1';
+
     // ── Lazy load images ──
     function lazyLoadFoilImages() {
       const observer = new IntersectionObserver(entries => {
@@ -5183,6 +5194,19 @@ document.head.appendChild(manifestLink);
       el.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
     }
     lazyLoadFoilImages();
+
+    // ── Wire initial foil slot clicks ──
+    function wireFoilSlotClicks(root) {
+      root.querySelectorAll('.foil-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+          const cn = slot.dataset.cn;
+          const card = allCards.find(c => c.collector_number === cn)
+                    || variantCards.find(c => c.collector_number === cn);
+          if (card) openModal(card);
+        });
+      });
+    }
+    wireFoilSlotClicks(el);
 
     // ── Top owned foil clicks ──
     el.querySelectorAll('.top-card-item:not(.missing-inspect)').forEach(item => {
@@ -5200,14 +5224,7 @@ document.head.appendChild(manifestLink);
       if (container) {
         container.innerHTML = buildGrid();
         lazyLoadFoilImages();
-        container.querySelectorAll('.foil-slot').forEach(slot => {
-          slot.addEventListener('click', () => {
-            const cn = slot.dataset.cn;
-            const card = allCards.find(c => c.collector_number === cn)
-                      || variantCards.find(c => c.collector_number === cn);
-            if (card) openModal(card);
-          });
-        });
+        wireFoilSlotClicks(container);
       }
       // Update button active states
       el.querySelectorAll('.foil-filter-type').forEach(btn => {
