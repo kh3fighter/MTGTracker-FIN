@@ -1895,8 +1895,6 @@ document.head.appendChild(manifestLink);
         </div>
       </div>
       <p class="subtitle">
-        <span>ClearEdge 360</span>
-        <span class="sep"></span>
         <span id="binder-preset-display">9-Pocket Binder</span>
         <span class="sep"></span>
         <span id="binder-page-count-display">34 Pages</span>
@@ -3713,12 +3711,7 @@ document.head.appendChild(manifestLink);
     document.getElementById('progress-fill').style.width = pct.toFixed(1) + '%';
     document.getElementById('progress-text').textContent = `${owned} / ${total} (${pct.toFixed(1)}%)`;
 
-    const rarities = ['mythic', 'rare', 'uncommon', 'common'];
-    document.getElementById('stats-row').innerHTML = rarities.map(r => {
-      const tot = allCards.filter(c => c.rarity === r).length;
-      const own = allCards.filter(c => c.rarity === r && ownedSet.has(c.collector_number)).length;
-      return `<span class="stat-badge ${r}">${r}: ${own}/${tot}</span>`;
-    }).join('');
+    document.getElementById('stats-row').innerHTML = '';
   }
 
   // ── Rendering: Dashboard ──
