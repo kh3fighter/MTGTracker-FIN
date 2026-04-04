@@ -4539,6 +4539,28 @@ document.head.appendChild(manifestLink);
       else addCard(card.collector_number);
       closeModal();
     };
+    // ── Foil toggle button ──
+    const foilToggleBtn = document.getElementById('modal-foil-toggle');
+    if (foilToggleBtn) {
+      const canBeFoil = (card.finishes || []).includes('foil');
+      if (canBeFoil) {
+        foilToggleBtn.style.display = '';
+        const isFoilOwned = hasFoil(card.collector_number);
+        foilToggleBtn.textContent = isFoilOwned ? 'Remove Foil' : 'Add Foil ✦';
+        foilToggleBtn.className = isFoilOwned ? 'btn btn-secondary' : 'btn btn-foil';
+        foilToggleBtn.onclick = () => {
+          if (isFoilOwned) removeFoil(card.collector_number);
+          else addFoil(card.collector_number);
+          closeModal();
+          if (document.getElementById('tab-foil').classList.contains('active')) {
+            renderFoilBinder();
+          }
+        };
+      } else {
+        foilToggleBtn.style.display = 'none';
+      }
+    }
+
     const overlay = document.getElementById('modal-overlay');
     overlay.classList.remove('closing');
     overlay.classList.add('visible');
@@ -4696,8 +4718,264 @@ document.head.appendChild(manifestLink);
   function fetchVariants() {}
 
   function renderFoilBinder() {
-    var el = document.getElementById('tab-foil');
-    if (el) el.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Foil Binder coming soon.</div>';
+    const el = document.getElementById('tab-foil');
+    if (!el) return;
+
+    // ── Filter state (closure-local) ──
+    let activeFilter = el._foilFilter || 'All';
+    let activeRarity = el._foilRarity || '';
+    let searchQuery  = el._foilSearch || '';
+
+    function persist() {
+      el._foilFilter = activeFilter;
+      el._foilRarity = activeRarity;
+      el._foilSearch = searchQuery;
+    }
+
+    // ── Computed stats ──
+    const ownedFoilCount = allCards.filter(c => hasFoil(c.collector_number)).length;
+    const ownedVariantFoilCount = variantCards.filter(c => hasFoil(c.collector_number)).length;
+    const foilValue = [
+      ...allCards.filter(c => hasFoil(c.collector_number)),
+      ...variantCards.filter(c => hasFoil(c.collector_number))
+    ].reduce((s, c) => s + (c.price_usd_foil || 0), 0);
+
+    const mainTotal    = allCards.length;
+    const variantTotal = variantCards.length;
+    const mainPct      = mainTotal > 0    ? (ownedFoilCount / mainTotal * 100)         : 0;
+    const variantPct   = variantTotal > 0 ? (ownedVariantFoilCount / variantTotal * 100) : 0;
+
+    // ── Helper: progress donut ──
+    function donutSVG(pct, color) {
+      const r = 22, cx = 28, cy = 28, circ = 2 * Math.PI * r;
+      const dash = (pct / 100) * circ;
+      return `<svg width="56" height="56" style="display:block">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="5"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}"
+          stroke-width="5" stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
+          stroke-dashoffset="${(circ * 0.25).toFixed(2)}" stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.5s ease"/>
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+          style="font-size:9px;font-weight:700;fill:var(--text)">${pct.toFixed(0)}%</text>
+      </svg>`;
+    }
+
+    // ── Stats bar HTML ──
+    const statsHTML = `
+      <div class="dash-grid" style="margin-bottom:18px">
+        <div class="dash-card" style="display:flex;align-items:center;gap:16px">
+          ${donutSVG(mainPct, '#ffd93d')}
+          <div>
+            <h3>Traditional Foils</h3>
+            <div class="dash-big-num" style="font-size:1.4rem">${ownedFoilCount} / ${mainTotal}</div>
+            <div class="dash-sub">${mainPct.toFixed(1)}% complete</div>
+          </div>
+        </div>
+        <div class="dash-card" style="display:flex;align-items:center;gap:16px">
+          ${donutSVG(variantPct, '#c77dff')}
+          <div>
+            <h3>Variant Foils</h3>
+            <div class="dash-big-num" style="font-size:1.4rem">${ownedVariantFoilCount} / ${variantTotal}</div>
+            <div class="dash-sub">${variantTotal === 0 ? 'No variants loaded' : variantPct.toFixed(1) + '% complete'}</div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <h3>Foil Value</h3>
+          <div class="dash-big-num" style="font-size:1.4rem">$${foilValue.toFixed(2)}</div>
+          <div class="dash-sub">RM ${(foilValue * USD_TO_MYR).toFixed(2)} (est.)</div>
+        </div>
+      </div>`;
+
+    // ── Filter bar HTML ──
+    const filterTypes = ['All', 'Traditional', 'Surge', 'Neon Ink', 'Chocobo Track'];
+    const rarities = ['C', 'U', 'R', 'M'];
+    const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
+
+    const filterBarHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${filterTypes.map(f => `<button class="btn ${activeFilter === f ? 'btn-primary' : 'btn-secondary'} foil-filter-type" data-type="${f}" style="padding:4px 12px;font-size:0.82rem">${f}</button>`).join('')}
+        </div>
+        <div style="display:flex;gap:5px">
+          ${rarities.map(r => `<button class="btn ${activeRarity === r ? 'btn-primary' : 'btn-secondary'} foil-filter-rarity" data-rarity="${r}" style="padding:4px 10px;font-size:0.8rem;font-weight:700">${r}</button>`).join('')}
+        </div>
+        <input type="text" class="foil-search-input" placeholder="Search card name…" value="${searchQuery.replace(/"/g, '&quot;')}"
+          style="padding:5px 10px;border-radius:8px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text);font-size:0.85rem;min-width:160px">
+      </div>`;
+
+    // ── Determine which cards to show and render grid ──
+    function buildGrid() {
+      const isVariantFilter = ['Surge', 'Neon Ink', 'Chocobo Track'].includes(activeFilter);
+      let cards;
+
+      if (isVariantFilter) {
+        if (variantCards.length === 0) {
+          return `<div style="padding:32px;text-align:center;color:var(--text-muted)">No variant cards loaded yet.<br><small>Variant data will be available once the collector booster card list is fetched.</small></div>`;
+        }
+        const filterKey = activeFilter.toLowerCase().replace(' ', '_');
+        cards = variantCards.filter(c => {
+          const finishes = c.finishes || [];
+          if (activeFilter === 'Surge')        return finishes.includes('surge_foil') || (c.frame_effects || []).includes('surge_foil');
+          if (activeFilter === 'Neon Ink')     return (c.frame_effects || []).includes('neon_ink') || c.name?.toLowerCase().includes('neon');
+          if (activeFilter === 'Chocobo Track')return (c.frame_effects || []).includes('chocobo_track') || c.name?.toLowerCase().includes('chocobo');
+          return true;
+        });
+      } else {
+        // Traditional or All — show main-set cards
+        cards = [...allCards].sort((a, b) => compareCollector(a.collector_number, b.collector_number));
+      }
+
+      // Rarity filter
+      if (activeRarity) {
+        const rarityFull = rarityMap[activeRarity];
+        cards = cards.filter(c => c.rarity === rarityFull);
+      }
+
+      // Name search
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        cards = cards.filter(c => c.name.toLowerCase().includes(q));
+      }
+
+      if (cards.length === 0) {
+        return `<div style="padding:32px;text-align:center;color:var(--text-muted)">No cards match the current filters.</div>`;
+      }
+
+      const slotsHTML = cards.map((card, idx) => {
+        const owned = hasFoil(card.collector_number);
+        const cls = owned ? 'slot-foil-owned' : 'slot-foil-missing';
+        const delay = (idx * 0.015).toFixed(3);
+        const imgOrPlaceholder = owned
+          ? `<img data-src="${card.image_small}" alt="${card.name}" style="width:100%;height:100%;object-fit:cover;border-radius:4px">`
+          : `<div class="placeholder"><span class="num">#${card.collector_number}</span><span class="pname">${card.name}</span></div>`;
+        return `<div class="card-slot ${cls} foil-slot" data-cn="${card.collector_number}"
+          style="position:relative;animation:card-enter 0.3s ease both;animation-delay:${delay}s">
+          ${imgOrPlaceholder}
+          <span class="foil-badge">✦</span>
+        </div>`;
+      }).join('');
+
+      return `<div class="page-grid foil-card-grid" style="grid-template-columns:repeat(${binderConfig.gridCols},1fr);gap:6px">${slotsHTML}</div>`;
+    }
+
+    // ── Top valuable foils ──
+    const ownedFoilCards  = allCards.filter(c => hasFoil(c.collector_number) && c.price_usd_foil > 0)
+                                     .sort((a, b) => b.price_usd_foil - a.price_usd_foil).slice(0, 5);
+    const missingFoilCards = allCards.filter(c => !hasFoil(c.collector_number) && c.price_usd_foil > 0)
+                                      .sort((a, b) => b.price_usd_foil - a.price_usd_foil).slice(0, 5);
+
+    function topFoilItem(c, i, missing) {
+      return `<div class="top-card-item${missing ? ' missing-inspect' : ''}" data-cn="${c.collector_number}" style="cursor:pointer">
+        <span class="rank">${i + 1}</span>
+        <img src="${c.image_small}" alt="${c.name}">
+        <span class="tc-name">${c.name}</span>
+        <span class="tc-price" style="color:${missing ? 'var(--accent)' : 'var(--owned-border)'};white-space:nowrap">$${c.price_usd_foil.toFixed(2)}</span>
+        ${missing ? `<span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>` : ''}
+      </div>`;
+    }
+
+    const topValueHTML = `
+      <div class="dash-grid" style="margin-top:24px">
+        <div class="dash-card">
+          <h3>Most Valuable Foil (Owned)</h3>
+          ${ownedFoilCards.length > 0
+            ? `<div class="top-cards">${ownedFoilCards.map((c, i) => topFoilItem(c, i, false)).join('')}</div>`
+            : `<div class="dash-sub" style="padding:20px 0">No owned foils yet</div>`}
+        </div>
+        <div class="dash-card">
+          <h3>Most Valuable Foil (Missing)</h3>
+          ${missingFoilCards.length > 0
+            ? `<div class="top-cards">${missingFoilCards.map((c, i) => topFoilItem(c, i, true)).join('')}</div>`
+            : `<div class="dash-sub" style="padding:20px 0">All foils owned!</div>`}
+        </div>
+      </div>`;
+
+    // ── Assemble full tab ──
+    el.innerHTML = `
+      <div style="padding:16px 12px">
+        ${statsHTML}
+        ${filterBarHTML}
+        <div id="foil-grid-container">${buildGrid()}</div>
+        ${topValueHTML}
+      </div>`;
+
+    // ── Lazy load images ──
+    function lazyLoadFoilImages() {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const img = e.target;
+            if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
+            observer.unobserve(img);
+          }
+        });
+      });
+      el.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+    }
+    lazyLoadFoilImages();
+
+    // ── Card slot click handlers ──
+    el.querySelectorAll('.foil-slot').forEach(slot => {
+      slot.addEventListener('click', () => {
+        const cn = slot.dataset.cn;
+        const card = allCards.find(c => c.collector_number === cn)
+                  || variantCards.find(c => c.collector_number === cn);
+        if (card) openModal(card);
+      });
+    });
+
+    // ── Top owned foil clicks ──
+    el.querySelectorAll('.top-card-item:not(.missing-inspect)').forEach(item => {
+      item.addEventListener('click', () => {
+        const cn = item.dataset.cn;
+        const card = allCards.find(c => c.collector_number === cn);
+        if (card) openModal(card);
+      });
+    });
+
+    // ── Filter button wiring ──
+    function reRenderGrid() {
+      persist();
+      const container = document.getElementById('foil-grid-container');
+      if (container) {
+        container.innerHTML = buildGrid();
+        lazyLoadFoilImages();
+        container.querySelectorAll('.foil-slot').forEach(slot => {
+          slot.addEventListener('click', () => {
+            const cn = slot.dataset.cn;
+            const card = allCards.find(c => c.collector_number === cn)
+                      || variantCards.find(c => c.collector_number === cn);
+            if (card) openModal(card);
+          });
+        });
+      }
+      // Update button active states
+      el.querySelectorAll('.foil-filter-type').forEach(btn => {
+        btn.className = `btn ${btn.dataset.type === activeFilter ? 'btn-primary' : 'btn-secondary'} foil-filter-type`;
+      });
+      el.querySelectorAll('.foil-filter-rarity').forEach(btn => {
+        btn.className = `btn ${btn.dataset.rarity === activeRarity ? 'btn-primary' : 'btn-secondary'} foil-filter-rarity`;
+      });
+    }
+
+    el.querySelectorAll('.foil-filter-type').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeFilter = btn.dataset.type;
+        reRenderGrid();
+      });
+    });
+
+    el.querySelectorAll('.foil-filter-rarity').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeRarity = activeRarity === btn.dataset.rarity ? '' : btn.dataset.rarity;
+        reRenderGrid();
+      });
+    });
+
+    el.querySelector('.foil-search-input').addEventListener('input', e => {
+      searchQuery = e.target.value;
+      reRenderGrid();
+    });
   }
 
   async function init() {
