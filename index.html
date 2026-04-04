@@ -5590,7 +5590,7 @@ document.head.appendChild(manifestLink);
   }
 
   // ── Filter bar ──
-  const filterTypes = ['All', 'Owned', 'Traditional', 'Surge', 'Neon Ink', 'Chocobo Track'];
+  const filterTypes = ['All', 'Foil Owned', 'Showcase', 'Extended Art', 'Surge Foil', 'Neon Ink', 'Chocobo Track', 'Serialized'];
   const rarities = ['C', 'U', 'R', 'M'];
   const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
 
@@ -5611,22 +5611,20 @@ document.head.appendChild(manifestLink);
     const spp = binderConfig.slotsPerPage;
     let cards;
 
-    if (activeFilter === 'Owned') {
-      cards = variantCards.filter(c => ownedSet.has(c.collector_number));
+    if (activeFilter === 'Foil Owned') {
+      cards = variantCards.filter(c => hasFoil(c.collector_number));
+    } else if (activeFilter === 'Showcase') {
+      cards = variantCards.filter(c => (c.frame_effects || []).includes('showcase'));
+    } else if (activeFilter === 'Extended Art') {
+      cards = variantCards.filter(c => (c.frame_effects || []).includes('extendedart'));
     } else if (activeFilter === 'Surge Foil') {
       cards = variantCards.filter(c => isSurgeFoil(c));
     } else if (activeFilter === 'Neon Ink') {
       cards = variantCards.filter(c => (c.promo_types || []).includes('neon_ink'));
     } else if (activeFilter === 'Chocobo Track') {
       cards = variantCards.filter(c => (c.name || '').toLowerCase().includes('chocobo'));
-    } else if (activeFilter === 'Traditional') {
-      cards = variantCards.filter(c => {
-        const fe = c.frame_effects || [];
-        const pt = c.promo_types || [];
-        return !fe.includes('surge') && !fe.includes('serialized')
-            && !pt.includes('neon_ink')
-            && !(c.name || '').toLowerCase().includes('chocobo');
-      });
+    } else if (activeFilter === 'Serialized') {
+      cards = variantCards.filter(c => (c.frame_effects || []).includes('serialized'));
     } else {
       cards = variantCards.slice();
     }
