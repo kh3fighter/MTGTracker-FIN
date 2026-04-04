@@ -5391,12 +5391,12 @@ document.head.appendChild(manifestLink);
                                       .sort((a, b) => b.price_usd_foil - a.price_usd_foil).slice(0, 5);
 
     function topFoilItem(c, i, missing) {
-      return `<div class="top-card-item${missing ? ' missing-inspect' : ''}" data-cn="${c.collector_number}" style="cursor:pointer">
+      return `<div class="top-card-item missing-inspect" data-cn="${c.collector_number}" style="cursor:pointer">
         <span class="rank">${i + 1}</span>
         <img src="${c.image_small}" alt="${c.name}">
         <span class="tc-name">${c.name}</span>
         <span class="tc-price" style="color:${missing ? 'var(--accent)' : 'var(--owned-border)'};white-space:nowrap">$${c.price_usd_foil.toFixed(2)}</span>
-        ${missing ? `<span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>` : ''}
+        <span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
       </div>`;
     }
 
@@ -5463,15 +5463,6 @@ document.head.appendChild(manifestLink);
       });
     }
     wireFoilSlotClicks(el);
-
-    // ── Top owned foil clicks ──
-    el.querySelectorAll('.top-card-item:not(.missing-inspect)').forEach(item => {
-      item.addEventListener('click', () => {
-        const cn = item.dataset.cn;
-        const card = allCards.find(c => c.collector_number === cn);
-        if (card) openModal(card);
-      });
-    });
 
     // ── Filter button wiring ──
     function reRenderGrid() {
