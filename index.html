@@ -782,13 +782,8 @@
     100% { background-position: 0% 50%; }
   }
   .slot-foil-owned {
-    background: linear-gradient(135deg,
-      rgba(255,107,157,0.25),rgba(255,217,61,0.25),
-      rgba(107,203,119,0.25),rgba(77,150,255,0.25),rgba(199,125,255,0.25)) !important;
-    background-size: 300% 300% !important;
-    animation: foil-shimmer 3s ease infinite;
     border: 1.5px solid rgba(255,255,255,0.3) !important;
-    box-shadow: 0 0 14px rgba(255,200,100,0.25) !important;
+    box-shadow: 0 0 14px rgba(255,200,100,0.3) !important;
   }
   .slot-foil-missing {
     opacity: 0.45;
@@ -799,6 +794,78 @@
     font-size: 0.55rem; color: #ffd93d;
     text-shadow: 0 0 6px rgba(255,217,61,0.9);
     pointer-events: none;
+  }
+  /* ── Foil card shimmer overlay (::after on owned slots) ── */
+  @keyframes foil-card-shimmer {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  @keyframes foil-neon-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 1; }
+  }
+
+  /* Base overlay — traditional foil rainbow */
+  .foil-slot.slot-foil-owned::after {
+    content: ''; position: absolute; inset: 0; border-radius: 4px;
+    pointer-events: none; z-index: 1;
+    will-change: background-position;
+    background: linear-gradient(115deg,
+      transparent 25%, rgba(255,107,157,0.3) 35%,
+      rgba(77,150,255,0.25) 48%, rgba(107,203,119,0.25) 58%,
+      rgba(255,217,61,0.3) 68%, transparent 78%);
+    background-size: 300% 300%;
+    mix-blend-mode: screen;
+    animation: foil-card-shimmer 4s ease-in-out infinite;
+  }
+  /* Surge — electric blue-white, faster */
+  .foil-slot.foil-variant-surge.slot-foil-owned::after {
+    background: linear-gradient(115deg,
+      transparent 20%, rgba(160,210,255,0.5) 35%,
+      rgba(255,255,255,0.55) 50%, rgba(120,175,255,0.5) 65%,
+      transparent 80%);
+    animation-duration: 2.5s;
+  }
+  /* Neon ink — pulsing radial glow */
+  .foil-slot.foil-variant-neon.slot-foil-owned::after {
+    background: radial-gradient(ellipse at center,
+      rgba(255,80,180,0.35) 0%, rgba(80,220,255,0.25) 50%, transparent 75%);
+    background-size: 100% 100%;
+    animation: foil-neon-pulse 2s ease-in-out infinite;
+  }
+  /* Serialized — slow gold sweep */
+  .foil-slot.foil-variant-serialized.slot-foil-owned::after {
+    background: linear-gradient(115deg,
+      transparent 30%, rgba(255,215,0,0.4) 42%,
+      rgba(255,180,50,0.45) 52%, rgba(255,215,0,0.4) 62%,
+      transparent 72%);
+    animation-duration: 5s;
+  }
+  /* Collector — soft silver */
+  .foil-slot.foil-variant-collector.slot-foil-owned::after {
+    background: linear-gradient(115deg,
+      transparent 30%, rgba(200,220,255,0.3) 45%,
+      rgba(255,255,255,0.35) 55%, rgba(200,220,255,0.3) 65%,
+      transparent 75%);
+    animation-duration: 3.5s;
+  }
+  /* Stagger delays so cards don't pulse in sync */
+  .foil-delay-1::after { animation-delay: 1.35s; }
+  .foil-delay-2::after { animation-delay: 2.7s; }
+
+  /* Variant-specific border glow overrides */
+  .foil-slot.foil-variant-surge.slot-foil-owned {
+    box-shadow: 0 0 14px rgba(100,180,255,0.45) !important;
+  }
+  .foil-slot.foil-variant-neon.slot-foil-owned {
+    box-shadow: 0 0 14px rgba(255,80,200,0.5) !important;
+  }
+  .foil-slot.foil-variant-serialized.slot-foil-owned {
+    box-shadow: 0 0 14px rgba(255,215,0,0.5) !important;
+  }
+  .foil-slot.foil-variant-collector.slot-foil-owned {
+    box-shadow: 0 0 14px rgba(200,220,255,0.3) !important;
   }
   /* Foil tab button entrance */
   .tab-btn[data-tab="foil"] {
