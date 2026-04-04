@@ -4120,6 +4120,22 @@ document.head.appendChild(manifestLink);
     const foilOwnedCards = allCards.filter(c => hasFoil(c.collector_number) && c.price_usd_foil > 0);
     const foilCollectionValueUSD = foilOwnedCards.reduce((s, c) => s + c.price_usd_foil, 0);
 
+    // Variant stats for portfolio cards
+    const variantOwned = variantCards.filter(c => ownedSet.has(c.collector_number));
+    const variantOwnedCount = variantOwned.length;
+    const variantTotalCount = variantCards.length;
+    const variantOwnedPct = variantTotalCount > 0 ? (variantOwnedCount / variantTotalCount * 100) : 0;
+    const variantOwnedValueUSD = variantOwned.reduce((s, c) => s + Math.max(c.price_usd || 0, c.price_usd_foil || 0), 0);
+    const topOwnedVariants = [...variantOwned].sort((a, b) => Math.max(b.price_usd||0,b.price_usd_foil||0) - Math.max(a.price_usd||0,a.price_usd_foil||0)).slice(0, 3);
+
+    // Foil stats for portfolio card
+    const foilCapableCards = allCards.filter(c => (c.finishes || []).includes('foil'));
+    const foilCapableCount = foilCapableCards.length;
+    const foilOwnedPortfolioCount = foilCapableCards.filter(c => hasFoil(c.collector_number)).length;
+    const foilOwnedPct = foilCapableCount > 0 ? (foilOwnedPortfolioCount / foilCapableCount * 100) : 0;
+    const topOwnedFoils = [...allCards].filter(c => hasFoil(c.collector_number) && c.price_usd_foil > 0)
+      .sort((a, b) => b.price_usd_foil - a.price_usd_foil).slice(0, 3);
+
     // Top 5 most valuable owned (effective price = higher of regular or foil)
     const getEffectivePrice = (c) => {
       const regular = c.price_usd || 0;
@@ -4179,9 +4195,9 @@ document.head.appendChild(manifestLink);
               <div class="value-sub">${fxIsLive ? 'live rate' : 'fallback rate'}</div>
             </div>
             <div class="value-box">
-              <div class="value-label">Full Set (USD)</div>
+              <div class="value-label">Main Set (USD)</div>
               <div class="value-amount usd" style="font-size:1rem">$${fullSetValueUSD.toFixed(2)}</div>
-              <div class="value-sub">${total} cards total</div>
+              <div class="value-sub">${total} main set cards</div>
             </div>
             <div class="value-box">
               <div class="value-label">Still Need</div>
@@ -4252,6 +4268,63 @@ document.head.appendChild(manifestLink);
             </div>`).join('')}
           </div>` : '<div class="dash-sub" style="padding:20px 0">Full set complete!</div>'}
         </div>
+
+        ${variantTotalCount > 0 ? `
+        <div class="dash-card">
+          <h3>◈ Variant Portfolio</h3>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div>
+              <div class="dash-big-num" style="font-size:1.2rem">${variantOwnedCount} / ${variantTotalCount}</div>
+              <div class="dash-sub">${variantOwnedPct.toFixed(1)}% owned</div>
+            </div>
+            <div style="flex:1">
+              <div class="rarity-track"><div class="rarity-fill rare" style="width:${variantOwnedPct.toFixed(1)}%"></div></div>
+              <div class="dash-sub" style="margin-top:4px">Value: <strong>$${variantOwnedValueUSD.toFixed(2)}</strong> / RM ${(variantOwnedValueUSD * USD_TO_MYR).toFixed(2)}</div>
+            </div>
+          </div>
+          ${topOwnedVariants.length > 0 ? `
+            <div class="dash-sub" style="margin-bottom:4px;font-size:0.75rem;color:var(--text-muted)">Top owned variants:</div>
+            <div class="top-cards">
+              ${topOwnedVariants.map((c, i) => `<div class="top-card-item missing-inspect" data-cn="${c.collector_number}" style="cursor:pointer">
+                <span class="rank">${i + 1}</span>
+                <img src="${c.image_small}" alt="${c.name}">
+                <span class="tc-name">${c.name}</span>
+                <span class="tc-price">$${Math.max(c.price_usd||0,c.price_usd_foil||0).toFixed(2)}</span>
+                <span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              </div>`).join('')}
+            </div>
+          ` : `<div class="dash-sub" style="padding:8px 0">No variants owned yet</div>`}
+        </div>
+        ` : ''}
+
+        ${binderConfig.scope?.foilBinder ? `
+        <div class="dash-card">
+          <h3>✦ Foil Collection</h3>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div>
+              <div class="dash-big-num" style="font-size:1.2rem">${foilOwnedPortfolioCount} / ${foilCapableCount}</div>
+              <div class="dash-sub">${foilOwnedPct.toFixed(1)}% complete</div>
+            </div>
+            <div style="flex:1">
+              <div class="rarity-track"><div class="rarity-fill" style="width:${foilOwnedPct.toFixed(1)}%;background:#ffd93d"></div></div>
+              <div class="dash-sub" style="margin-top:4px">Value: <strong style="color:#ffd93d">$${foilCollectionValueUSD.toFixed(2)}</strong> / RM ${(foilCollectionValueUSD * USD_TO_MYR).toFixed(2)}</div>
+            </div>
+          </div>
+          ${topOwnedFoils.length > 0 ? `
+            <div class="dash-sub" style="margin-bottom:4px;font-size:0.75rem;color:var(--text-muted)">Top owned foils:</div>
+            <div class="top-cards">
+              ${topOwnedFoils.map((c, i) => `<div class="top-card-item missing-inspect" data-cn="${c.collector_number}" style="cursor:pointer">
+                <span class="rank">${i + 1}</span>
+                <img src="${c.image_small}" alt="${c.name}">
+                <span class="tc-name">${c.name}</span>
+                <span class="tc-price" style="color:#ffd93d">$${c.price_usd_foil.toFixed(2)}</span>
+                <span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+              </div>`).join('')}
+            </div>
+          ` : `<div class="dash-sub" style="padding:8px 0">No foils collected yet</div>`}
+        </div>
+        ` : ''}
+
       </div>
     `;
   }
