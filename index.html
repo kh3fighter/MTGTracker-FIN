@@ -5340,7 +5340,7 @@ document.head.appendChild(manifestLink);
       } else if (activeFilter === 'Surge') {
         cards = variantCards.filter(c => (c.frame_effects || []).includes('surge'));
       } else if (activeFilter === 'Neon Ink') {
-        cards = variantCards.filter(c => (c.promo_types || []).includes('neon_ink') || (c.name || '').toLowerCase().includes('chocobo'));
+        cards = variantCards.filter(c => (c.promo_types || []).includes('neon_ink'));
       } else if (activeFilter === 'Chocobo Track') {
         cards = variantCards.filter(c => (c.name || '').toLowerCase().includes('chocobo'));
       } else if (activeFilter === 'Traditional') {
@@ -5351,7 +5351,6 @@ document.head.appendChild(manifestLink);
       }
 
       if (activeRarity) {
-        const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
         cards = cards.filter(c => c.rarity === rarityMap[activeRarity]);
       }
       if (searchQuery.trim()) {
@@ -5514,7 +5513,8 @@ document.head.appendChild(manifestLink);
     });
 
     // ── Pagination button wiring (event delegation on container) ──
-    el.addEventListener('click', function onFoilPaginate(e) {
+    if (el._onFoilPaginate) el.removeEventListener('click', el._onFoilPaginate);
+    el._onFoilPaginate = function(e) {
       if (e.target.classList.contains('foil-prev')) {
         foilPage = Math.max(0, foilPage - 1);
         persist();
@@ -5527,7 +5527,8 @@ document.head.appendChild(manifestLink);
         reRenderGrid();
         return;
       }
-    });
+    };
+    el.addEventListener('click', el._onFoilPaginate);
   }
 
   async function init() {
