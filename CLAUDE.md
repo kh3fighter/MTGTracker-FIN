@@ -12,10 +12,16 @@ Open `index.html` in a browser. No build step, no dependencies — plain HTML/CS
 
 ## Architecture
 
-Everything lives in `index.html`:
-- **Data layer**: Fetches FIN set from Scryfall API (`/cards/search?q=set:fin+is:booster+game:paper`), caches in localStorage for 7 days. Collection state (owned card collector numbers) stored separately in localStorage.
+Everything lives in `index.html` — no build step, no external JS files. The script is structured into named sections marked with `// ──` comments:
+
+- **State / localStorage keys**: `fin-card-data-v4` (Scryfall cache), `fin-collection` (owned collector numbers), `fin-booster-packs`, `fin-timeline`, `fin-theme`, `fin-fx-rate`, `fin-gist-config`.
+- **Data layer**: Fetches FIN set from Scryfall API (`/cards/search?q=set:fin+is:booster+game:paper`), caches for 7 days. Collection state (owned card collector numbers) stored separately.
 - **Collector number sorting**: Handles non-numeric suffixes (e.g. `99b`) via `collectorKey()` parser. Binder slot placement is derived from array index after sorting.
 - **Binder math**: 300 cards / 9 per page = 34 pages. Spread view shows 2 pages side-by-side.
+- **Tabs**: Binder, Dashboard, Portfolio, Timeline, Pack Simulator.
+- **Booster Pack Mode**: Simulates opening packs, logs pulls to `fin-booster-packs` and `fin-timeline`.
+- **PWA**: Manifest and icons generated at runtime via canvas; supports iOS/Android home-screen install.
+- **Celebration**: Rarity-tiered fanfare animations on card adds.
 
 ## Scryfall API
 
