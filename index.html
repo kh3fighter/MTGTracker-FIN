@@ -5706,12 +5706,12 @@ document.head.appendChild(manifestLink);
       activeRarity = activeRarity === rarBtn.dataset.rarity ? '' : rarBtn.dataset.rarity;
       resetPage(); persist(); renderVariantBinder(); return;
     }
-    // Slot click — toggle ownership
+    // Slot click — open inspection modal
     const slot = e.target.closest('.card-slot[data-cn]');
     if (slot) {
       const cn = slot.dataset.cn;
-      if (ownedSet.has(cn)) removeCard(cn);
-      else addCard(cn);
+      const card = variantCards.find(c => c.collector_number === cn);
+      if (card) openModal(card);
       return;
     }
   };
