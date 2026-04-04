@@ -5359,7 +5359,7 @@ document.head.appendChild(manifestLink);
       }
 
       if (cards.length === 0) {
-        return `<div style="padding:32px;text-align:center;color:var(--text-muted)">No cards match the current filters.</div>`;
+        return { html: `<div style="padding:32px;text-align:center;color:var(--text-muted)">No cards match the current filters.</div>`, totalPages: 1 };
       }
 
       const totalPages = Math.ceil(cards.length / spp);
@@ -5381,14 +5381,7 @@ document.head.appendChild(manifestLink);
     </div>`;
       }).join('');
 
-      const navHTML = `
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px">
-      <button class="btn btn-secondary foil-prev" style="padding:6px 16px" ${foilPage === 0 ? 'disabled' : ''}>&larr; Prev</button>
-      <span style="font-size:0.85rem;color:var(--text-muted)">Page ${foilPage + 1} of ${totalPages}</span>
-      <button class="btn btn-secondary foil-next" style="padding:6px 16px" ${foilPage >= totalPages - 1 ? 'disabled' : ''}>Next &rarr;</button>
-    </div>`;
-
-      return `<div class="page-grid foil-card-grid" style="grid-template-columns:repeat(${binderConfig.gridCols},1fr);gap:6px">${slotsHTML}</div>${navHTML}`;
+      return { html: `<div class="page-grid foil-card-grid" style="grid-template-columns:repeat(${binderConfig.gridCols},1fr);gap:6px">${slotsHTML}</div>`, totalPages };
     }
 
     // ── Top valuable foils ──
@@ -5424,11 +5417,19 @@ document.head.appendChild(manifestLink);
       </div>`;
 
     // ── Assemble full tab ──
+    const gridResult = buildGrid();
     el.innerHTML = `
       <div style="padding:16px 12px">
         ${statsHTML}
         ${filterBarHTML}
-        <div id="foil-grid-container">${buildGrid()}</div>
+        <div class="binder-layout">
+          <button class="binder-nav" id="foil-prev-page" ${foilPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
+          <div style="flex:1;min-width:0">
+            <div id="foil-grid-container">${gridResult.html}</div>
+            <div style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:6px">Page ${foilPage + 1} of ${gridResult.totalPages}</div>
+          </div>
+          <button class="binder-nav" id="foil-next-page" ${foilPage >= gridResult.totalPages - 1 ? 'disabled' : ''}>&rsaquo;</button>
+        </div>
         ${topValueHTML}
       </div>`;
 
@@ -5475,19 +5476,7 @@ document.head.appendChild(manifestLink);
     // ── Filter button wiring ──
     function reRenderGrid() {
       persist();
-      const container = document.getElementById('foil-grid-container');
-      if (container) {
-        container.innerHTML = buildGrid();
-        lazyLoadFoilImages();
-        wireFoilSlotClicks(container);
-      }
-      // Update button active states
-      el.querySelectorAll('.foil-filter-type').forEach(btn => {
-        btn.className = `btn ${btn.dataset.type === activeFilter ? 'btn-primary' : 'btn-secondary'} foil-filter-type`;
-      });
-      el.querySelectorAll('.foil-filter-rarity').forEach(btn => {
-        btn.className = `btn ${btn.dataset.rarity === activeRarity ? 'btn-primary' : 'btn-secondary'} foil-filter-rarity`;
-      });
+      renderFoilBinder();
     }
 
     el.querySelectorAll('.foil-filter-type').forEach(btn => {
@@ -5515,16 +5504,16 @@ document.head.appendChild(manifestLink);
     // ── Pagination button wiring (event delegation on container) ──
     if (el._onFoilPaginate) el.removeEventListener('click', el._onFoilPaginate);
     el._onFoilPaginate = function(e) {
-      if (e.target.classList.contains('foil-prev')) {
+      if (e.target.closest('#foil-prev-page')) {
         foilPage = Math.max(0, foilPage - 1);
         persist();
-        reRenderGrid();
+        renderFoilBinder();
         return;
       }
-      if (e.target.classList.contains('foil-next')) {
+      if (e.target.closest('#foil-next-page')) {
         foilPage++;
         persist();
-        reRenderGrid();
+        renderFoilBinder();
         return;
       }
     };
