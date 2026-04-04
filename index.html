@@ -5338,7 +5338,7 @@ document.head.appendChild(manifestLink);
           .filter(c => hasFoil(c.collector_number))
           .sort((a, b) => compareCollector(a.collector_number, b.collector_number));
       } else if (activeFilter === 'Surge') {
-        cards = variantCards.filter(c => (c.frame_effects || []).includes('surge'));
+        cards = variantCards.filter(c => isSurgeFoil(c));
       } else if (activeFilter === 'Neon Ink') {
         cards = variantCards.filter(c => (c.promo_types || []).includes('neon_ink'));
       } else if (activeFilter === 'Chocobo Track') {
@@ -5613,8 +5613,8 @@ document.head.appendChild(manifestLink);
 
     if (activeFilter === 'Owned') {
       cards = variantCards.filter(c => ownedSet.has(c.collector_number));
-    } else if (activeFilter === 'Surge') {
-      cards = variantCards.filter(c => (c.frame_effects || []).includes('surge'));
+    } else if (activeFilter === 'Surge Foil') {
+      cards = variantCards.filter(c => isSurgeFoil(c));
     } else if (activeFilter === 'Neon Ink') {
       cards = variantCards.filter(c => (c.promo_types || []).includes('neon_ink'));
     } else if (activeFilter === 'Chocobo Track') {
