@@ -255,25 +255,33 @@
 
   /* ── Tabs ── */
   .tabs {
-    display: flex; gap: 0; margin-bottom: 20px;
-    border-bottom: 2px solid var(--surface2);
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--surface); border-radius: 12px;
+    padding: 4px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab-btn {
-    padding: clamp(8px, 1.5vw, 10px) clamp(10px, 2.5vw, 24px);
-    background: none; border: none;
-    color: var(--text-muted); font-size: clamp(0.78rem, 1.8vw, 1rem); cursor: pointer;
-    border-bottom: 2px solid transparent; margin-bottom: -2px;
-    transition: all 0.25s ease; position: relative;
-    white-space: nowrap;
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: clamp(7px, 1.2vw, 9px) clamp(8px, 1.5vw, 14px);
+    background: none; border: none; border-radius: 9px;
+    color: var(--text-muted);
+    font-size: clamp(0.72rem, 1.4vw, 0.85rem);
+    font-weight: 500; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
   }
   .tab-btn svg {
-    width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px);
-    vertical-align: -2px; margin-right: clamp(3px, 0.8vw, 6px);
+    width: clamp(12px, 1.8vw, 15px); height: clamp(12px, 1.8vw, 15px);
+    flex-shrink: 0;
   }
-  .tab-btn:hover { color: var(--text); transform: translateY(-1px); }
+  .tab-btn:hover { background: var(--surface2); color: var(--text); }
   .tab-btn.active {
-    color: var(--accent); border-bottom-color: var(--accent);
-    text-shadow: 0 0 12px var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(233,69,96,0.35);
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; animation: tab-enter 0.4s ease both; }
@@ -891,14 +899,6 @@
   .foil-slot.foil-variant-collector.slot-foil-owned {
     box-shadow: 0 0 14px rgba(200,220,255,0.3) !important;
   }
-  /* Foil tab button entrance */
-  .tab-btn[data-tab="foil"] {
-    animation: tab-foil-appear 0.3s cubic-bezier(0.34,1.4,0.64,1) both;
-  }
-  @keyframes tab-foil-appear {
-    from { opacity: 0; transform: scale(0.82); }
-    to   { opacity: 1; transform: scale(1); }
-  }
   /* Modal foil button */
   .btn-foil {
     background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcb77, #4d96ff, #c77dff);
@@ -1249,9 +1249,6 @@
       padding-bottom: max(160px, calc(160px + env(safe-area-inset-bottom, 0px)));
     }
     header { padding: 14px 0 12px; }
-    /* Tabs horizontal scroll on mobile */
-    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 0; }
-    .tabs::-webkit-scrollbar { display: none; }
     .tab-btn { flex-shrink: 0; }
 
     /* Binder */
@@ -1998,12 +1995,34 @@ document.head.appendChild(manifestLink);
     </header>
 
     <div class="tabs">
-      <button class="tab-btn active" data-tab="dashboard"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Main Dashboard</button>
-      <button class="tab-btn" data-tab="portfolio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Portfolio</button>
-      <button class="tab-btn" data-tab="timeline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
-      <button class="tab-btn" data-tab="binder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Binder View</button>
-      <button class="tab-btn" data-tab="foil" id="tab-btn-foil" style="display:none">✦ Foil</button>
-      <button class="tab-btn" data-tab="settings">⚙ Settings</button>
+      <button class="tab-btn active" data-tab="dashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="tab-btn" data-tab="portfolio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Portfolio
+      </button>
+      <button class="tab-btn" data-tab="timeline">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Timeline
+      </button>
+      <button class="tab-btn" data-tab="binder">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Binder
+      </button>
+      <button class="tab-btn" data-tab="foil" id="tab-btn-foil" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Foil Collection
+      </button>
+      <button class="tab-btn" data-tab="variants" id="tab-btn-variants" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Variant Collection
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
     </div>
 
     <div id="tab-dashboard" class="tab-content active">
@@ -2489,6 +2508,8 @@ document.head.appendChild(manifestLink);
   function applyConfigToTabs() {
     var foilBtn = document.getElementById('tab-btn-foil');
     if (foilBtn) foilBtn.style.display = binderConfig.scope.foilBinder ? '' : 'none';
+    var variantBtn = document.getElementById('tab-btn-variants');
+    if (variantBtn) variantBtn.style.display = binderConfig.scope.collectorVariants ? '' : 'none';
     var pcEl = document.getElementById('binder-page-count-display');
     if (pcEl) pcEl.textContent = binderConfig.pageCount + ' Pages';
     var preEl = document.getElementById('binder-preset-display');
