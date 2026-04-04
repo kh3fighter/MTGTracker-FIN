@@ -742,6 +742,30 @@
     opacity: 1;
   }
 
+  /* Foil add toast */
+  .add-toast.foil {
+    --toast-glow: rgba(199,125,255,0.4);
+    border: 1.5px solid rgba(255,255,255,0.2);
+  }
+  .toast-foil-badge {
+    font-weight: 900; text-transform: uppercase;
+    letter-spacing: 2px; padding: 5px 18px;
+    border-radius: 20px; margin-bottom: 14px;
+    font-size: 0.85rem; color: #fff;
+    background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcb77, #4d96ff, #c77dff);
+    background-size: 300% 300%;
+    animation: foil-shimmer 3s ease infinite, badge-pop 0.4s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .toast-foil-msg {
+    font-size: 1.05rem; font-weight: 700;
+    background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcb77, #4d96ff, #c77dff);
+    background-size: 300% 300%;
+    animation: foil-shimmer 3s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   /* ── Bottom Sheet (mobile confirmation) ── */
   .sheet-backdrop {
     display: none; position: fixed; inset: 0;
@@ -2696,6 +2720,8 @@ document.head.appendChild(manifestLink);
     if (!foilOwned[cn]) foilOwned[cn] = [];
     if (!foilOwned[cn].includes('foil')) foilOwned[cn].push('foil');
     saveFoil();
+    const card = getCardByNumber(cn);
+    celebrateFoil(card);
   }
 
   function removeFoil(cn) {
@@ -3304,6 +3330,44 @@ document.head.appendChild(manifestLink);
     setTimeout(() => ring.remove(), 2200);
   }
 
+  function spawnRainbowBurst() {
+    const colors = ['#ff6b9d', '#ffd93d', '#6bcb77', '#4d96ff', '#c77dff'];
+    const container = document.createElement('div');
+    container.className = 'fx-container';
+    document.body.appendChild(container);
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('div');
+      const color = colors[i % colors.length];
+      const angle = (Math.random() * Math.PI * 2);
+      const dist = 80 + Math.random() * 220;
+      const size = 4 + Math.random() * 6;
+      p.style.cssText = `
+        position: fixed;
+        left: ${cx}px; top: ${cy}px;
+        width: ${size}px; height: ${size}px;
+        border-radius: 50%;
+        background: ${color};
+        pointer-events: none;
+        z-index: 9999;
+        box-shadow: 0 0 ${size * 2}px ${color};
+      `;
+      p.animate([
+        { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist}px)) scale(0.2)`, opacity: 0 },
+      ], {
+        duration: 900 + Math.random() * 600,
+        delay: Math.random() * 200,
+        easing: 'cubic-bezier(0.25, 0, 0.3, 1)',
+        fill: 'forwards',
+      });
+      container.appendChild(p);
+    }
+    setTimeout(() => container.remove(), 1800);
+  }
+
   function showAddToast(card, cfg) {
     const container = document.getElementById('toast-container');
     container.querySelectorAll('.add-toast').forEach(t => t.remove());
@@ -3332,6 +3396,39 @@ document.head.appendChild(manifestLink);
     }, dismissTime);
   }
 
+  function showFoilToast(card) {
+    const msgs = [
+      'Shimmer acquired.', 'It catches the light.', 'The foil is real.',
+      'Prismatic.', "That one's a keeper.", 'Foil secured. \u2726', 'Ooh, shiny.'
+    ];
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+    const label = getFoilVariantLabel(card);
+    const p = getPlacement(card);
+    const price = card.price_usd_foil > 0 ? card.price_usd_foil : card.price_usd;
+    const priceStr = price > 0 ? ` \u00B7 $${price.toFixed(2)}${card.price_usd_foil > 0 ? ' foil' : ''}` : '';
+
+    const container = document.getElementById('toast-container');
+    container.querySelectorAll('.add-toast').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'add-toast foil';
+    toast.style.setProperty('--toast-glow', 'rgba(199,125,255,0.4)');
+    toast.innerHTML = `
+      <div class="toast-foil-badge">${label}</div>
+      <img src="${card.image_normal || card.image_small}" alt="${card.name}">
+      <div class="toast-name">#${card.collector_number} ${card.name}</div>
+      <div class="toast-foil-msg">${msg}</div>
+      <div class="toast-placement">Page ${p.page}, Slot ${p.slot}${priceStr}</div>
+    `;
+    container.appendChild(toast);
+
+    const dismissTime = 3000;
+    setTimeout(() => {
+      toast.classList.add('removing');
+      setTimeout(() => toast.remove(), 400);
+    }, dismissTime);
+  }
+
   function celebrateAdd(card) {
     if (!card) return;
     const cfg = rarityConfig[card.rarity] || rarityConfig.common;
@@ -3353,6 +3450,13 @@ document.head.appendChild(manifestLink);
 
     // Toast (always)
     showAddToast(card, cfg);
+  }
+
+  function celebrateFoil(card) {
+    if (!card) return;
+    spawnGlowRing('rgba(199,125,255,0.7)');
+    spawnRainbowBurst();
+    showFoilToast(card);
   }
 
   // ── Core: addCard / removeCard ──
