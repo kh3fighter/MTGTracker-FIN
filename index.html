@@ -4790,11 +4790,18 @@ document.head.appendChild(manifestLink);
     const filterTypes = ['All', 'Traditional', 'Surge', 'Neon Ink', 'Chocobo Track'];
     const rarities = ['C', 'U', 'R', 'M'];
     const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
+    const variantFilterTypes = ['Surge', 'Neon Ink', 'Chocobo Track'];
+    const variantsLoaded = variantCards.length > 0;
 
     const filterBarHTML = `
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${filterTypes.map(f => `<button class="btn ${activeFilter === f ? 'btn-primary' : 'btn-secondary'} foil-filter-type" data-type="${f}" style="padding:4px 12px;font-size:0.82rem">${f}</button>`).join('')}
+          ${filterTypes.map(f => {
+            const isVariantBtn = variantFilterTypes.includes(f);
+            const disabledAttr = (isVariantBtn && !variantsLoaded) ? 'disabled title="Enable Collector Variants in Settings to load these"' : '';
+            const disabledStyle = (isVariantBtn && !variantsLoaded) ? 'opacity:0.4;cursor:not-allowed;' : '';
+            return `<button class="btn ${activeFilter === f ? 'btn-primary' : 'btn-secondary'} foil-filter-type" data-type="${f}" style="padding:4px 12px;font-size:0.82rem;${disabledStyle}" ${disabledAttr}>${f}</button>`;
+          }).join('')}
         </div>
         <div style="display:flex;gap:5px">
           ${rarities.map(r => `<button class="btn ${activeRarity === r ? 'btn-primary' : 'btn-secondary'} foil-filter-rarity" data-rarity="${r}" style="padding:4px 10px;font-size:0.8rem;font-weight:700">${r}</button>`).join('')}
@@ -4812,7 +4819,6 @@ document.head.appendChild(manifestLink);
         if (variantCards.length === 0) {
           return `<div style="padding:32px;text-align:center;color:var(--text-muted)">No variant cards loaded yet.<br><small>Variant data will be available once the collector booster card list is fetched.</small></div>`;
         }
-        const filterKey = activeFilter.toLowerCase().replace(' ', '_');
         cards = variantCards.filter(c => {
           const finishes = c.finishes || [];
           if (activeFilter === 'Surge')        return finishes.includes('surge_foil') || (c.frame_effects || []).includes('surge_foil');
@@ -4913,16 +4919,6 @@ document.head.appendChild(manifestLink);
       el.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
     }
     lazyLoadFoilImages();
-
-    // ── Card slot click handlers ──
-    el.querySelectorAll('.foil-slot').forEach(slot => {
-      slot.addEventListener('click', () => {
-        const cn = slot.dataset.cn;
-        const card = allCards.find(c => c.collector_number === cn)
-                  || variantCards.find(c => c.collector_number === cn);
-        if (card) openModal(card);
-      });
-    });
 
     // ── Top owned foil clicks ──
     el.querySelectorAll('.top-card-item:not(.missing-inspect)').forEach(item => {
