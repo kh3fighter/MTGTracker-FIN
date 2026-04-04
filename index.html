@@ -2061,6 +2061,7 @@ document.head.appendChild(manifestLink);
 
     <div class="tab-content" id="tab-foil"></div>
     <div class="tab-content" id="tab-settings"></div>
+    <div class="tab-content" id="tab-variants"></div>
 
     <div class="data-actions">
       <button class="btn btn-secondary" id="export-btn">Export Collection</button>
@@ -5064,6 +5065,7 @@ document.head.appendChild(manifestLink);
       if (btn.dataset.tab === 'timeline') renderTimeline();
       if (btn.dataset.tab === 'settings') renderSettings();
       if (btn.dataset.tab === 'foil') renderFoilBinder();
+      if (btn.dataset.tab === 'variants' && typeof renderVariantBinder === 'function') renderVariantBinder();
     });
   });
 
