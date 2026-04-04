@@ -4583,6 +4583,8 @@ document.head.appendChild(manifestLink);
       if (btn.dataset.tab === 'dashboard') renderDashboard();
       if (btn.dataset.tab === 'portfolio') renderPortfolio();
       if (btn.dataset.tab === 'timeline') renderTimeline();
+      if (btn.dataset.tab === 'settings') renderSettings();
+      if (btn.dataset.tab === 'foil') renderFoilBinder();
     });
   });
 
@@ -4677,6 +4679,13 @@ document.head.appendChild(manifestLink);
   }
 
   // ── Init ──
+  function fetchVariants() {}
+
+  function renderFoilBinder() {
+    var el = document.getElementById('tab-foil');
+    if (el) el.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Foil Binder coming soon.</div>';
+  }
+
   async function init() {
     try {
       await loadFxRate();
@@ -4690,6 +4699,20 @@ document.head.appendChild(manifestLink);
       renderProgress();
       renderFabRecent();
       renderDashboard();
+      // Auto-navigate to Settings on first run
+      if (!binderConfig.configured) {
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+        var settingsBtn = document.querySelector('[data-tab="settings"]');
+        var settingsTab = document.getElementById('tab-settings');
+        if (settingsBtn && settingsTab) {
+          settingsBtn.classList.add('active');
+          settingsTab.classList.add('active');
+          renderSettings();
+        }
+      } else {
+        applyConfigToTabs();
+      }
     } catch (err) {
       document.getElementById('loading-screen').innerHTML =
         `<p style="color:var(--accent)">Failed to load card data: ${err.message}</p>
