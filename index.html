@@ -1621,7 +1621,7 @@ document.head.appendChild(manifestLink);
         <span class="sep"></span>
         <span>9-Pocket Binder</span>
         <span class="sep"></span>
-        <span>34 Pages</span>
+        <span id="binder-page-count-display">34 Pages</span>
       </p>
       <div class="progress-wrap">
         <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -2296,11 +2296,11 @@ document.head.appendChild(manifestLink);
   // ── Binder placement ──
   function getPlacement(card) {
     const idx = allCards.indexOf(card);
-    const page = Math.floor(idx / 9) + 1;
-    const slot = (idx % 9) + 1;
-    const row = Math.floor((slot - 1) / 3) + 1;
-    const col = ((slot - 1) % 3) + 1;
-    return { page, slot, row, col, idx };
+    if (idx === -1) return { page: '?', slot: '?' };
+    const spp = binderConfig.slotsPerPage;
+    const page = Math.floor(idx / spp) + 1;
+    const slot = (idx % spp) + 1;
+    return { page, slot };
   }
 
   function getCardByNumber(cn) {
@@ -2525,7 +2525,7 @@ document.head.appendChild(manifestLink);
     if (document.getElementById('tab-binder').classList.contains('active')) {
       if (card) {
         const idx = allCards.indexOf(card);
-        const pageIdx = Math.floor(idx / 9);
+        const pageIdx = Math.floor(idx / binderConfig.slotsPerPage);
         currentPage = isMobile() ? pageIdx : Math.floor(pageIdx / 2);
         highlightedCN = cn;
       }
@@ -2965,9 +2965,9 @@ document.head.appendChild(manifestLink);
       };
     }
 
-    const totalBinderPages = Math.ceil(total / 9);
+    const totalBinderPages = Math.ceil(total / binderConfig.slotsPerPage);
     const fullPages = [...Array(totalBinderPages)].filter((_, i) => {
-      const pageCards = allCards.slice(i * 9, i * 9 + 9);
+      const pageCards = allCards.slice(i * binderConfig.slotsPerPage, (i + 1) * binderConfig.slotsPerPage);
       return pageCards.length > 0 && pageCards.every(c => ownedSet.has(c.collector_number));
     }).length;
 
@@ -3410,7 +3410,10 @@ document.head.appendChild(manifestLink);
   }
 
   function renderBinder() {
-    totalPages = Math.ceil(allCards.length / 9);
+    totalPages = Math.ceil(allCards.length / binderConfig.slotsPerPage);
+    binderConfig.pageCount = totalPages;
+    const pcEl = document.getElementById('binder-page-count-display');
+    if (pcEl) pcEl.textContent = `${binderConfig.pageCount} Pages`;
     renderPageSelector(getPageCount());
     renderSpread();
   }
@@ -3429,15 +3432,16 @@ document.head.appendChild(manifestLink);
     for (const pageIdx of pageIndices) {
       const pageNum = pageIdx + 1;
       if (pageNum > totalPages) break;
-      const startIdx = pageIdx * 9;
-      const pageCards = allCards.slice(startIdx, startIdx + 9);
+      const startIdx = pageIdx * binderConfig.slotsPerPage;
+      const pageCards = allCards.slice(startIdx, startIdx + binderConfig.slotsPerPage);
 
       const pageEl = document.createElement('div');
       pageEl.className = 'binder-page';
       pageEl.innerHTML = `<div class="page-label">Page ${pageNum}</div><div class="page-grid"></div>`;
       const grid = pageEl.querySelector('.page-grid');
+      grid.style.gridTemplateColumns = `repeat(${binderConfig.gridCols}, 1fr)`;
 
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < binderConfig.slotsPerPage; i++) {
         const card = pageCards[i];
         const slot = document.createElement('div');
         slot.className = 'card-slot';
@@ -3490,16 +3494,17 @@ document.head.appendChild(manifestLink);
   // Build a single binder page element for a given 0-indexed page number (no DOM side effects)
   function buildPageEl(pageIdx) {
     const pageNum = pageIdx + 1;
-    if (pageNum > Math.ceil(allCards.length / 9)) return null;
-    const startIdx = pageIdx * 9;
-    const pageCards = allCards.slice(startIdx, startIdx + 9);
+    if (pageNum > Math.ceil(allCards.length / binderConfig.slotsPerPage)) return null;
+    const startIdx = pageIdx * binderConfig.slotsPerPage;
+    const pageCards = allCards.slice(startIdx, startIdx + binderConfig.slotsPerPage);
 
     const pageEl = document.createElement('div');
     pageEl.className = 'binder-page';
     pageEl.innerHTML = `<div class="page-label">Page ${pageNum}</div><div class="page-grid"></div>`;
     const grid = pageEl.querySelector('.page-grid');
+    grid.style.gridTemplateColumns = `repeat(${binderConfig.gridCols}, 1fr)`;
 
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < binderConfig.slotsPerPage; i++) {
       const card = pageCards[i];
       const slot = document.createElement('div');
       slot.className = 'card-slot';
@@ -3569,7 +3574,8 @@ document.head.appendChild(manifestLink);
     backPage.className = 'binder-page';
     backPage.innerHTML = '<div class="page-label">&nbsp;</div><div class="page-grid"></div>';
     const backGrid = backPage.querySelector('.page-grid');
-    for (let i = 0; i < 9; i++) {
+    backGrid.style.gridTemplateColumns = `repeat(${binderConfig.gridCols}, 1fr)`;
+    for (let i = 0; i < binderConfig.slotsPerPage; i++) {
       const slot = document.createElement('div');
       slot.className = 'card-slot';
       slot.style.background = 'var(--surface2)';
@@ -3641,11 +3647,11 @@ document.head.appendChild(manifestLink);
     sliderDots.innerHTML = '';
     for (let i = 0; i < spreadCount; i++) {
       const p1 = i * 2 + 1;
-      const p2 = Math.min(i * 2 + 2, Math.ceil(allCards.length / 9));
+      const p2 = Math.min(i * 2 + 2, Math.ceil(allCards.length / binderConfig.slotsPerPage));
       const label = p1 === p2 ? `Pg ${p1}` : `Pg ${p1}\u2013${p2}`;
 
-      const startIdx = i * 2 * 9;
-      const spreadCards = allCards.slice(startIdx, startIdx + 18);
+      const startIdx = i * 2 * binderConfig.slotsPerPage;
+      const spreadCards = allCards.slice(startIdx, startIdx + 2 * binderConfig.slotsPerPage);
       const ownedCount = spreadCards.filter(c => ownedSet.has(c.collector_number)).length;
       const isFull = ownedCount === spreadCards.length && spreadCards.length > 0;
 
