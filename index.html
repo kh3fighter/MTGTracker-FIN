@@ -14,6 +14,9 @@
 <!-- General mobile -->
 <meta name="format-detection" content="telephone=no">
 <meta name="msapplication-tap-highlight" content="no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,7 +53,7 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -397,6 +400,18 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }
+  .price-source-refresh {
+    background: none; border: none; cursor: pointer;
+    color: var(--accent2); font-size: 0.85rem; padding: 0 2px;
+    opacity: 0.6; transition: opacity 0.15s, transform 0.15s; line-height: 1;
+  }
+  .price-source-refresh:hover { opacity: 1; transform: rotate(30deg); }
+  .price-source-refresh.spinning { animation: spin-refresh 0.7s linear infinite; opacity: 1; }
+  @keyframes spin-refresh { to { transform: rotate(360deg); } }
+  @media (max-width: 600px) {
+    .price-sources { flex-direction: column; gap: 8px; }
+    .price-source { width: 100%; flex-wrap: wrap; border-radius: 8px; box-sizing: border-box; }
+  }
 
   /* Value grid */
   .value-grid {
@@ -499,6 +514,77 @@
   }
   .top-card-item .tc-name { flex: 1; font-weight: 600; }
   .top-card-item .tc-price { font-weight: 700; color: var(--owned-border); white-space: nowrap; }
+
+  /* ── Missing card inspect ── */
+  .missing-inspect {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+                border-color 0.22s ease,
+                box-shadow 0.28s ease,
+                background 0.22s ease;
+  }
+  .missing-inspect:hover {
+    transform: translateY(-3px) translateX(2px) !important;
+    border-color: rgba(243,139,168,0.45);
+    box-shadow: 0 8px 28px rgba(243,139,168,0.18), 0 2px 8px rgba(0,0,0,0.35);
+    background: rgba(243,139,168,0.06);
+  }
+  .missing-inspect:active {
+    transform: scale(0.96) translateY(-1px) !important;
+    transition-duration: 0.08s;
+  }
+  /* shimmer sweep */
+  .missing-inspect::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg,
+      transparent 30%,
+      rgba(243,139,168,0.12) 50%,
+      transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.55s ease;
+    pointer-events: none;
+  }
+  .missing-inspect:hover::after { transform: translateX(120%); }
+  /* image zoom-tilt */
+  .missing-inspect img {
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.3s ease,
+                filter 0.3s ease;
+  }
+  .missing-inspect:hover img {
+    transform: scale(1.18) rotate(-4deg);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    filter: brightness(1.08);
+  }
+  /* inspect eye icon */
+  .missing-inspect .inspect-icon {
+    opacity: 0;
+    transform: scale(0.5) translateX(6px);
+    transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    color: var(--accent);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .missing-inspect:hover .inspect-icon { opacity: 1; transform: scale(1) translateX(0); }
+  /* ripple */
+  @keyframes missing-ripple {
+    0% { transform: scale(0); opacity: 0.55; }
+    100% { transform: scale(5); opacity: 0; }
+  }
+  .missing-inspect .ripple-dot {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(243,139,168,0.35);
+    width: 32px; height: 32px;
+    margin-top: -16px; margin-left: -16px;
+    animation: missing-ripple 0.55s ease-out forwards;
+    pointer-events: none;
+  }
 
   /* ── Timeline ── */
   .milestone-track {
@@ -1714,6 +1800,20 @@ document.head.appendChild(manifestLink);
   const FX_KEY = 'fin-fx-rate';
   const FX_TTL = 12 * 60 * 60 * 1000; // 12 hours
   const GIST_KEY = 'fin-gist-config';
+  const BINDER_CONFIG_KEY = 'fin-binder-config';
+  const FOIL_KEY         = 'fin-foil-collection';
+  const VARIANT_KEY      = 'fin-variant-data-v1';
+  const VARIANT_TTL      = 7 * 24 * 60 * 60 * 1000;
+
+  const BINDER_PRESETS = [
+    { label: '4-pocket (2×2)',          rows: 2, cols: 2 },
+    { label: '9-pocket (3×3)',          rows: 3, cols: 3 },
+    { label: '12-pocket (3×4)',         rows: 3, cols: 4 },
+    { label: '16-pocket (4×4)',         rows: 4, cols: 4 },
+    { label: '18-pocket (3×6)',         rows: 3, cols: 6 },
+    { label: 'Custom…',                rows: 0, cols: 0 },
+  ];
+
   let USD_TO_MYR = 4.40; // fallback
   let fxFetchedAt = null;
   let fxIsLive = false;
@@ -1746,8 +1846,64 @@ document.head.appendChild(manifestLink);
     }
   }
 
+  function loadConfig() {
+    try {
+      const raw = localStorage.getItem(BINDER_CONFIG_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      gridRows: 3, gridCols: 3, slotsPerPage: 9, pageCount: 34,
+      presetName: '9-pocket (3×3)',
+      scope: { mainSet: true, collectorVariants: false, foilBinder: false },
+      configured: false,
+    };
+  }
+
+  function saveConfig(cfg) {
+    binderConfig = cfg;
+    localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(cfg));
+  }
+
+  function calcPageCount(slotsPerPage) {
+    const total = allCards.length || 300;
+    return Math.ceil(total / slotsPerPage);
+  }
+
+  function loadFoil() {
+    try {
+      const raw = localStorage.getItem(FOIL_KEY);
+      if (raw) foilOwned = JSON.parse(raw);
+    } catch (e) { foilOwned = {}; }
+  }
+
+  function saveFoil() {
+    localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
+    triggerSync();
+  }
+
+  function hasFoil(cn) {
+    return !!(foilOwned[cn] && foilOwned[cn].includes('foil'));
+  }
+
+  function addFoil(cn) {
+    if (!foilOwned[cn]) foilOwned[cn] = [];
+    if (!foilOwned[cn].includes('foil')) foilOwned[cn].push('foil');
+    saveFoil();
+  }
+
+  function removeFoil(cn) {
+    if (!foilOwned[cn]) return;
+    foilOwned[cn] = foilOwned[cn].filter(f => f !== 'foil');
+    if (!foilOwned[cn].length) delete foilOwned[cn];
+    saveFoil();
+  }
+
   let allCards = [];
   let ownedSet = new Set();
+  let binderConfig = loadConfig();
+  let foilOwned    = {};   // { collector_number: ['foil'] }
+  let variantCards = [];   // collector booster exclusive cards
+  let wizardStep   = 1;    // 1 | 2 | 3 — current wizard step
   let packSession = [];
   let currentPage = 0;
   let totalPages = 0;
@@ -2962,15 +3118,20 @@ document.head.appendChild(manifestLink);
             <div class="price-source">
               <span class="dot"></span>
               USD via <a href="https://scryfall.com/sets/fin" target="_blank" rel="noopener">Scryfall</a>
-              from <a href="https://www.tcgplayer.com" target="_blank" rel="noopener">TCGPlayer</a>
-              ${dataFetchedAt ? ` \u00B7 ${new Date(dataFetchedAt).toLocaleDateString()}` : ''}
+              / <a href="https://www.tcgplayer.com" target="_blank" rel="noopener">TCGPlayer</a>
+              ${dataFetchedAt
+                ? ` \u00B7 fetched ${new Date(dataFetchedAt).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} MYT \u00B7 ${timeAgo(new Date(dataFetchedAt))} \u00B7 cached 7d`
+                : ' \u00B7 not cached'}
+              <button class="price-source-refresh" id="btn-refresh-scryfall" onclick="window._refreshScryfall(this)" title="Re-fetch card prices from Scryfall">\u21BB</button>
             </div>
             <div class="price-source">
               <span class="dot" style="${fxIsLive ? '' : 'background:var(--accent);'}"></span>
               1 USD = ${USD_TO_MYR.toFixed(2)} MYR
               ${fxIsLive
-                ? ` via <a href="https://open.er-api.com" target="_blank" rel="noopener">ExchangeRate-API</a>`
-                : ' (offline)'}
+                ? ` via <a href="https://open.er-api.com" target="_blank" rel="noopener">ExchangeRate-API</a>
+                    \u00B7 fetched ${new Date(fxFetchedAt).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })} MYT \u00B7 ${timeAgo(new Date(fxFetchedAt))} \u00B7 cached 12h`
+                : ' \u00B7 offline (fallback rate)'}
+              <button class="price-source-refresh" id="btn-refresh-fx" onclick="window._refreshFxRate(this)" title="Re-fetch exchange rate">\u21BB</button>
             </div>
           </div>
           <div class="value-grid">
@@ -3040,11 +3201,12 @@ document.head.appendChild(manifestLink);
         <div class="dash-card">
           <h3>Most Valuable (Missing)</h3>
           ${topMissing.length > 0 ? `<div class="top-cards">
-            ${topMissing.map((c, i) => `<div class="top-card-item">
+            ${topMissing.map((c, i) => `<div class="top-card-item missing-inspect" data-cn="${c.collector_number}">
               <span class="rank">${i + 1}</span>
               <img src="${c.image_small}" alt="${c.name}">
               <span class="tc-name">${c.name}</span>
               <span class="tc-price" style="color:var(--accent)">$${c.price_usd.toFixed(2)}</span>
+              <span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
             </div>`).join('')}
           </div>` : '<div class="dash-sub" style="padding:20px 0">Full set complete!</div>'}
         </div>
@@ -3723,6 +3885,27 @@ document.head.appendChild(manifestLink);
     if (e.target === e.currentTarget) closeModal();
   });
 
+  // ── Missing card inspect click ──
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('.missing-inspect');
+    if (!item) return;
+    const cn = item.dataset.cn;
+    const card = allCards.find(c => c.collector_number === cn);
+    if (!card) return;
+
+    // ripple
+    const rect = item.getBoundingClientRect();
+    const dot = document.createElement('span');
+    dot.className = 'ripple-dot';
+    dot.style.left = (e.clientX - rect.left) + 'px';
+    dot.style.top = (e.clientY - rect.top) + 'px';
+    item.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove());
+
+    // slight delay so ripple is visible before modal
+    setTimeout(() => openModal(card), 120);
+  });
+
   // ── Tabs ──
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3833,6 +4016,7 @@ document.head.appendChild(manifestLink);
       await loadFxRate();
       allCards = await loadCards();
       ownedSet = loadCollection();
+      loadFoil();
       boosterPacks = loadPacks();
       timelineEvents = loadTimeline();
       document.getElementById('loading-screen').style.display = 'none';
@@ -3846,6 +4030,31 @@ document.head.appendChild(manifestLink);
          <button onclick="location.reload()" class="btn btn-primary" style="margin-top:12px">Retry</button>`;
     }
   }
+
+  // ── Global refresh helpers (used by onclick in renderPortfolio) ──
+  window._refreshScryfall = async function(btn) {
+    if (btn) { btn.classList.add('spinning'); btn.disabled = true; }
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      allCards = await loadCards();
+      renderPortfolio();
+    } finally {
+      if (btn) { btn.classList.remove('spinning'); btn.disabled = false; }
+    }
+  };
+
+  window._refreshFxRate = async function(btn) {
+    if (btn) { btn.classList.add('spinning'); btn.disabled = true; }
+    try {
+      localStorage.removeItem(FX_KEY);
+      fxIsLive = false;
+      fxFetchedAt = null;
+      await loadFxRate();
+      renderPortfolio();
+    } finally {
+      if (btn) { btn.classList.remove('spinning'); btn.disabled = false; }
+    }
+  };
 
   init();
 })();
