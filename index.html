@@ -3055,7 +3055,33 @@ document.head.appendChild(manifestLink);
   }
 
   function getCardByNumber(cn) {
-    return allCards.find(c => c.collector_number === cn);
+    return allCards.find(c => c.collector_number === cn)
+        || variantCards.find(c => c.collector_number === cn);
+  }
+
+  // Returns uppercase badge label for foil toast and variant chips
+  function getFoilVariantLabel(card) {
+    if (!card) return 'FOIL';
+    const fe = card.frame_effects || [];
+    const pt = card.promo_types || [];
+    if (fe.includes('surge')) return 'SURGE FOIL';
+    if (pt.includes('neon_ink')) return 'NEON INK FOIL';
+    if ((card.name || '').includes('Traveling Chocobo')) return 'NEON INK FOIL';
+    if (fe.includes('serialized')) return 'SERIALIZED';
+    if ((card.finishes || []).includes('foil') && !(card.finishes || []).includes('nonfoil')) return 'COLLECTOR FOIL';
+    return 'TRADITIONAL FOIL';
+  }
+
+  // Returns CSS variant class for foil slot shimmer overlay
+  function getFoilSlotClass(card) {
+    if (!card) return '';
+    const fe = card.frame_effects || [];
+    const pt = card.promo_types || [];
+    if (fe.includes('surge')) return 'foil-variant-surge';
+    if (pt.includes('neon_ink') || (card.name || '').toLowerCase().includes('chocobo')) return 'foil-variant-neon';
+    if (fe.includes('serialized')) return 'foil-variant-serialized';
+    if ((card.finishes || []).every(f => f !== 'nonfoil')) return 'foil-variant-collector';
+    return '';
   }
 
   // ── Celebration: Rarity-Tiered Fanfare ──
