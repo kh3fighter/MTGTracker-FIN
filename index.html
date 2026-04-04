@@ -3908,8 +3908,17 @@ document.head.appendChild(manifestLink);
     const missingValueUSD = fullSetValueUSD - collectionValueUSD;
     const totalSpentPacks = boosterPacks.reduce((s, p) => s + (p.price || 0), 0);
 
-    // Top 5 most valuable owned
-    const topOwned = [...ownedCards].sort((a, b) => b.price_usd - a.price_usd).slice(0, 5);
+    // Foil value totals
+    const foilOwnedCards = allCards.filter(c => hasFoil(c.collector_number) && c.price_usd_foil > 0);
+    const foilCollectionValueUSD = foilOwnedCards.reduce((s, c) => s + c.price_usd_foil, 0);
+
+    // Top 5 most valuable owned (effective price = higher of regular or foil)
+    const getEffectivePrice = (c) => {
+      const regular = c.price_usd || 0;
+      const foil = hasFoil(c.collector_number) ? (c.price_usd_foil || 0) : 0;
+      return Math.max(regular, foil);
+    };
+    const topOwned = [...ownedCards].sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a)).slice(0, 5);
     // Top 5 most valuable missing
     const topMissing = allCards.filter(c => !ownedSet.has(c.collector_number))
       .sort((a, b) => b.price_usd - a.price_usd).slice(0, 5);
@@ -3972,6 +3981,10 @@ document.head.appendChild(manifestLink);
               <div class="value-sub">${total - owned} cards</div>
             </div>
           </div>
+          ${foilCollectionValueUSD > 0 ? `
+          <div class="dash-sub" style="margin-top:8px">
+            <span style="color:#ffd93d">\u2746 Foil collection: $${foilCollectionValueUSD.toFixed(2)} / RM ${(foilCollectionValueUSD * USD_TO_MYR).toFixed(2)}</span>
+          </div>` : ''}
         </div>
 
         <div class="dash-card">
@@ -4005,12 +4018,17 @@ document.head.appendChild(manifestLink);
         <div class="dash-card">
           <h3>Most Valuable (Owned)</h3>
           ${topOwned.length > 0 ? `<div class="top-cards">
-            ${topOwned.map((c, i) => `<div class="top-card-item">
+            ${topOwned.map((c, i) => {
+              const isFoilOwned = hasFoil(c.collector_number);
+              const effectivePrice = getEffectivePrice(c);
+              return `<div class="top-card-item missing-inspect" data-cn="${c.collector_number}">
               <span class="rank">${i + 1}</span>
               <img src="${c.image_small}" alt="${c.name}">
-              <span class="tc-name">${c.name}</span>
-              <span class="tc-price">$${c.price_usd.toFixed(2)}</span>
-            </div>`).join('')}
+              <span class="tc-name">${c.name}${isFoilOwned ? ' <span style="color:#ffd93d;font-size:0.8rem">\u2746</span>' : ''}</span>
+              <span class="tc-price">$${effectivePrice.toFixed(2)}${isFoilOwned && c.price_usd_foil > 0 && c.price_usd_foil > c.price_usd ? `<br><span style="color:#888;font-size:0.75rem;text-decoration:line-through">$${c.price_usd.toFixed(2)}</span>` : ''}</span>
+              <span class="inspect-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+            </div>`;
+            }).join('')}
           </div>` : '<div class="dash-sub" style="padding:20px 0">No cards yet</div>'}
         </div>
 
