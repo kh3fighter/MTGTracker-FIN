@@ -2126,6 +2126,38 @@ document.head.appendChild(manifestLink);
     scheduleSyncPush();
   }
 
+  function showToast(msg, duration) {
+    duration = duration || 2200;
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    clearTimeout(el._t);
+    el._t = setTimeout(function() { el.classList.remove('visible'); }, duration);
+  }
+
+  function showSheet(opts) {
+    document.getElementById('sheet-title').textContent = opts.title;
+    document.getElementById('sheet-body').textContent = opts.body;
+    var actionsEl = document.getElementById('sheet-actions');
+    actionsEl.innerHTML = '';
+    opts.actions.forEach(function(a) {
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + a.className;
+      btn.textContent = a.label;
+      btn.onclick = function() { closeSheet(); a.onClick(); };
+      actionsEl.appendChild(btn);
+    });
+    document.getElementById('sheet-backdrop').classList.add('visible');
+    document.getElementById('bottom-sheet').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet() {
+    document.getElementById('sheet-backdrop').classList.remove('visible');
+    document.getElementById('bottom-sheet').classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
   function hasFoil(cn) {
     return !!(foilOwned[cn] && foilOwned[cn].includes('foil'));
   }
@@ -4140,6 +4172,8 @@ document.head.appendChild(manifestLink);
   document.getElementById('modal-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeModal();
   });
+
+  document.getElementById('sheet-backdrop').addEventListener('click', closeSheet);
 
   // ── Missing card inspect click ──
   document.addEventListener('click', (e) => {
