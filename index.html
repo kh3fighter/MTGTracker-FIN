@@ -817,6 +817,35 @@
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
   .btn-foil:hover { filter: brightness(1.1); }
+  .modal-foil-info {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin: 8px 0 4px; min-height: 0;
+    justify-content: center;
+  }
+  .foil-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.72rem; padding: 3px 10px;
+    border-radius: 20px; border: 1px solid;
+    line-height: 1.5;
+  }
+  .foil-chip.owned {
+    border-color: rgba(255,217,61,0.6);
+    color: #ffd93d;
+    background: rgba(255,217,61,0.1);
+  }
+  .foil-chip.unowned {
+    border-color: var(--surface2);
+    color: var(--text-muted);
+    background: transparent;
+  }
+  .foil-chip.unavailable {
+    border-color: transparent;
+    color: var(--text-muted);
+    background: var(--surface2);
+    opacity: 0.75;
+    font-style: italic;
+    font-size: 0.7rem;
+  }
 
   /* ── Timeline ── */
   .milestone-track {
@@ -2031,6 +2060,7 @@ document.head.appendChild(manifestLink);
     </div>
     <h3 id="modal-name"></h3>
     <p class="detail" id="modal-detail"></p>
+    <div id="modal-foil-info" class="modal-foil-info"></div>
     <a class="scryfall-link" id="scryfall-link" href="#" target="_blank" rel="noopener">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       View on Scryfall
@@ -4561,6 +4591,59 @@ document.head.appendChild(manifestLink);
     setTimeout(() => { card3d.style.transition = 'none'; }, 600);
   });
 
+  // ── Modal helpers ──
+  function getVariantLabel(v) {
+    var fe = v.frame_effects || [];
+    var pt = v.promo_types || [];
+    if (fe.includes('surge')) return 'Surge Foil';
+    if (pt.includes('neon_ink')) return 'Neon Ink Foil';
+    if (v.name && v.name.includes('Traveling Chocobo')) return 'Neon Ink Foil';
+    if (fe.includes('serialized')) return 'Serialized (' + v.collector_number + '/77)';
+    return 'Collector Foil';
+  }
+
+  function buildFoilInfoHTML(card) {
+    var chips = [];
+    var cn = card.collector_number;
+
+    // Traditional foil
+    if ((card.finishes || []).includes('foil')) {
+      var tOwned = hasFoil(cn);
+      chips.push(
+        '<span class="foil-chip ' + (tOwned ? 'owned' : 'unowned') + '">' +
+        '\u2726 Traditional Foil' + (tOwned ? ' \u00B7 Owned' : '') +
+        '</span>'
+      );
+    }
+
+    // Special variants — look for linked variant cards
+    var linkedVariants = variantCards.filter(function(v) {
+      return v.variant_of === cn || (card.oracle_id && v.oracle_id === card.oracle_id);
+    });
+
+    if (linkedVariants.length > 0) {
+      linkedVariants.forEach(function(v) {
+        var vOwned = hasFoil(v.collector_number);
+        var label = getVariantLabel(v);
+        chips.push(
+          '<span class="foil-chip ' + (vOwned ? 'owned' : 'unowned') + '">' +
+          '\u2726 ' + label + (vOwned ? ' \u00B7 Owned' : '') +
+          '</span>'
+        );
+      });
+    } else if (!binderConfig.scope.collectorVariants) {
+      chips.push(
+        '<span class="foil-chip unavailable">' +
+        'Surge &amp; special foil variants are Collector Booster exclusives \u2014 ' +
+        '<a href="#" onclick="document.querySelector(\'[data-tab=\\\"settings\\\"]\').click();closeModal();return false;" ' +
+        'style="color:var(--accent);text-decoration:none;font-style:normal">Enable Collector Variants</a>' +
+        '</span>'
+      );
+    }
+
+    return chips.join('');
+  }
+
   // ── Modal ──
   function openModal(card) {
     const isOwned = ownedSet.has(card.collector_number);
@@ -4627,6 +4710,10 @@ document.head.appendChild(manifestLink);
     if (card3dEl) {
       card3dEl.classList.toggle('foil-owned', hasFoil(card.collector_number));
     }
+
+    // Foil type info panel
+    var foilInfoEl = document.getElementById('modal-foil-info');
+    if (foilInfoEl) foilInfoEl.innerHTML = buildFoilInfoHTML(card);
 
     const overlay = document.getElementById('modal-overlay');
     overlay.classList.remove('closing');
