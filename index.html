@@ -4715,7 +4715,72 @@ document.head.appendChild(manifestLink);
   }
 
   // ── Init ──
-  function fetchVariants() {}
+  async function fetchVariants() {
+    const cached = localStorage.getItem(VARIANT_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.fetchedAt < VARIANT_TTL && parsed.cards?.length > 0) {
+          variantCards = parsed.cards;
+          for (const variant of variantCards) {
+            const main = allCards.find(c => c.oracle_id === variant.oracle_id);
+            if (main) variant.variant_of = main.collector_number;
+          }
+          if (document.getElementById('tab-foil')?.classList.contains('active')) {
+            renderFoilBinder();
+          }
+          return;
+        }
+      } catch {}
+    }
+
+    const cards = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const resp = await fetch(
+        `https://api.scryfall.com/cards/search?q=set:fin+game:paper+-is:booster&order=collector_number&page=${page}`
+      );
+      if (!resp.ok) throw new Error(`Scryfall variant API error: ${resp.status}`);
+      const data = await resp.json();
+      for (const c of data.data) {
+        cards.push({
+          id:               c.id,
+          name:             c.name,
+          collector_number: c.collector_number,
+          rarity:           c.rarity,
+          image_small:      c.image_uris?.small  || c.card_faces?.[0]?.image_uris?.small  || '',
+          image_normal:     c.image_uris?.normal || c.card_faces?.[0]?.image_uris?.normal || '',
+          price_usd:        parseFloat(c.prices?.usd)      || 0,
+          price_usd_foil:   parseFloat(c.prices?.usd_foil) || 0,
+          scryfall_uri:     c.scryfall_uri || '',
+          finishes:         c.finishes   || ['foil'],
+          oracle_id:        c.oracle_id  || '',
+          foil_only:        Array.isArray(c.finishes) ? c.finishes.every(f => f !== 'nonfoil') : true,
+          frame_effects:    c.frame_effects || [],
+          promo_types:      c.promo_types  || [],
+          variant_of:       null,
+        });
+      }
+      hasMore = data.has_more;
+      page++;
+      if (hasMore) await new Promise(r => setTimeout(r, 100));
+    }
+    cards.sort((a, b) => compareCollector(a.collector_number, b.collector_number));
+
+    const fetchedAt = Date.now();
+    localStorage.setItem(VARIANT_KEY, JSON.stringify({ fetchedAt, cards }));
+
+    variantCards = cards;
+    for (const variant of variantCards) {
+      const main = allCards.find(c => c.oracle_id === variant.oracle_id);
+      if (main) variant.variant_of = main.collector_number;
+    }
+
+    if (document.getElementById('tab-foil')?.classList.contains('active')) {
+      renderFoilBinder();
+    }
+  }
 
   function renderFoilBinder() {
     const el = document.getElementById('tab-foil');
@@ -4978,6 +5043,7 @@ document.head.appendChild(manifestLink);
     try {
       await loadFxRate();
       allCards = await loadCards();
+      if (binderConfig.scope?.collectorVariants) fetchVariants();
       ownedSet = loadCollection();
       loadFoil();
       boosterPacks = loadPacks();
