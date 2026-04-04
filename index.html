@@ -2118,6 +2118,14 @@ document.head.appendChild(manifestLink);
     return Math.ceil(total / slotsPerPage);
   }
 
+  function getActiveCardCount() {
+    var cv = document.getElementById('wiz-cv');
+    var cvEnabled = cv ? cv.checked : binderConfig.scope.collectorVariants;
+    var base = allCards.length || 300;
+    var variants = (cvEnabled && variantCards.length > 0) ? variantCards.length : 0;
+    return base + variants;
+  }
+
   function loadFoil() {
     try {
       const raw = localStorage.getItem(FOIL_KEY);
@@ -2223,7 +2231,7 @@ document.head.appendChild(manifestLink);
       '<label class="toggle-switch"><input type="checkbox" id="wiz-cv"' + (cv ? ' checked' : '') + '><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>' +
       '<div class="toggle-wrap"><div class="toggle-label"><strong>Foil Binder</strong><span>Adds a separate tab to track foil ownership</span></div>' +
       '<label class="toggle-switch"><input type="checkbox" id="wiz-fb"' + (fb ? ' checked' : '') + '><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>' +
-      '<p class="settings-live-summary" id="wiz-step2-summary">Tracking <span class="pop">300</span> cards across <span class="pop">' + pages + '</span> pages</p>' +
+      '<p class="settings-live-summary" id="wiz-step2-summary">Tracking <span class="pop">' + (allCards.length || 300) + '</span> cards across <span class="pop">' + pages + '</span> pages</p>' +
       '<div class="wizard-nav"><button class="btn btn-secondary" id="wiz-back">← Back</button><button class="btn btn-primary wizard-cta" id="wiz-next">Next →</button></div>' +
       '</div>';
   }
@@ -2300,7 +2308,8 @@ document.head.appendChild(manifestLink);
     var el = document.getElementById('wiz-step2-summary');
     if (!el) return;
     var pages = calcPageCount(binderConfig.slotsPerPage);
-    el.innerHTML = 'Tracking <span class="pop">300</span> cards across <span class="pop">' + pages + '</span> pages';
+    var count = getActiveCardCount();
+    el.innerHTML = 'Tracking <span class="pop">' + count + '</span> cards across <span class="pop">' + pages + '</span> pages';
   }
 
   function advanceWizard(dir) {
@@ -2444,6 +2453,25 @@ document.head.appendChild(manifestLink);
       var el = document.getElementById(id);
       if (el) el.addEventListener('input', updateSfSummary);
     });
+
+    var sfCvEl = document.getElementById('sf-cv');
+    if (sfCvEl) {
+      sfCvEl.addEventListener('change', function() {
+        var sfSummaryNote = document.getElementById('sf-cv-note');
+        if (!sfSummaryNote) {
+          sfSummaryNote = document.createElement('div');
+          sfSummaryNote.id = 'sf-cv-note';
+          sfSummaryNote.className = 'dash-sub';
+          sfSummaryNote.style.cssText = 'margin-top:4px;font-size:0.8rem;color:var(--text-muted)';
+          var sfCvInput = document.getElementById('sf-cv');
+          if (sfCvInput) sfCvInput.closest('.toggle-wrap').after(sfSummaryNote);
+        }
+        var isCvOn = document.getElementById('sf-cv') ? document.getElementById('sf-cv').checked : false;
+        sfSummaryNote.textContent = isCvOn ?
+          (variantCards.length > 0 ? '+' + variantCards.length + ' collector variant cards' : 'Variants will load on save') :
+          '';
+      });
+    }
 
     var dangerToggle = document.getElementById('sf-danger-toggle');
     if (dangerToggle) {
