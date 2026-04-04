@@ -652,6 +652,10 @@
     from { opacity: 0; transform: translateX(-32px); }
     to   { opacity: 1; transform: translateX(0); }
   }
+  @keyframes wizard-exit-back {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(32px); }
+  }
   .wizard-step h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
   .wizard-step .step-sub { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
   .wizard-nav {
@@ -733,7 +737,7 @@
     transition: transform 0.3s cubic-bezier(0.34,1.4,0.64,1), opacity 0.25s ease;
     opacity: 0; pointer-events: none; white-space: nowrap;
   }
-  .toast.visible {
+  .toast.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
@@ -2127,12 +2131,12 @@ document.head.appendChild(manifestLink);
   }
 
   function showToast(msg, duration) {
-    duration = duration || 2200;
+    duration = duration || 2000;
     const el = document.getElementById('toast');
     el.textContent = msg;
-    el.classList.add('visible');
+    el.classList.add('show');
     clearTimeout(el._t);
-    el._t = setTimeout(function() { el.classList.remove('visible'); }, duration);
+    el._t = setTimeout(function() { el.classList.remove('show'); }, duration);
   }
 
   function showSheet(opts) {
@@ -2170,9 +2174,9 @@ document.head.appendChild(manifestLink);
   }
 
   function renderWizard(el) {
-    var pct = ((wizardStep - 1) / 2) * 100;
+    var pct = (wizardStep / 3 * 100).toFixed(1) + '%';
     el.innerHTML = '<div class="settings-wrap"><div class="wizard-card">' +
-      '<div class="wizard-progress"><div class="wizard-progress-fill" id="wiz-progress" style="width:' + pct + '%"></div></div>' +
+      '<div class="wizard-progress"><div class="wizard-progress-fill" id="wiz-progress" style="width:' + pct + '"></div></div>' +
       '<div class="wizard-step-container" id="wiz-step-container">' + renderWizardStep(wizardStep) + '</div>' +
       '</div></div>';
     bindWizardEvents();
@@ -2301,20 +2305,25 @@ document.head.appendChild(manifestLink);
 
   function advanceWizard(dir) {
     wizardStep = Math.max(1, Math.min(3, wizardStep + dir));
-    var pct = ((wizardStep - 1) / 2) * 100;
+    var pct = (wizardStep / 3 * 100).toFixed(1) + '%';
     var progressEl = document.getElementById('wiz-progress');
-    if (progressEl) progressEl.style.width = pct + '%';
+    if (progressEl) progressEl.style.width = pct;
     var container = document.getElementById('wiz-step-container');
     if (container) {
       var stepEl = document.getElementById('wiz-step');
       // Apply exit animation on previous step
       if (stepEl) {
-        stepEl.style.animationName = dir > 0 ? 'wizard-exit' : 'wizard-enter-back';
+        stepEl.style.animationName = dir > 0 ? 'wizard-exit' : 'wizard-exit-back';
         stepEl.style.animationDuration = '0.15s';
       }
       setTimeout(function() {
         if (container) {
           container.innerHTML = renderWizardStep(wizardStep);
+          var newStepEl = document.getElementById('wiz-step');
+          if (newStepEl) {
+            newStepEl.style.animationName = dir < 0 ? 'wizard-enter-back' : 'wizard-enter';
+            newStepEl.style.animationDuration = '0.3s';
+          }
           bindWizardEvents();
         }
       }, 120);
@@ -2520,6 +2529,9 @@ document.head.appendChild(manifestLink);
         };
         saveConfig(newCfg);
         applyConfigToTabs();
+        if (document.getElementById('tab-binder').classList.contains('active')) {
+          renderBinder();
+        }
         if (newCfg.scope.collectorVariants && variantCards.length === 0) {
           fetchVariants();
         }
