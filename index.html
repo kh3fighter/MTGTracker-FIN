@@ -3739,6 +3739,16 @@ document.head.appendChild(manifestLink);
     if (deg < 360) donutSegments.push(`var(--chart-empty) ${deg}deg 360deg`);
     const donutGradient = donutSegments.length ? `conic-gradient(${donutSegments.join(', ')})` : `var(--chart-empty)`;
 
+    var foilCapableCards = allCards.filter(c => (c.finishes || []).includes('foil'));
+    var foilOwnedCount = foilCapableCards.filter(c => hasFoil(c.collector_number)).length;
+    var foilCapable = foilCapableCards.length;
+    var foilPct = foilCapable > 0 ? (foilOwnedCount / foilCapable * 100) : 0;
+    var variantFoilOwned = variantCards.filter(c => hasFoil(c.collector_number)).length;
+    var topFoils = [...allCards, ...variantCards]
+      .filter(c => hasFoil(c.collector_number) && (c.price_usd_foil || 0) > 0)
+      .sort((a, b) => (b.price_usd_foil || 0) - (a.price_usd_foil || 0))
+      .slice(0, 3);
+
     dash.innerHTML = `
       <div class="dash-grid">
         <div class="dash-card">
@@ -3780,6 +3790,28 @@ document.head.appendChild(manifestLink);
           <div class="dash-big-num">${totalBinderPages}</div>
           <div class="dash-sub">total binder pages</div>
           <div class="dash-sub" style="margin-top:8px">${fullPages} pages complete</div>
+        </div>
+        <div class="dash-card">
+          <h3>✦ Foil Collection</h3>
+          <div class="dash-big-num">${foilOwnedCount}</div>
+          <div class="dash-sub">of ${foilCapable} foil-capable cards</div>
+          <div class="rarity-track" style="margin:10px 0 4px">
+            <div class="rarity-fill rare" style="width:${foilPct.toFixed(1)}%"></div>
+          </div>
+          <div class="dash-sub">${foilPct.toFixed(1)}% foil complete</div>
+          ${variantCards.length > 0 ? `<div class="dash-sub" style="margin-top:6px">${variantFoilOwned}/${variantCards.length} collector variants owned</div>` : ''}
+          ${topFoils.length > 0 ? `
+            <div class="dash-sub" style="margin-top:10px;color:var(--text-muted);font-size:0.78rem;margin-bottom:4px">Top owned foils:</div>
+            ${topFoils.map(c => `
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;padding:3px 0;cursor:pointer;border-radius:6px;transition:background 0.15s"
+                   onclick="openModal(allCards.concat(variantCards).find(x => x.collector_number === '${c.collector_number}'))"
+                   onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+                   onmouseout="this.style.background=''">
+                <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${c.name}</span>
+                <span style="color:#ffd93d;flex-shrink:0;margin-left:8px">$${(c.price_usd_foil || 0).toFixed(2)}</span>
+              </div>
+            `).join('')}
+          ` : `<div class="dash-sub" style="margin-top:16px;opacity:0.55">No foils collected yet</div>`}
         </div>
         <div class="dash-card">
           <h3>Booster Packs</h3>
