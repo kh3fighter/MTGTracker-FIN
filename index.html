@@ -1431,8 +1431,12 @@
     }
     .fab-util-btn { width: 34px; height: 34px; min-height: 34px; min-width: 34px; }
 
-    /* FAB — centered right edge, well above bottom nav */
-    .fab-search { bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
+    /* FAB — left side on mobile, well above bottom nav */
+    .fab-search {
+      bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+      right: auto;
+      left: max(18px, env(safe-area-inset-left, 18px));
+    }
     .fab-panel { bottom: 60px; }
 
     /* Modal — bottom sheet style on mobile */
@@ -1927,8 +1931,7 @@
     pointer-events: auto;
   }
   @media (max-width: 500px) {
-    .fab-panel { width: calc(100vw - 32px); right: 0; max-height: 70vh; }
-    .fab-search { right: max(18px, env(safe-area-inset-right, 18px)); }
+    .fab-panel { width: calc(100vw - 32px); left: 0; right: auto; max-height: 70vh; }
     .fab-btn { width: 44px; height: 44px; font-size: 1.4rem; }
   }
 
