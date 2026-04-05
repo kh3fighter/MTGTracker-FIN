@@ -1341,8 +1341,8 @@
     }
     .fab-util-btn { width: 34px; height: 34px; min-height: 34px; min-width: 34px; }
 
-    /* FAB — sit just above bottom nav */
-    .fab-search { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+    /* FAB — sit just above bottom nav, left side to avoid blocking Settings tab */
+    .fab-search { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); right: auto; left: 10px; }
     .fab-panel { bottom: 60px; }
 
     /* Modal — bottom sheet style on mobile */
@@ -1805,8 +1805,8 @@
     pointer-events: auto;
   }
   @media (max-width: 500px) {
-    .fab-panel { width: calc(100vw - 32px); right: 0; max-height: 70vh; }
-    .fab-search { right: max(18px, env(safe-area-inset-right, 18px)); }
+    .fab-panel { width: calc(100vw - 32px); right: auto; left: 0; max-height: 70vh; transform-origin: bottom left; }
+    .fab-search { left: max(18px, env(safe-area-inset-left, 18px)); right: auto; }
     .fab-btn { width: 50px; height: 50px; font-size: 1.6rem; }
   }
 
