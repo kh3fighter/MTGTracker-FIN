@@ -1332,12 +1332,12 @@
     .binder-layout { gap: 6px; }
     .page-nav-widget { min-width: 160px; }
 
-    /* Utilities — fixed top-right on mobile */
+    /* Utilities — inline in header on mobile */
     .header-actions {
-      position: fixed;
-      top: max(10px, env(safe-area-inset-top, 10px));
-      right: 10px;
-      z-index: 50;
+      position: static;
+      transform: none;
+      justify-content: center;
+      margin-top: 6px;
     }
     .fab-util-btn { width: 34px; height: 34px; min-height: 34px; min-width: 34px; }
 
