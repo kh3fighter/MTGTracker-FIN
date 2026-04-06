@@ -1203,7 +1203,7 @@
     transition: all 0.2s ease;
     text-decoration: none;
   }
-  .foil-chip[data-switch-cn] { cursor: pointer; }
+  .foil-chip[data-switch-cn], .foil-chip[data-foil-preview] { cursor: pointer; }
   .foil-chip.active {
     border-color: var(--accent) !important;
     background: rgba(91,127,199,0.18) !important;
@@ -1673,7 +1673,7 @@
     .modal-info-col h3 { text-align: left; font-size: 0.95rem; }
     .modal-info-col .detail { text-align: left; }
     .modal-info-col .modal-foil-info { justify-content: flex-start; }
-    .modal-info-col .modal-actions { justify-content: flex-start; }
+    .modal-info-col .modal-actions { min-height: 40px; }
     .modal-info-col .modal-actions .btn { min-height: 40px; font-size: 0.78rem; padding: 6px 12px; }
     .modal .btn { min-height: 44px; }
     .viz-icon-btn { width: 36px; height: 36px; }
@@ -1940,8 +1940,15 @@
   .modal-info-col .modal-foil-info { justify-content: flex-start; margin: 0; }
   .modal-info-col .modal-actions {
     display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start; margin-top: 4px;
+    position: relative; min-height: 34px;
   }
-  .modal-info-col .modal-actions .btn { padding: 6px 14px; font-size: 0.78rem; }
+  .modal-info-col .modal-actions .btn {
+    padding: 6px 14px; font-size: 0.78rem;
+    transition: opacity 0.2s ease;
+  }
+  .modal-info-col .modal-actions .btn.modal-btn-hidden {
+    position: absolute; opacity: 0; pointer-events: none;
+  }
   .modal-footer {
     display: flex; align-items: center; justify-content: center; gap: 10px;
     margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--surface2);
@@ -2078,6 +2085,15 @@
   .modal-price-chip .price-val.foil { color: var(--foil-color); }
   .modal-price-chip .price-sub {
     font-size: 0.65rem; color: var(--text-muted); line-height: 1.3;
+  }
+  .modal-price-chip {
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .modal-prices.has-highlight .modal-price-chip:not(.price-active) {
+    opacity: 0.4;
+  }
+  .modal-price-chip.price-active {
+    border-color: var(--accent);
   }
   .modal-price-chip.no-price {
     border-style: dashed; opacity: 0.6; grid-column: 1 / -1;
@@ -3122,7 +3138,7 @@ document.head.appendChild(manifestLink);
         <div id="modal-foil-info" class="modal-foil-info"></div>
         <div class="modal-actions">
           <button class="btn btn-primary" id="modal-toggle"></button>
-          <button class="btn btn-foil" id="modal-foil-toggle" style="display:none">Add Foil ✦</button>
+          <button class="btn btn-foil modal-btn-hidden" id="modal-foil-toggle">Add Foil ✦</button>
         </div>
       </div>
     </div>
@@ -4788,18 +4804,24 @@ document.head.appendChild(manifestLink);
 
     const msg = cfg.msgs[Math.floor(Math.random() * cfg.msgs.length)];
     const p = getPlacement(card);
+    const vInfo = getCardVariantInfo(card);
+    const variantTag = vInfo.label ? ` \u00B7 ${vInfo.label}` : '';
 
     const toast = document.createElement('div');
     toast.className = 'add-toast';
     toast.style.setProperty('--toast-glow', cfg.glow);
     toast.style.setProperty('--toast-glow-color', cfg.border);
     const rarityLabels = { mythic: 'MYTHIC RARE', rare: 'RARE', uncommon: 'UNCOMMON', common: 'COMMON' };
+    const isVariant = !allCards.includes(card);
+    const placementStr = isVariant
+      ? `Collector Variant${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}`
+      : `Page ${p.page}, Slot ${p.slot}${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}`;
     toast.innerHTML = `
-      <div class="toast-rarity-badge ${esc(card.rarity)}">${rarityLabels[card.rarity] || esc(card.rarity)}</div>
+      <div class="toast-rarity-badge ${esc(card.rarity)}">${(rarityLabels[card.rarity] || esc(card.rarity)) + esc(variantTag)}</div>
       <img src="${esc(card.image_normal || card.image_small)}" alt="${displayNameText(card)}">
       <div class="toast-name">#${esc(card.collector_number)} ${displayName(card)}</div>
       <div class="toast-msg ${esc(card.rarity)}">${esc(msg)}</div>
-      <div class="toast-placement">Page ${p.page}, Slot ${p.slot}${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}</div>
+      <div class="toast-placement">${placementStr}</div>
     `;
     container.appendChild(toast);
 
@@ -6620,30 +6642,39 @@ document.head.appendChild(manifestLink);
       );
     }
 
-    // 2. Foil pill for main card (ownership indicator, not switchable)
+    // 2. Foil pill for main card — clickable to preview foil shimmer
     if (mainCard && (mainCard.finishes || []).includes('foil')) {
       var isMainSpecial = isSurgeFoil(mainCard) || isChocoboTrack(mainCard) || isShowcase(mainCard) || (mainCard.frame_effects || []).includes('extendedart');
       if (!isMainSpecial) {
         var fOwned = hasFoil(mainCard.collector_number);
         chips.push(
-          '<span class="foil-chip ' + (fOwned ? 'owned' : 'unowned') + '">' +
+          '<span class="foil-chip ' + (fOwned ? 'owned' : 'unowned') + '" data-foil-preview="' + esc(mainCard.collector_number) + '">' +
           '\u2726 Foil' + (fOwned ? ' \u00B7 Owned' : '') +
           '</span>'
         );
       }
     }
 
-    // 3. Variant pills — switchable
+    // 3. Variant pills — switchable, with foil sub-pills for variants that have foil pricing
     if (variants.length > 0) {
       variants.forEach(function(v) {
         var vOwned = hasFoil(v.collector_number);
         var label = getVariantLabel(v);
-        var isActive = cn === v.collector_number;
+        var isActive = cn === v.collector_number && !_foilPreviewActive;
         chips.push(
           '<span class="foil-chip ' + (vOwned ? 'owned' : 'unowned') + (isActive ? ' active' : '') + '" data-switch-cn="' + esc(v.collector_number) + '">' +
           '\u2726 ' + esc(label) + (vOwned ? ' \u00B7 Owned' : '') +
           '</span>'
         );
+        // Foil pill for this variant (if it has a distinct foil price and isn't inherently foil)
+        if (v.price_usd_foil > 0 && v.price_usd_foil !== v.price_usd && !isSurgeFoil(v) && !isChocoboTrack(v)) {
+          var vfOwned = hasFoil(v.collector_number);
+          chips.push(
+            '<span class="foil-chip ' + (vfOwned ? 'owned' : 'unowned') + '" data-foil-preview="' + esc(v.collector_number) + '">' +
+            '\u2726 ' + esc(label) + ' Foil' + (vfOwned ? ' \u00B7 Owned' : '') +
+            '</span>'
+          );
+        }
       });
     } else if (!collEnabled) {
       chips.push(
@@ -6659,6 +6690,30 @@ document.head.appendChild(manifestLink);
   }
 
   // ── Modal ──
+  function showModalBtn(btn, show) {
+    if (!btn) return;
+    btn.style.display = '';
+    if (show) btn.classList.remove('modal-btn-hidden');
+    else btn.classList.add('modal-btn-hidden');
+  }
+  function highlightPriceChips(cn, isFoil) {
+    const pricesEl = document.getElementById('modal-prices');
+    if (!pricesEl) return;
+    pricesEl.classList.add('has-highlight');
+    pricesEl.querySelectorAll('.modal-price-chip').forEach(chip => {
+      const match = chip.dataset.priceCn === cn &&
+        (isFoil ? chip.hasAttribute('data-price-foil') : !chip.hasAttribute('data-price-foil'));
+      chip.classList.toggle('price-active', match);
+    });
+  }
+  function highlightPriceChipsByCn(cn) {
+    const pricesEl = document.getElementById('modal-prices');
+    if (!pricesEl) return;
+    pricesEl.classList.add('has-highlight');
+    pricesEl.querySelectorAll('.modal-price-chip').forEach(chip => {
+      chip.classList.toggle('price-active', chip.dataset.priceCn === cn && !chip.hasAttribute('data-price-foil'));
+    });
+  }
   let _currentModalCard = null;
   let _packModeAdding = false;
   function openModal(card) {
@@ -6668,6 +6723,7 @@ document.head.appendChild(manifestLink);
     const p = getPlacement(card);
 
     rotX = 0; rotY = 0; isFlipped = false;
+    _foilPreviewActive = false;
     card3d.style.transition = 'none';
     updateCardTransform();
 
@@ -6683,8 +6739,8 @@ document.head.appendChild(manifestLink);
     const vInfo = getCardVariantInfo(card);
     const variantTag = vInfo.label ? vInfo.short : 'Main';
 
-    function priceChip(label, usd, myr, cls) {
-      return `<div class="modal-price-chip">
+    function priceChip(label, usd, myr, cls, cn, isFoilPrice) {
+      return `<div class="modal-price-chip" data-price-cn="${esc(cn)}"${isFoilPrice ? ' data-price-foil' : ''}>
         <div class="price-label">${label}</div>
         <div class="price-val ${cls}">$${usd.toFixed(2)}</div>
         <div class="price-sub">RM ${myr.toFixed(2)}</div>
@@ -6692,25 +6748,21 @@ document.head.appendChild(manifestLink);
     }
 
     let chips = [];
-    // This card's prices
-    if (card.price_usd > 0)
-      chips.push(priceChip(variantTag, card.price_usd, card.price_usd * USD_TO_MYR, 'usd'));
-    if (card.price_usd_foil > 0)
-      chips.push(priceChip(variantTag + ' \u2726', card.price_usd_foil, card.price_usd_foil * USD_TO_MYR, 'foil'));
+    // Build prices for entire card family (main + all variants)
+    const mainCard = isVariant
+      ? allCards.find(c => card.oracle_id && c.oracle_id === card.oracle_id)
+      : card;
+    const familyOracleId = mainCard ? mainCard.oracle_id : (card.oracle_id || null);
+    const familyVariants = familyOracleId ? variantCards.filter(c => c.oracle_id === familyOracleId) : [];
+    const familyCards = mainCard ? [mainCard, ...familyVariants] : [card, ...familyVariants];
 
-    // Linked variant prices
-    if (card.oracle_id) {
-      const linked = isVariant
-        ? allCards.filter(c => c.oracle_id === card.oracle_id)
-        : variantCards.filter(c => c.oracle_id === card.oracle_id);
-      for (const v of linked) {
-        const vTag = getCardVariantInfo(v);
-        const vLabel = vTag.label ? vTag.short : 'Main';
-        if (v.price_usd > 0)
-          chips.push(priceChip(vLabel, v.price_usd, v.price_usd * USD_TO_MYR, 'usd'));
-        if (v.price_usd_foil > 0 && !(v.price_usd > 0 && v.price_usd_foil === v.price_usd))
-          chips.push(priceChip(vLabel + ' \u2726', v.price_usd_foil, v.price_usd_foil * USD_TO_MYR, 'foil'));
-      }
+    for (const fc of familyCards) {
+      const fcInfo = getCardVariantInfo(fc);
+      const fcLabel = fcInfo.label ? fcInfo.short : 'Main';
+      if (fc.price_usd > 0)
+        chips.push(priceChip(fcLabel, fc.price_usd, fc.price_usd * USD_TO_MYR, 'usd', fc.collector_number, false));
+      if (fc.price_usd_foil > 0 && !(fc.price_usd > 0 && fc.price_usd_foil === fc.price_usd))
+        chips.push(priceChip(fcLabel + ' \u2726', fc.price_usd_foil, fc.price_usd_foil * USD_TO_MYR, 'foil', fc.collector_number, true));
     }
     if (chips.length === 0)
       chips.push('<div class="modal-price-chip no-price"><span class="price-sub">No price data</span></div>');
@@ -6782,10 +6834,11 @@ document.head.appendChild(manifestLink);
 
     const isFoilOwned = hasFoil(card.collector_number);
 
+    let _showToggle = false, _showFoilToggle = false;
     if (isVariant && !hasNonfoil && !isPack) {
-      toggleBtn.style.display = 'none';
+      _showToggle = false;
     } else if (isPack) {
-      toggleBtn.style.display = '';
+      _showToggle = true;
       if (isOwned) {
         toggleBtn.textContent = 'Already Owned';
         toggleBtn.className = 'btn btn-secondary';
@@ -6798,7 +6851,7 @@ document.head.appendChild(manifestLink);
         toggleBtn.onclick = () => addToPackAndReturn(card.collector_number, false);
       }
     } else {
-      toggleBtn.style.display = '';
+      _showToggle = true;
       toggleBtn.disabled = false;
       if (isVariant) {
         toggleBtn.textContent = isOwned ? `Remove ${variantType}` : `Add ${variantType}`;
@@ -6820,7 +6873,7 @@ document.head.appendChild(manifestLink);
     if (foilToggleBtn) {
       const canBeFoil = (card.finishes || []).includes('foil');
       if (isPack && canBeFoil) {
-        foilToggleBtn.style.display = '';
+        _showFoilToggle = true;
         if (isFoilOwned) {
           foilToggleBtn.textContent = 'Foil Already Owned \u2726';
           foilToggleBtn.className = 'btn btn-secondary';
@@ -6833,7 +6886,8 @@ document.head.appendChild(manifestLink);
           foilToggleBtn.onclick = () => addToPackAndReturn(card.collector_number, true);
         }
       } else if (canBeFoil && !isPack) {
-        foilToggleBtn.style.display = '';
+        const inherentlyFoil = isVariant && !hasNonfoil && (isSurgeFoil(card) || isChocoboTrack(card));
+        _showFoilToggle = inherentlyFoil;
         foilToggleBtn.disabled = false;
         const typeAlreadyFoil = isVariant && variantType.toLowerCase().includes('foil');
         const foilLabel = isVariant ? (typeAlreadyFoil ? variantType : `${variantType} Foil`) : 'Foil';
@@ -6857,10 +6911,13 @@ document.head.appendChild(manifestLink);
           }
         };
       } else {
-        foilToggleBtn.style.display = 'none';
+        _showFoilToggle = false;
         foilToggleBtn.disabled = false;
       }
     }
+    // Apply visibility after className is set (so it doesn't get wiped)
+    showModalBtn(toggleBtn, _showToggle);
+    showModalBtn(foilToggleBtn, _showFoilToggle);
 
     // Foil shimmer overlay — apply variant-specific class for distinct effects
     const card3dEl = document.getElementById('card-3d');
@@ -6875,17 +6932,29 @@ document.head.appendChild(manifestLink);
     var foilInfoEl = document.getElementById('modal-foil-info');
     if (foilInfoEl) foilInfoEl.innerHTML = buildFoilInfoHTML(card);
 
+    // Highlight price chips for the current card
+    const _initInherentFoil = isVariant && !hasNonfoil && (isSurgeFoil(card) || isChocoboTrack(card));
+    if (_initInherentFoil) highlightPriceChips(card.collector_number, true);
+    else highlightPriceChipsByCn(card.collector_number);
+
+    const modalEl = document.getElementById('modal');
+    modalEl.style.minHeight = '';
     const overlay = document.getElementById('modal-overlay');
     overlay.classList.remove('closing');
     overlay.classList.add('visible');
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
+    // Lock modal height after first paint so pill switching doesn't cause layout jumps
+    requestAnimationFrame(() => {
+      modalEl.style.minHeight = modalEl.offsetHeight + 'px';
+    });
   }
 
   function closeModal() {
     const wasPackMode = _packModeAdding;
     _currentModalCard = null;
     _packModeAdding = false;
+    document.getElementById('modal').style.minHeight = '';
     const overlay = document.getElementById('modal-overlay');
     overlay.classList.add('closing');
     highlightedCN = null;
@@ -6939,16 +7008,100 @@ document.head.appendChild(manifestLink);
   })();
 
   // ── Foil chip switching — click to switch modal to variant in-place ──
+  let _foilPreviewActive = false;
   document.getElementById('modal-foil-info').addEventListener('click', (e) => {
+    // Ignore clicks on already-active pills
+    const anyChip = e.target.closest('.foil-chip');
+    if (anyChip && anyChip.classList.contains('active')) return;
+
+    // Handle foil preview pill (main card foil or variant foil)
+    const foilChip = e.target.closest('.foil-chip[data-foil-preview]');
+    if (foilChip) {
+      const previewCN = foilChip.dataset.foilPreview;
+      const previewCard = getCardByNumber(previewCN);
+
+      // If this foil pill is for a different card than currently shown, navigate first
+      if (previewCard && _currentModalCard && _currentModalCard.collector_number !== previewCN) {
+        openModal(previewCard);
+      }
+      _foilPreviewActive = true;
+
+      // Apply foil shimmer
+      const card3dEl = document.getElementById('card-3d');
+      if (card3dEl) {
+        card3dEl.classList.add('foil-owned');
+        card3dEl.classList.remove('foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
+        if (previewCard) {
+          const slotClass = getFoilSlotClass(previewCard);
+          if (slotClass) card3dEl.classList.add(slotClass);
+        }
+      }
+
+      // Update active styling — only the matching foil pill is active (re-query after possible openModal rebuild)
+      const foilInfoEl = document.getElementById('modal-foil-info');
+      foilInfoEl.querySelectorAll('.foil-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.foilPreview === previewCN);
+      });
+
+      // Show foil button, hide regular + highlight foil price
+      showModalBtn(document.getElementById('modal-toggle'), false);
+      showModalBtn(document.getElementById('modal-foil-toggle'), true);
+      highlightPriceChips(previewCN, true);
+      return;
+    }
+
+    // Handle variant chip navigation
     const chip = e.target.closest('.foil-chip[data-switch-cn]');
     if (!chip) return;
     const targetCN = chip.dataset.switchCn;
     if (!targetCN) return;
-    // Don't switch if already viewing this card
-    if (_currentModalCard && _currentModalCard.collector_number === targetCN) return;
+    // If foil preview is on and user clicks the same card's Regular pill, just turn off preview
+    if (_foilPreviewActive && _currentModalCard && _currentModalCard.collector_number === targetCN) {
+      _foilPreviewActive = false;
+      const card3dEl = document.getElementById('card-3d');
+      if (card3dEl) {
+        card3dEl.classList.toggle('foil-owned', hasFoil(targetCN));
+        card3dEl.classList.remove('foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
+        if (hasFoil(targetCN)) {
+          const tc = getCardByNumber(targetCN);
+          const sc = tc ? getFoilSlotClass(tc) : '';
+          if (sc) card3dEl.classList.add(sc);
+        }
+      }
+      // Update active states on all chips
+      const allChips = chip.parentElement.querySelectorAll('.foil-chip');
+      allChips.forEach(c => {
+        c.classList.toggle('active', c.dataset.switchCn === targetCN);
+      });
+      // Show regular button, hide foil button
+      showModalBtn(document.getElementById('modal-toggle'), true);
+      showModalBtn(document.getElementById('modal-foil-toggle'), false);
+      highlightPriceChipsByCn(targetCN);
+      return;
+    }
+    _foilPreviewActive = false;
+    // Already viewing this card — just reveal the actions for it
+    if (_currentModalCard && _currentModalCard.collector_number === targetCN) {
+      const isVar = !allCards.includes(_currentModalCard);
+      const _hasNonfoil = (_currentModalCard.finishes || []).includes('nonfoil');
+      const _inherentFoil = isVar && !_hasNonfoil && (isSurgeFoil(_currentModalCard) || isChocoboTrack(_currentModalCard));
+      showModalBtn(document.getElementById('modal-toggle'), !(isVar && !_hasNonfoil));
+      showModalBtn(document.getElementById('modal-foil-toggle'), _inherentFoil);
+      if (_inherentFoil) highlightPriceChips(targetCN, true);
+      else highlightPriceChipsByCn(targetCN);
+      return;
+    }
     const targetCard = getCardByNumber(targetCN);
     if (!targetCard) return;
     openModal(targetCard);
+    // Navigated to a variant — show appropriate button
+    const isVar = !allCards.includes(targetCard);
+    const _tHasNonfoil = (targetCard.finishes || []).includes('nonfoil');
+    const _tInherentFoil = isVar && !_tHasNonfoil && (isSurgeFoil(targetCard) || isChocoboTrack(targetCard));
+    showModalBtn(document.getElementById('modal-toggle'), !(isVar && !_tHasNonfoil));
+    showModalBtn(document.getElementById('modal-foil-toggle'), _tInherentFoil);
+    if (_tInherentFoil) highlightPriceChips(targetCard.collector_number, true);
+    else highlightPriceChipsByCn(targetCard.collector_number);
   });
 
   document.getElementById('sheet-backdrop').addEventListener('click', closeSheet);
