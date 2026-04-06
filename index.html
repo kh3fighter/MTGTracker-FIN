@@ -3416,10 +3416,91 @@ document.head.appendChild(manifestLink);
     var ownedCount = ownedSet.size;
     var foilCount = Object.keys(foilOwned).length;
     var variantCount = variantCards.length;
+    var totalCards = allCards.length || 309;
+
+    // Cache status
+    var cacheData = JSON.parse(localStorage.getItem('fin-card-data-v6') || '{}');
+    var cacheFetchedAt = cacheData.fetchedAt;
+    var cacheAge = cacheFetchedAt ? Math.floor((Date.now() - cacheFetchedAt) / 86400000) : null;
+    var cacheExpiry = cacheFetchedAt ? Math.max(0, 7 - cacheAge) : null;
+    var cacheStatus = cacheFetchedAt
+      ? 'Card data cached ' + cacheAge + 'd ago (expires in ' + cacheExpiry + 'd)'
+      : 'No cached data';
+
+    // FX cache status
+    var fxData = JSON.parse(localStorage.getItem(FX_KEY) || '{}');
+    var fxAge = fxData.fetchedAt ? Math.floor((Date.now() - fxData.fetchedAt) / 3600000) : null;
+    var fxStatus = fxAge !== null ? 'FX rate cached ' + fxAge + 'h ago' : 'No FX rate cached';
+
+    // Binder preview helper
+    function binderPreview(rows, cols) {
+      var cells = [];
+      for (var i = 0; i < rows * cols; i++) {
+        cells.push('<div style="aspect-ratio:5/7;background:var(--surface2);border-radius:2px;border:1px solid var(--ff-border)"></div>');
+      }
+      return '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:3px;max-width:180px;margin:8px auto">' + cells.join('') + '</div>';
+    }
+
+    // Sync section HTML
+    var syncHTML = '';
+    if (gistConfig && gistConfig.gistId) {
+      syncHTML =
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">' +
+          '<span style="width:8px;height:8px;border-radius:50%;background:var(--owned-border);flex-shrink:0"></span>' +
+          '<span style="font-size:0.82rem;font-weight:600">Connected</span>' +
+          '<span style="font-size:0.7rem;color:var(--text-muted);margin-left:auto">Gist: ' + esc(gistConfig.gistId.slice(0, 8)) + '...</span>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+          '<button class="btn btn-primary" id="sf-sync-pull" style="width:100%">Pull from Cloud</button>' +
+          '<button class="btn btn-secondary" id="sf-sync-push" style="width:100%">Push to Cloud</button>' +
+          '<button class="btn btn-danger" id="sf-sync-disconnect" style="width:100%;font-size:0.78rem;margin-top:4px">Disconnect</button>' +
+        '</div>';
+    } else {
+      syncHTML =
+        '<label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">GitHub Personal Access Token</label>' +
+        '<input type="password" id="sf-sync-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" style="width:100%;padding:10px 12px;font-size:0.9rem;background:var(--slot-bg);border:2px solid var(--surface2);border-radius:8px;color:var(--text);outline:none;margin-bottom:8px;font-family:monospace">' +
+        '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px">' +
+          '<a href="https://github.com/settings/tokens/new?scopes=gist&description=FIN+Binder+Tracker" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">Generate a token here</a> (select only <strong>gist</strong> scope)' +
+        '</div>' +
+        '<button class="btn btn-primary" id="sf-sync-connect" style="width:100%">Save &amp; Connect</button>';
+    }
+
+    // Sync status for profile card
+    var syncStatusLabel = (gistConfig && gistConfig.gistId) ? 'Cloud Sync Active' : 'Not Connected';
+    var syncDotColor = (gistConfig && gistConfig.gistId) ? 'var(--owned-border)' : 'var(--text-muted)';
 
     el.innerHTML = '<div class="settings-wrap">' +
 
-      // ── Binder Setup ──
+      // ── Profile Summary Card ──
+      '<div class="dash-card" style="margin-bottom:var(--sp-4)">' +
+        '<div style="display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-3)">' +
+          '<div style="width:40px;height:40px;border-radius:10px;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;font-weight:700">FIN</div>' +
+          '<div style="flex:1">' +
+            '<div style="font-weight:700;font-size:0.95rem">Final Fantasy Binder</div>' +
+            '<div style="font-size:0.78rem;color:var(--text-muted)">' + ownedCount + ' / ' + totalCards + ' cards collected</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-2);text-align:center">' +
+          '<div style="background:var(--surface2);border-radius:8px;padding:var(--sp-2)">' +
+            '<div style="font-size:1.1rem;font-weight:700">' + ownedCount + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Cards</div>' +
+          '</div>' +
+          '<div style="background:var(--surface2);border-radius:8px;padding:var(--sp-2)">' +
+            '<div style="font-size:1.1rem;font-weight:700">' + foilCount + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Foils</div>' +
+          '</div>' +
+          '<div style="background:var(--surface2);border-radius:8px;padding:var(--sp-2)">' +
+            '<div style="font-size:1.1rem;font-weight:700">' + cfg.pageCount + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Pages</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-top:var(--sp-3);padding-top:var(--sp-2);border-top:1px solid var(--ff-border)">' +
+          '<span style="width:6px;height:6px;border-radius:50%;background:' + syncDotColor + ';flex-shrink:0"></span>' +
+          '<span style="font-size:0.75rem;color:var(--text-muted)">' + syncStatusLabel + '</span>' +
+        '</div>' +
+      '</div>' +
+
+      // ── Binder Layout ──
       '<div class="settings-section">' +
       '<div class="settings-section-header">' +
         '<div class="settings-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>' +
@@ -3429,12 +3510,13 @@ document.head.appendChild(manifestLink);
       '<div class="settings-row"><label>Type</label><select id="sf-preset">' + presetOptions + '</select></div>' +
       '<div class="custom-inputs' + (isCustom ? ' visible' : '') + '" id="sf-custom">' +
         '<input id="sf-rows" type="number" inputmode="numeric" min="1" max="10" value="' + cfg.gridRows + '" placeholder="Rows">' +
-        '<span style="color:var(--text-muted)">×</span>' +
+        '<span style="color:var(--text-muted)">\u00d7</span>' +
         '<input id="sf-cols" type="number" inputmode="numeric" min="1" max="10" value="' + cfg.gridCols + '" placeholder="Cols">' +
       '</div>' +
       '<div class="settings-row"><label>Pages</label>' +
         '<input id="sf-pages" type="number" inputmode="numeric" min="1" max="999" value="' + cfg.pageCount + '" style="width:64px">' +
       '</div>' +
+      '<div id="sf-binder-preview">' + binderPreview(cfg.gridRows, cfg.gridCols) + '</div>' +
       '<div class="settings-live-summary"><span id="sf-s1">' + spp + '</span> slots/page &middot; <span id="sf-s2">' + cfg.pageCount + '</span> pages &middot; <span id="sf-s3">' + totalSlots + '</span> total</div>' +
       '</div>' +
 
@@ -3445,27 +3527,56 @@ document.head.appendChild(manifestLink);
         '<div><div class="settings-section-title">Collection Scope</div>' +
         '<div class="settings-section-sub">What to track in this binder</div></div>' +
       '</div>' +
-      '<div class="toggle-wrap"><div class="toggle-label"><strong>Main Set</strong><span>' + (allCards.length || '~309') + ' booster cards</span></div>' +
+      '<div class="toggle-wrap"><div class="toggle-label"><strong>Main Set</strong><span>' + totalCards + ' booster cards</span></div>' +
         '<label class="toggle-switch locked"><input type="checkbox" checked disabled><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>' +
-      '<div class="toggle-wrap"><div class="toggle-label"><strong>Collector Variants</strong><span>Foils, extended art, showcase, surge foil, chocobo track</span></div>' +
+      '<div class="toggle-wrap"><div class="toggle-label"><strong>Collector Variants</strong><span>Foils, extended art, showcase, surge foil' + (variantCount > 0 ? ' <span style="background:var(--surface2);padding:1px 6px;border-radius:10px;font-size:0.72rem;font-weight:600;margin-left:4px">' + variantCount + '</span>' : '') + '</span></div>' +
         '<label class="toggle-switch"><input type="checkbox" id="sf-cb"' + (cfg.scope.collectorBinder ? ' checked' : '') + '><span class="toggle-track"></span><span class="toggle-thumb"></span></label></div>' +
       '</div>' +
 
-      // ── Save ──
-      '<div class="save-btn-wrap"><button class="btn btn-primary btn-save" id="sf-save">Save Changes</button></div>' +
+      // ── Cloud Sync (inline) ──
+      '<div class="settings-section" id="settings-sync-section">' +
+      '<div class="settings-section-header">' +
+        '<div class="settings-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg></div>' +
+        '<div><div class="settings-section-title">Cloud Sync</div>' +
+        '<div class="settings-section-sub">Backup to GitHub Gist</div></div>' +
+      '</div>' +
+      syncHTML +
+      '</div>' +
 
-      // ── Data Management ──
+      // ── Appearance ──
+      '<div class="settings-section">' +
+      '<div class="settings-section-header">' +
+        '<div class="settings-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div>' +
+        '<div><div class="settings-section-title">Appearance</div>' +
+        '<div class="settings-section-sub">Theme and display</div></div>' +
+      '</div>' +
+      '<div class="settings-theme-toggle" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">' +
+        '<div class="toggle-label"><strong>Dark Mode</strong><span style="display:block;font-size:0.78rem;color:var(--text-muted)">Switch between dark and light theme</span></div>' +
+        '<label class="toggle-switch"><input type="checkbox" id="sf-theme" ' + (document.documentElement.getAttribute('data-theme') === 'dark' ? 'checked' : '') + '><span class="toggle-track"></span><span class="toggle-thumb"></span></label>' +
+      '</div>' +
+      '</div>' +
+
+      // ── Data & Cache ──
       '<div class="settings-section">' +
       '<div class="settings-section-header">' +
         '<div class="settings-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>' +
-        '<div><div class="settings-section-title">Data</div>' +
+        '<div><div class="settings-section-title">Data &amp; Cache</div>' +
         '<div class="settings-section-sub">' + ownedCount + ' cards &middot; ' + foilCount + ' foils' + (variantCount > 0 ? ' &middot; ' + variantCount + ' variants' : '') + '</div></div>' +
+      '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--sp-2)">' + esc(cacheStatus) + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--sp-3)">' + esc(fxStatus) + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">' +
+        '<button class="btn btn-secondary" id="sf-refresh-cards" style="font-size:0.82rem">Refresh Card Data</button>' +
+        '<button class="btn btn-secondary" id="sf-refresh-fx" style="font-size:0.82rem">Refresh FX Rate</button>' +
       '</div>' +
       '<div class="settings-data-row">' +
         '<button class="btn btn-secondary" id="sf-export">Export</button>' +
         '<button class="btn btn-secondary" id="sf-import">Import</button>' +
       '</div>' +
       '</div>' +
+
+      // ── Save ──
+      '<div class="save-btn-wrap"><button class="btn btn-primary btn-save" id="sf-save">Save Changes</button></div>' +
 
       // ── Danger Zone ──
       '<div class="settings-section danger">' +
@@ -3488,6 +3599,14 @@ document.head.appendChild(manifestLink);
     var presetEl = document.getElementById('sf-preset');
     var customWrap = document.getElementById('sf-custom');
 
+    function binderPreviewHTML(rows, cols) {
+      var cells = [];
+      for (var i = 0; i < rows * cols; i++) {
+        cells.push('<div style="aspect-ratio:5/7;background:var(--surface2);border-radius:2px;border:1px solid var(--ff-border)"></div>');
+      }
+      return '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:3px;max-width:180px;margin:8px auto">' + cells.join('') + '</div>';
+    }
+
     function updateSfSummary() {
       var sfRows = document.getElementById('sf-rows');
       var sfCols = document.getElementById('sf-cols');
@@ -3507,6 +3626,9 @@ document.head.appendChild(manifestLink);
       popEl('sf-s1', spp);
       popEl('sf-s2', pages);
       popEl('sf-s3', spp * pages);
+      // Update live binder preview
+      var previewEl = document.getElementById('sf-binder-preview');
+      if (previewEl) previewEl.innerHTML = binderPreviewHTML(r, c);
     }
 
     if (presetEl) {
@@ -3551,12 +3673,113 @@ document.head.appendChild(manifestLink);
       });
     }
 
+    // Theme toggle
+    var themeToggle = document.getElementById('sf-theme');
+    if (themeToggle) {
+      themeToggle.addEventListener('change', function() {
+        toggleTheme();
+      });
+    }
+
+    // Cloud Sync events
+    var syncConnectBtn = document.getElementById('sf-sync-connect');
+    if (syncConnectBtn) {
+      syncConnectBtn.addEventListener('click', async function() {
+        var tokenInput = document.getElementById('sf-sync-token');
+        var token = tokenInput ? tokenInput.value.trim() : '';
+        if (!token) { showToast('Please enter a token.'); return; }
+        syncConnectBtn.textContent = 'Connecting...';
+        syncConnectBtn.disabled = true;
+        try {
+          var resp = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: 'FIN Binder Tracker Data', public: false, files: { 'fin-binder-data.json': { content: '{}' } } })
+          });
+          if (!resp.ok) throw new Error('GitHub API error');
+          var data = await resp.json();
+          gistConfig.token = token;
+          gistConfig.gistId = data.id;
+          saveGistConfig();
+          updateSyncDot('ok');
+          showToast('Connected to GitHub Gist!');
+          renderSettings();
+        } catch (e) {
+          showToast('Connection failed. Check your token.');
+          syncConnectBtn.textContent = 'Save & Connect';
+          syncConnectBtn.disabled = false;
+        }
+      });
+    }
+
+    var syncPullBtn = document.getElementById('sf-sync-pull');
+    if (syncPullBtn) {
+      syncPullBtn.addEventListener('click', async function() {
+        syncPullBtn.textContent = 'Pulling...';
+        syncPullBtn.disabled = true;
+        var ok = await gistPull();
+        syncPullBtn.textContent = ok ? 'Pulled!' : 'Failed';
+        setTimeout(function() { renderSettings(); }, 1000);
+      });
+    }
+
+    var syncPushBtn = document.getElementById('sf-sync-push');
+    if (syncPushBtn) {
+      syncPushBtn.addEventListener('click', async function() {
+        syncPushBtn.textContent = 'Pushing...';
+        syncPushBtn.disabled = true;
+        var ok = await gistPush();
+        syncPushBtn.textContent = ok ? 'Pushed!' : 'Failed';
+        setTimeout(function() {
+          syncPushBtn.textContent = 'Push to Cloud';
+          syncPushBtn.disabled = false;
+        }, 1500);
+      });
+    }
+
+    var syncDisconnectBtn = document.getElementById('sf-sync-disconnect');
+    if (syncDisconnectBtn) {
+      syncDisconnectBtn.addEventListener('click', function() {
+        showSheet({
+          title: 'Disconnect Cloud Sync?',
+          body: 'Your local data will be kept. You can reconnect anytime.',
+          actions: [
+            { label: 'Cancel', className: 'btn-secondary', onClick: function() {} },
+            { label: 'Disconnect', className: 'btn-danger', onClick: function() {
+              gistConfig.token = '';
+              gistConfig.gistId = '';
+              saveGistConfig();
+              updateSyncDot('off');
+              showToast('Disconnected from cloud sync.');
+              renderSettings();
+            }}
+          ]
+        });
+      });
+    }
+
+    // Refresh card data
+    var refreshCardsBtn = document.getElementById('sf-refresh-cards');
+    if (refreshCardsBtn) {
+      refreshCardsBtn.addEventListener('click', function() {
+        if (window._refreshScryfall) window._refreshScryfall(refreshCardsBtn);
+      });
+    }
+
+    // Refresh FX rate
+    var refreshFxBtn = document.getElementById('sf-refresh-fx');
+    if (refreshFxBtn) {
+      refreshFxBtn.addEventListener('click', function() {
+        if (window._refreshFxRate) window._refreshFxRate(refreshFxBtn);
+      });
+    }
+
     var dangerToggle = document.getElementById('sf-danger-toggle');
     if (dangerToggle) {
       dangerToggle.addEventListener('click', function() {
         var actions = document.getElementById('sf-danger-actions');
         actions.classList.toggle('visible');
-        dangerToggle.textContent = actions.classList.contains('visible') ? '▾ Hide options' : '▸ Show options';
+        dangerToggle.textContent = actions.classList.contains('visible') ? '\u25be Hide options' : '\u25b8 Show options';
       });
     }
 
@@ -3645,7 +3868,7 @@ document.head.appendChild(manifestLink);
         if (newCfg.scope.collectorBinder && variantCards.length === 0) {
           fetchVariants();
         }
-        saveBtn.textContent = '✓ Saved';
+        saveBtn.textContent = '\u2713 Saved';
         saveBtn.classList.add('success');
         setTimeout(function() {
           saveBtn.textContent = 'Save Changes';
@@ -3875,11 +4098,11 @@ document.head.appendChild(manifestLink);
 
   // Sync modal
   function openSyncModal() {
-    const overlay = document.getElementById('sync-modal-overlay');
-    const tokenInput = document.getElementById('sync-token-input');
-    tokenInput.value = gistConfig.token;
-    renderSyncModalBody();
-    overlay.classList.add('visible');
+    switchTab('settings');
+    setTimeout(() => {
+      const syncSection = document.getElementById('settings-sync-section');
+      if (syncSection) syncSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   function closeSyncModal() {
