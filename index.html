@@ -3864,16 +3864,38 @@ document.head.appendChild(manifestLink);
     // Refresh card data
     var refreshCardsBtn = document.getElementById('sf-refresh-cards');
     if (refreshCardsBtn) {
-      refreshCardsBtn.addEventListener('click', function() {
-        if (window._refreshScryfall) window._refreshScryfall(refreshCardsBtn);
+      refreshCardsBtn.addEventListener('click', async function() {
+        var origText = refreshCardsBtn.textContent;
+        refreshCardsBtn.textContent = 'Refreshing...';
+        refreshCardsBtn.disabled = true;
+        try {
+          if (window._refreshScryfall) await window._refreshScryfall(refreshCardsBtn);
+          refreshCardsBtn.textContent = '✓ Refreshed';
+          showToast('Card data refreshed.');
+          setTimeout(function() { renderSettings(); }, 1200);
+        } catch(e) {
+          refreshCardsBtn.textContent = 'Failed';
+          showToast('Refresh failed — check your connection.');
+        }
       });
     }
 
     // Refresh FX rate
     var refreshFxBtn = document.getElementById('sf-refresh-fx');
     if (refreshFxBtn) {
-      refreshFxBtn.addEventListener('click', function() {
-        if (window._refreshFxRate) window._refreshFxRate(refreshFxBtn);
+      refreshFxBtn.addEventListener('click', async function() {
+        var origText = refreshFxBtn.textContent;
+        refreshFxBtn.textContent = 'Refreshing...';
+        refreshFxBtn.disabled = true;
+        try {
+          if (window._refreshFxRate) await window._refreshFxRate(refreshFxBtn);
+          refreshFxBtn.textContent = '✓ Refreshed';
+          showToast('Exchange rate refreshed.');
+          setTimeout(function() { renderSettings(); }, 1200);
+        } catch(e) {
+          refreshFxBtn.textContent = 'Failed';
+          showToast('Refresh failed — check your connection.');
+        }
       });
     }
 
