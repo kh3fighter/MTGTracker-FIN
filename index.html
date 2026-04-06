@@ -919,11 +919,11 @@
     object-fit: cover; margin-bottom: 4px;
   }
   .card-carousel-item .cc-name {
-    font-size: 0.6rem; font-weight: 600; color: var(--text);
+    font-size: 0.7rem; font-weight: 600; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .card-carousel-item .cc-price {
-    font-size: 0.58rem; font-weight: 700;
+    font-size: 0.68rem; font-weight: 700;
   }
   .card-carousel-item.unowned img {
     opacity: 0.5; border: 1.5px dashed rgba(46,58,82,0.5);
@@ -950,9 +950,9 @@
 
   /* ── Rarity Circles ── */
   .rarity-circle {
-    width: 24px; height: 24px; border-radius: 50%;
+    width: 26px; height: 26px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.55rem; font-weight: 800; cursor: pointer;
+    font-size: 0.65rem; font-weight: 800; cursor: pointer;
     transition: all 0.2s; border: 2px solid;
     background: transparent;
   }
@@ -980,7 +980,7 @@
     font-size: 1.1rem; font-weight: 800;
   }
   .stat-pill .stat-label {
-    font-size: 0.6rem; color: var(--text-muted);
+    font-size: 0.7rem; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.04em;
   }
 
@@ -993,10 +993,10 @@
     pointer-events: none;
   }
   .card-name-overlay .overlay-name {
-    font-size: 0.5rem; color: #fff; font-weight: 600;
+    font-size: 0.65rem; color: #fff; font-weight: 600;
   }
   .card-name-overlay .overlay-sub {
-    font-size: 0.42rem; text-transform: uppercase;
+    font-size: 0.58rem; text-transform: uppercase;
   }
 
   /* Foil add toast */
@@ -1778,10 +1778,10 @@
     align-items: center; justify-content: center; gap: 2px;
   }
   .card-slot .placeholder-silhouette .sil-num {
-    font-size: 0.65rem; color: rgba(138,144,168,0.35); font-weight: 700;
+    font-size: 0.75rem; color: rgba(138,144,168,0.4); font-weight: 700;
   }
   .card-slot .placeholder-silhouette .sil-name {
-    font-size: 0.45rem; color: rgba(138,144,168,0.25);
+    font-size: 0.6rem; color: rgba(138,144,168,0.3);
   }
   .card-slot .quick-add-circle {
     width: 14px; height: 14px; border-radius: 50%;
@@ -1790,7 +1790,7 @@
     margin-top: 2px; transition: all 0.2s;
   }
   .card-slot .quick-add-circle span {
-    font-size: 0.55rem; color: rgba(91,127,199,0.5);
+    font-size: 0.65rem; color: rgba(91,127,199,0.5);
   }
   .card-slot:hover .quick-add-circle {
     border-color: var(--accent); background: rgba(91,127,199,0.1);
@@ -1821,7 +1821,7 @@
     font-size: 0.78rem; font-weight: 700; color: var(--text);
   }
   .binder-stats-banner .bsb-spread-label {
-    font-size: 0.62rem; color: var(--text-muted);
+    font-size: 0.7rem; color: var(--text-muted);
   }
   .binder-search-slim {
     display: flex; align-items: center; gap: var(--sp-2);
@@ -1843,7 +1843,7 @@
     padding: 0 36px; margin-top: var(--sp-3);
   }
   .page-scrubber .scrub-label {
-    font-size: 0.62rem; color: var(--text-muted); flex-shrink: 0;
+    font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0;
   }
   .page-scrubber .scrub-track {
     flex: 1; height: 6px; background: var(--surface2);
@@ -5440,7 +5440,7 @@ document.head.appendChild(manifestLink);
       return w > 0 ? `<div style="flex:${w};height:6px;background:${rarityColors[r]}"></div>` : '';
     }).join('');
     const rarityLabels = rarities.map(r =>
-      `<span style="font-size:0.58rem;color:${rarityColors[r]}">${r[0].toUpperCase()} ${rarityCounts[r].owned}/${rarityCounts[r].total}</span>`
+      `<span style="font-size:0.68rem;color:${rarityColors[r]}">${r[0].toUpperCase()} ${rarityCounts[r].owned}/${rarityCounts[r].total}</span>`
     ).join(' ');
 
     // Session card strip
@@ -5498,13 +5498,13 @@ document.head.appendChild(manifestLink);
       <div class="dash-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
           <h3 style="margin:0">Binder Map</h3>
-          <span style="font-size:0.62rem;color:var(--text-muted)">${completePages} / ${totalBinderPages} pages complete</span>
+          <span style="font-size:0.7rem;color:var(--text-muted)">${completePages} / ${totalBinderPages} pages complete</span>
         </div>
         <div style="display:flex;gap:2px;flex-wrap:wrap">${mapCells}</div>
         <div style="display:flex;gap:var(--sp-3);margin-top:6px">
-          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--owned-border)"></div>Complete</div>
-          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:rgba(91,127,199,0.4)"></div>Partial</div>
-          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--chart-empty)"></div>Empty</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--owned-border)"></div>Complete</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:rgba(91,127,199,0.4)"></div>Partial</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--chart-empty)"></div>Empty</div>
         </div>
       </div>
     `;
@@ -5570,7 +5570,7 @@ document.head.appendChild(manifestLink);
       const w = (rarityValues[r] / totalRarVal) * 100;
       return w > 0 ? `<div style="flex:${w};text-align:center">
         <div style="height:6px;background:${rarityColors[r]};border-radius:3px;margin-bottom:3px"></div>
-        <div style="font-size:0.55rem;color:${rarityColors[r]}">${r.charAt(0).toUpperCase() + r.slice(1)} $${rarityValues[r].toFixed(0)}</div>
+        <div style="font-size:0.65rem;color:${rarityColors[r]}">${r.charAt(0).toUpperCase() + r.slice(1)} $${rarityValues[r].toFixed(0)}</div>
       </div>` : '';
     }).join('');
 
@@ -5614,7 +5614,7 @@ document.head.appendChild(manifestLink);
           ${points.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="var(--owned-border)">
             <title>${chartDays[i]}: $${dailyValues[chartDays[i]].toFixed(2)}</title></circle>`).join('')}
         </svg>
-        <div style="display:flex;justify-content:space-between;font-size:0.55rem;color:var(--text-muted);margin-top:2px">
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:2px">
           <span>${chartDays[0]}</span><span>${chartDays[chartDays.length - 1]}</span>
         </div>
       </div>`;
@@ -5686,14 +5686,14 @@ document.head.appendChild(manifestLink);
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
           <div class="dash-card">
-            <div style="font-size:0.62rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">✦ Foil Value</div>
+            <div style="font-size:0.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">✦ Foil Value</div>
             <div style="font-size:1rem;font-weight:800;color:var(--gold)">$${foilValueUSD.toFixed(2)}</div>
-            <div style="font-size:0.62rem;color:var(--text-muted)">${foilCount} foils owned</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${foilCount} foils owned</div>
           </div>
           <div class="dash-card">
-            <div style="font-size:0.62rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">◈ Variants</div>
+            <div style="font-size:0.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">◈ Variants</div>
             <div style="font-size:1rem;font-weight:800;color:var(--accent)">$${variantValueUSD.toFixed(2)}</div>
-            <div style="font-size:0.62rem;color:var(--text-muted)">${variantOwned.length} / ${variantCards.length} owned</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${variantOwned.length} / ${variantCards.length} owned</div>
           </div>
         </div>
 
@@ -5836,7 +5836,7 @@ document.head.appendChild(manifestLink);
       '</div>' +
       '<div style="text-align:right">' +
         '<div style="font-weight:700;color:var(--text);font-size:1rem">' + cardsPerWeek.toFixed(1) + '</div>' +
-        '<div style="font-size:0.62rem;color:var(--text-muted)">cards/week</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-muted)">cards/week</div>' +
       '</div>' +
     '</div>';
 
