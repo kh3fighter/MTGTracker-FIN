@@ -2421,6 +2421,31 @@
     to { transform: scale(0.85); opacity: 0; }
   }
 
+  /* ── Skeleton Loading ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: 6px;
+  }
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton-header { height: 80px; margin-bottom: 20px; border-radius: 8px; }
+  .skeleton-tabs { height: 40px; margin-bottom: 20px; border-radius: 6px; }
+  .skeleton-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .skeleton-card { height: 120px; border-radius: 6px; }
+  @media (max-width: 600px) { .skeleton-grid { grid-template-columns: 1fr; } }
+  .skeleton-fade-out {
+    animation: skeleton-out 0.3s ease both;
+  }
+  @keyframes skeleton-out {
+    to { opacity: 0; }
+  }
+
   /* ── Loading ── */
   .loading { text-align: center; padding: 60px; }
   .loading p { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.08em; color: var(--text-muted); }
@@ -2601,9 +2626,17 @@ document.head.appendChild(manifestLink);
 </head>
 <body>
 <div id="app">
-  <div id="loading-screen" class="loading">
-    <div class="spinner"></div>
-    <p>Loading FIN set data from Scryfall...</p>
+  <div id="loading-screen" class="loading" style="padding:16px;max-width:1200px;margin:0 auto;">
+    <div class="skeleton skeleton-header"></div>
+    <div class="skeleton skeleton-tabs"></div>
+    <div class="skeleton-grid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card" style="animation-delay:0.1s"></div>
+      <div class="skeleton skeleton-card" style="animation-delay:0.1s"></div>
+      <div class="skeleton skeleton-card" style="grid-column:1/-1;height:80px;animation-delay:0.2s"></div>
+    </div>
+    <p style="text-align:center;margin-top:16px;font-size:0.82rem;color:var(--text-muted)">Loading FIN set data...</p>
   </div>
 
   <div id="main-content" style="display:none;">
@@ -6662,8 +6695,12 @@ document.head.appendChild(manifestLink);
         const vp = JSON.parse(localStorage.getItem(VARIANT_KEY));
         if (vp?.cards?.length) variantCards = vp.cards;
       } catch {}
-      document.getElementById('loading-screen').style.display = 'none';
-      document.getElementById('main-content').style.display = '';
+      const loadingEl = document.getElementById('loading-screen');
+      loadingEl.classList.add('skeleton-fade-out');
+      setTimeout(() => {
+        loadingEl.style.display = 'none';
+        document.getElementById('main-content').style.display = '';
+      }, 300);
       renderProgress();
       renderFabRecent();
       renderDashboard();
@@ -6685,8 +6722,12 @@ document.head.appendChild(manifestLink);
       loadFoil();
       boosterPacks = loadPacks();
       timelineEvents = loadTimeline();
-      document.getElementById('loading-screen').style.display = 'none';
-      document.getElementById('main-content').style.display = '';
+      const loadingEl = document.getElementById('loading-screen');
+      loadingEl.classList.add('skeleton-fade-out');
+      setTimeout(() => {
+        loadingEl.style.display = 'none';
+        document.getElementById('main-content').style.display = '';
+      }, 300);
       renderProgress();
       renderFabRecent();
       renderDashboard();
