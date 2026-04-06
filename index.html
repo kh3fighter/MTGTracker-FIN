@@ -4815,8 +4815,8 @@ document.head.appendChild(manifestLink);
     const owned = ownedSet.size;
     const missing = total - owned;
     const pct = total ? (owned / total * 100) : 0;
-
     const rarities = ['mythic', 'rare', 'uncommon', 'common'];
+    const rarityColors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
     const rarityCounts = {};
     for (const r of rarities) {
       rarityCounts[r] = {
@@ -4824,158 +4824,121 @@ document.head.appendChild(manifestLink);
         owned: allCards.filter(c => c.rarity === r && ownedSet.has(c.collector_number)).length,
       };
     }
-
-    const totalBinderPages = Math.ceil(total / binderConfig.slotsPerPage);
-    const fullPages = [...Array(totalBinderPages)].filter((_, i) => {
-      const pageCards = allCards.slice(i * binderConfig.slotsPerPage, (i + 1) * binderConfig.slotsPerPage);
-      return pageCards.length > 0 && pageCards.every(c => ownedSet.has(c.collector_number));
-    }).length;
-
+    const foilCount = Object.keys(foilOwned).length;
+    const packCount = boosterPacks.length;
+    const collValue = allCards.filter(c => ownedSet.has(c.collector_number)).reduce((s, c) => s + c.price_usd, 0);
     const recentCNs = packSession.slice(-10).reverse();
 
-    const donutSegments = [];
-    let deg = 0;
-    const colors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
-    for (const r of rarities) {
-      const slice = total > 0 ? (rarityCounts[r].owned / total * 360) : 0;
-      if (slice > 0) {
-        donutSegments.push(`${colors[r]} ${deg}deg ${deg + slice}deg`);
-        deg += slice;
-      }
-    }
-    if (deg < 360) donutSegments.push(`var(--chart-empty) ${deg}deg 360deg`);
-    const donutGradient = donutSegments.length ? `conic-gradient(${donutSegments.join(', ')})` : `var(--chart-empty)`;
+    // Binder map
+    const totalBinderPages = Math.ceil(total / binderConfig.slotsPerPage);
+    const pageStatus = [...Array(totalBinderPages)].map((_, i) => {
+      const pageCards = allCards.slice(i * binderConfig.slotsPerPage, (i + 1) * binderConfig.slotsPerPage);
+      if (pageCards.length === 0) return 'empty';
+      const ownedOnPage = pageCards.filter(c => ownedSet.has(c.collector_number)).length;
+      if (ownedOnPage === pageCards.length) return 'complete';
+      if (ownedOnPage > 0) return 'partial';
+      return 'empty';
+    });
+    const completePages = pageStatus.filter(s => s === 'complete').length;
 
-    var foilCapableCards = allCards.filter(c => (c.finishes || []).includes('foil'));
-    var foilOwnedCount = foilCapableCards.filter(c => hasFoil(c.collector_number)).length;
-    var foilCapable = foilCapableCards.length;
-    var foilPct = foilCapable > 0 ? (foilOwnedCount / foilCapable * 100) : 0;
-    var variantFoilOwned = variantCards.filter(c => hasFoil(c.collector_number)).length;
-    var topFoils = [...allCards, ...variantCards]
-      .filter(c => hasFoil(c.collector_number) && (c.price_usd_foil || 0) > 0)
-      .sort((a, b) => (b.price_usd_foil || 0) - (a.price_usd_foil || 0))
-      .slice(0, 3);
+    // Progress ring SVG
+    const circumference = 2 * Math.PI * 32;
+    const dashLen = (pct / 100) * circumference;
+    const ringSVG = `<svg width="80" height="80" style="display:block;flex-shrink:0">
+      <defs><linearGradient id="heroRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="var(--accent2)"/><stop offset="100%" stop-color="var(--accent)"/>
+      </linearGradient></defs>
+      <circle cx="40" cy="40" r="32" fill="none" stroke="var(--chart-empty)" stroke-width="6"/>
+      <circle cx="40" cy="40" r="32" fill="none" stroke="url(#heroRingGrad)" stroke-width="6"
+        stroke-dasharray="${dashLen.toFixed(1)} ${circumference.toFixed(1)}"
+        stroke-dashoffset="${(circumference * 0.25).toFixed(1)}"
+        stroke-linecap="round" transform="rotate(-90 40 40)"
+        style="transition:stroke-dasharray 0.5s ease"/>
+      <text x="40" y="36" text-anchor="middle" dominant-baseline="central"
+        style="font-size:16px;font-weight:900;fill:var(--gold)">${pct.toFixed(0)}%</text>
+      <text x="40" y="51" text-anchor="middle" style="font-size:7px;fill:var(--text-muted)">complete</text>
+    </svg>`;
+
+    // Rarity stacked bar
+    const totalOwned = owned || 1;
+    const rarityBar = rarities.map(r => {
+      const w = (rarityCounts[r].owned / totalOwned) * 100;
+      return w > 0 ? `<div style="flex:${w};height:6px;background:${rarityColors[r]}"></div>` : '';
+    }).join('');
+    const rarityLabels = rarities.map(r =>
+      `<span style="font-size:0.58rem;color:${rarityColors[r]}">${r[0].toUpperCase()} ${rarityCounts[r].owned}/${rarityCounts[r].total}</span>`
+    ).join(' ');
+
+    // Session card strip
+    const sessionStrip = recentCNs.length > 0
+      ? `<div class="card-carousel">${recentCNs.map(cn => {
+          const card = getCardByNumber(cn);
+          if (!card) return '';
+          const borderColor = rarityColors[card.rarity] || '#888';
+          const glow = (card.rarity === 'mythic' || card.rarity === 'rare') ? `box-shadow:0 0 8px ${borderColor}30;` : '';
+          return `<div class="card-carousel-item" data-cn="${esc(card.collector_number)}">
+            <img src="${esc(card.image_small)}" alt="${displayNameText(card)}"
+              style="border:1.5px solid ${borderColor};${glow}" loading="lazy">
+            <div class="cc-name">${displayName(card)}</div>
+          </div>`;
+        }).join('')}</div>`
+      : `<div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:0.82rem">
+          Open a pack or search for cards to get started
+          <br><button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="openFab()">Add Cards</button>
+        </div>`;
+
+    // Binder mini-map
+    const mapCells = pageStatus.map((s, i) => {
+      const bg = s === 'complete' ? 'var(--owned-border)' : s === 'partial' ? 'rgba(91,127,199,0.4)' : 'var(--chart-empty)';
+      return `<div style="width:14px;height:10px;border-radius:2px;background:${bg}" title="Page ${i + 1}: ${s}"></div>`;
+    }).join('');
 
     dash.innerHTML = `
-      <div class="dash-grid">
-        <div class="dash-card">
-          <h3>Collection Progress</h3>
-          <div class="dash-big-num">${pct.toFixed(1)}%</div>
-          <div class="dash-sub">${owned} of ${total} cards collected</div>
-          <div class="dash-sub">${missing} cards remaining</div>
-        </div>
-        <div class="dash-card">
-          <h3>Rarity Breakdown</h3>
-          <div class="donut-wrap">
-            <div class="donut-chart" style="background: ${donutGradient}">
-              <div class="donut-center">${owned}</div>
-            </div>
-            <div class="donut-legend">
-              ${rarities.map(r => `<div class="legend-item">
-                <div class="legend-dot" style="background:${colors[r]}"></div>
-                <span>${r}: ${rarityCounts[r].owned}/${rarityCounts[r].total}</span>
-              </div>`).join('')}
-            </div>
-          </div>
-        </div>
-        <div class="dash-card dash-card-full">
-          <h3>Rarity Completion</h3>
-          <div class="rarity-bars">
-            ${rarities.map(r => {
-              const rc = rarityCounts[r];
-              const rpct = rc.total > 0 ? (rc.owned / rc.total * 100) : 0;
-              return `<div class="rarity-row">
-                <span class="rarity-label ${r}">${r}</span>
-                <div class="rarity-track"><div class="rarity-fill ${r}" style="width:${rpct.toFixed(1)}%"></div></div>
-                <span class="rarity-count">${rc.owned}/${rc.total}</span>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-        <div class="dash-card">
-          <h3>Binder Stats</h3>
-          <div class="dash-big-num">${totalBinderPages}</div>
-          <div class="dash-sub">total binder pages</div>
-          <div class="dash-sub" style="margin-top:8px">${fullPages} pages complete</div>
-        </div>
-        <div class="dash-card">
-          <h3>✦ Foil Collection</h3>
-          <div class="dash-big-num">${foilOwnedCount}</div>
-          <div class="dash-sub">of ${foilCapable} foil-capable cards</div>
-          <div class="rarity-track" style="margin:10px 0 4px">
-            <div class="rarity-fill rare" style="width:${foilPct.toFixed(1)}%"></div>
-          </div>
-          <div class="dash-sub">${foilPct.toFixed(1)}% foil complete</div>
-          ${variantCards.length > 0 ? `<div class="dash-sub" style="margin-top:6px">${variantFoilOwned}/${variantCards.length} collector variants owned</div>` : ''}
-          ${topFoils.length > 0 ? `
-            <div class="dash-sub" style="margin-top:10px;color:var(--text-muted);font-size:0.78rem;margin-bottom:4px">Top owned foils:</div>
-            ${topFoils.map(c => `
-              <div class="foil-top-row" data-foil-cn="${esc(c.collector_number)}" style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;padding:3px 0;border-radius:6px;transition:background 0.15s">
-                <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${displayName(c)}</span>
-                <span style="color:var(--foil-color);flex-shrink:0;margin-left:8px">$${(c.price_usd_foil || 0).toFixed(2)}</span>
-              </div>
-            `).join('')}
-          ` : `<div class="dash-sub" style="margin-top:16px;opacity:0.55">No foils collected yet</div>`}
-        </div>
-        <div class="dash-card">
-          <h3>Booster Packs</h3>
-          ${(() => {
-            const totalPacks = boosterPacks.length;
-            const totalSpent = boosterPacks.reduce((s, p) => s + (p.price || 0), 0);
-            const totalPackCards = boosterPacks.reduce((s, p) => s + p.cards.length, 0);
-            const avgPerCard = totalPackCards > 0 ? (totalSpent / totalPackCards) : 0;
-            const lastPack = boosterPacks[boosterPacks.length - 1];
-            return totalPacks > 0 ? `
-              <div class="dash-big-num">${totalPacks}</div>
-              <div class="dash-sub">packs opened</div>
-              <div class="dash-sub" style="margin-top:8px">
-                Total spent: <strong>RM ${totalSpent.toFixed(2)}</strong>
-              </div>
-              <div class="dash-sub">
-                Avg per card: <strong>RM ${avgPerCard.toFixed(2)}</strong>
-              </div>
-              ${lastPack ? `<div class="dash-sub" style="margin-top:6px;font-size:0.78rem">
-                Last pack: ${new Date(lastPack.date).toLocaleDateString()} \u00B7 ${lastPack.cards.length} cards
-              </div>` : ''}
-            ` : `
-              <div class="dash-sub" style="padding:20px 0">No packs opened yet</div>
-            `;
-          })()}
-        </div>
-        <div class="dash-card">
-          <h3>Session Activity</h3>
-          ${recentCNs.length > 0 ? `<div class="recent-list">
-            ${recentCNs.map(cn => {
-              const card = getCardByNumber(cn);
-              if (!card) return '';
-              return `<div class="recent-item">
-                <img src="${esc(card.image_small)}" alt="${displayNameText(card)}" loading="lazy">
-                <span class="rname">${displayName(card)}</span>
-                <span class="rnum">#${esc(card.collector_number)}</span>
-              </div>`;
-            }).join('')}
-          </div>` : `<div class="dash-sub" style="padding:20px 0">No cards added this session</div>`}
-        </div>
-        <div class="dash-card dash-card-full">
-          <h3>Collection Heatmap (each cell = 1 card, by collector #)</h3>
-          <div class="binder-fill-grid">
-            ${allCards.map(c => {
-              const isOwned = ownedSet.has(c.collector_number);
-              return `<div class="fill-cell ${esc(c.rarity)} ${isOwned ? 'owned' : ''}"
-                title="#${esc(c.collector_number)} ${displayNameText(c)}${isOwned ? ' (owned)' : ''}"></div>`;
-            }).join('')}
+      <div class="dash-card" style="margin-bottom:var(--sp-3)">
+        <div style="display:flex;align-items:center;gap:var(--sp-4);position:relative">
+          <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(212,168,80,0.08),transparent 70%);pointer-events:none"></div>
+          ${ringSVG}
+          <div style="flex:1">
+            <div style="font-size:clamp(1.4rem,4vw,1.8rem);font-weight:900;color:var(--text)">${owned} <span style="font-size:0.9rem;color:var(--text-muted);font-weight:500">/ ${total}</span></div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--sp-2)">${missing} cards remaining</div>
+            <div style="display:flex;gap:0;border-radius:3px;overflow:hidden">${rarityBar}</div>
+            <div style="display:flex;gap:var(--sp-2);margin-top:4px;flex-wrap:wrap">${rarityLabels}</div>
           </div>
         </div>
       </div>
+
+      <div class="stats-row">
+        <div class="stat-pill"><div class="stat-num" style="color:var(--gold)">✦ ${foilCount}</div><div class="stat-label">Foils</div></div>
+        <div class="stat-pill"><div class="stat-num" style="color:var(--accent)">${packCount}</div><div class="stat-label">Packs</div></div>
+        <div class="stat-pill"><div class="stat-num" style="color:var(--owned-border)">$${collValue.toFixed(0)}</div><div class="stat-label">Value</div></div>
+      </div>
+
+      <div class="dash-card" style="margin-bottom:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
+          <h3 style="margin:0">This Session</h3>
+          <span style="font-size:0.68rem;color:var(--accent);font-weight:600">${recentCNs.length} cards added</span>
+        </div>
+        ${sessionStrip}
+      </div>
+
+      <div class="dash-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
+          <h3 style="margin:0">Binder Map</h3>
+          <span style="font-size:0.62rem;color:var(--text-muted)">${completePages} / ${totalBinderPages} pages complete</span>
+        </div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap">${mapCells}</div>
+        <div style="display:flex;gap:var(--sp-3);margin-top:6px">
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--owned-border)"></div>Complete</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:rgba(91,127,199,0.4)"></div>Partial</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:0.55rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--chart-empty)"></div>Empty</div>
+        </div>
+      </div>
     `;
-    // Wire foil top-row clicks
-    dash.querySelectorAll('.foil-top-row').forEach(function(row) {
-      var cn = row.dataset.foilCn;
-      row.style.cursor = 'pointer';
-      row.addEventListener('mouseover', function() { this.style.background = 'rgba(255,255,255,0.05)'; });
-      row.addEventListener('mouseout', function() { this.style.background = ''; });
-      row.addEventListener('click', function() {
-        var card = allCards.concat(variantCards).find(function(x) { return x.collector_number === cn; });
+
+    // Wire session card clicks
+    dash.querySelectorAll('.card-carousel-item[data-cn]').forEach(item => {
+      item.addEventListener('click', () => {
+        const card = getCardByNumber(item.dataset.cn);
         if (card) openModal(card);
       });
     });
