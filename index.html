@@ -2234,7 +2234,7 @@
   .fab-panel .autocomplete {
     position: absolute; top: 100%; left: 18px; right: 18px;
     background: var(--surface); border: 1px solid var(--surface2);
-    border-radius: 0 0 8px 8px; max-height: 220px; overflow-y: auto;
+    border-radius: 0 0 8px 8px; max-height: 320px; overflow-y: auto;
     z-index: 110; display: none;
   }
   .fab-panel .autocomplete.show { display: block; }
@@ -2308,26 +2308,68 @@
   .fab-recent-item .remove-btn:hover { color: var(--accent); }
   .fab-empty { text-align: center; padding: 20px 0; color: var(--text-muted); font-size: 0.85rem; }
 
-  /* FAB mode toggle */
-  .fab-mode-toggle {
-    display: flex; margin: 0 18px 8px; padding: 3px;
-    background: var(--slot-bg); border-radius: 10px;
-    position: relative;
+  /* ── Smart Panel Autocomplete ── */
+  .ac-card-row {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent; border-radius: 8px;
+    margin: 0 var(--sp-2) var(--sp-1);
+    cursor: pointer;
   }
-  .fab-mode-btn {
-    flex: 1; padding: 7px 0; border: none; background: none;
-    color: var(--text-muted); font-size: 0.82rem; font-weight: 600;
-    cursor: pointer; border-radius: 8px; transition: all 0.25s;
-    position: relative; z-index: 1;
+  .ac-card-row:hover, .ac-card-row.hl {
+    background: var(--surface2);
+    border-color: var(--accent);
   }
-  .fab-mode-btn.active { color: var(--text); }
-  .fab-mode-slider {
-    position: absolute; top: 3px; bottom: 3px;
-    width: 50%; background: var(--surface2); border-radius: 8px;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    left: 0;
+  .ac-card-row img {
+    width: 48px; height: 67px; border-radius: 6px;
+    object-fit: cover; flex-shrink: 0;
   }
-  .fab-mode-slider.right { left: 50%; }
+  .ac-card-row .ac-info { flex: 1; min-width: 0; }
+  .ac-card-row .ac-name { font-weight: 700; font-size: 0.9rem; }
+  .ac-card-row .ac-detail { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+  .ac-card-row .ac-prices { display: flex; gap: 6px; margin-top: 4px; }
+  .ac-card-row .ac-prices span { font-size: 0.7rem; font-weight: 600; }
+  .ac-card-row .ac-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .ac-add-btn {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; padding: 6px 12px; font-size: 0.75rem;
+    font-weight: 700; cursor: pointer; transition: all 0.15s;
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .ac-add-btn:hover { filter: brightness(1.1); }
+  .ac-add-btn.success { background: var(--owned-border); }
+  .ac-foil-btn {
+    background: none; border: 1px solid var(--gold);
+    color: var(--gold); border-radius: 6px; padding: 4px 10px;
+    font-size: 0.68rem; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; font-family: 'Rajdhani', sans-serif;
+  }
+  .ac-foil-btn:hover { background: rgba(212,168,80,0.1); }
+  .ac-owned-badge {
+    font-size: 0.68rem; color: var(--owned-border);
+    padding: 4px 8px; border: 1px solid var(--owned-border);
+    border-radius: 6px; font-weight: 700;
+  }
+  /* Quick actions bar */
+  .fab-quick-actions {
+    display: flex; gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--surface2);
+  }
+  .fab-qa-btn {
+    flex: 1; padding: var(--sp-3); border: none; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    text-align: center; transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .fab-qa-btn.pack {
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+  }
+  .fab-qa-btn.pack:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
+  .fab-qa-btn.recent {
+    background: var(--surface2); color: var(--text-muted);
+  }
+  .fab-qa-btn.recent:hover { color: var(--text); }
 
   /* Pack mode styles */
   .pack-step {
@@ -2930,11 +2972,6 @@ document.head.appendChild(manifestLink);
       <h3>Add Cards</h3>
       <button class="fab-close" id="fab-close">&times;</button>
     </div>
-    <div class="fab-mode-toggle">
-      <div class="fab-mode-slider" id="fab-mode-slider"></div>
-      <button class="fab-mode-btn active" data-mode="quick">Quick Add</button>
-      <button class="fab-mode-btn" data-mode="pack">Booster Pack</button>
-    </div>
     <!-- Quick Add mode -->
     <div id="fab-quick-mode">
       <div class="search-wrap">
@@ -2946,6 +2983,10 @@ document.head.appendChild(manifestLink);
     <!-- Booster Pack mode -->
     <div id="fab-pack-mode" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div id="pack-step-container"></div>
+    </div>
+    <div class="fab-quick-actions" id="fab-quick-actions">
+      <button class="fab-qa-btn pack" id="fab-qa-pack">📦 Open Pack</button>
+      <button class="fab-qa-btn recent" id="fab-qa-recent">📋 Recent</button>
     </div>
   </div>
   <button class="fab-btn" id="fab-btn" title="Add Cards">+</button>
@@ -4806,23 +4847,31 @@ document.head.appendChild(manifestLink);
     acList.innerHTML = matches.map((c, i) => {
       const isOwned = ownedSet.has(c.collector_number);
       const isFoilOwned = hasFoil(c.collector_number);
-      return `<div class="ac-item" data-cn="${esc(c.collector_number)}" data-index="${i}" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
-          <span class="ac-rarity-dot ${esc(c.rarity)}"></span>
-          <span class="card-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span>
-          <span class="card-num" style="flex-shrink:0">#${esc(c.collector_number)}</span>
-        </span>
-        <span style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          ${acVariantBadgeHTML(c)}
-          ${isOwned || isFoilOwned ? '<span class="owned-tag">' + (isFoilOwned ? '✦ ' : '') + 'owned</span>' : ''}
-        </span>
+      const canFoil = (c.finishes || []).includes('foil');
+      const actionHTML = isOwned
+        ? `<span class="ac-owned-badge">Owned</span>`
+        : `<button class="ac-add-btn" data-cn="${esc(c.collector_number)}">+ Add</button>`;
+      const foilHTML = canFoil && !isFoilOwned
+        ? `<button class="ac-foil-btn" data-cn="${esc(c.collector_number)}">✦ Foil</button>`
+        : (isFoilOwned ? `<span style="font-size:0.65rem;color:var(--gold)">✦ Foil owned</span>` : '');
+      return `<div class="ac-card-row" data-cn="${esc(c.collector_number)}" data-index="${i}">
+        <img src="${esc(c.image_small)}" alt="${displayNameText(c)}" loading="lazy">
+        <div class="ac-info">
+          <div class="ac-name">${displayName(c)}</div>
+          <div class="ac-detail">#${esc(c.collector_number)} · ${esc(c.rarity)} · ${esc(c.type_line || '')}</div>
+          <div class="ac-prices">
+            ${c.price_usd > 0 ? `<span style="color:var(--owned-border)">$${c.price_usd.toFixed(2)}</span>` : ''}
+            ${c.price_usd_foil > 0 ? `<span style="color:var(--gold)">✦ $${c.price_usd_foil.toFixed(2)}</span>` : ''}
+          </div>
+        </div>
+        <div class="ac-actions">${actionHTML}${foilHTML}</div>
       </div>`;
     }).join('');
     acList.classList.add('show');
   });
 
   searchInput.addEventListener('keydown', (e) => {
-    const items = acList.querySelectorAll('.ac-item');
+    const items = acList.querySelectorAll('.ac-card-row');
     if (!items.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -4845,17 +4894,49 @@ document.head.appendChild(manifestLink);
   }
 
   acList.addEventListener('click', (e) => {
-    const item = e.target.closest('.ac-item');
-    if (!item) return;
-    const cn = item.dataset.cn;
+    // Handle Add button click
+    const addBtn = e.target.closest('.ac-add-btn');
+    if (addBtn) {
+      e.stopPropagation();
+      const cn = addBtn.dataset.cn;
+      addCard(cn);
+      addBtn.textContent = '\u2713';
+      addBtn.classList.add('success');
+      setTimeout(() => { addBtn.textContent = '+ Add'; addBtn.classList.remove('success'); }, 1000);
+      return;
+    }
+    // Handle Foil button click
+    const foilBtn = e.target.closest('.ac-foil-btn');
+    if (foilBtn) {
+      e.stopPropagation();
+      const cn = foilBtn.dataset.cn;
+      const card = getCardByNumber(cn);
+      addFoil(cn);
+      if (card) celebrateFoil(card);
+      foilBtn.textContent = '\u2726 Added';
+      foilBtn.disabled = true;
+      return;
+    }
+    // Clicking the card image opens the modal
+    const img = e.target.closest('.ac-card-row img');
+    if (img) {
+      const cn = img.closest('.ac-card-row').dataset.cn;
+      const card = getCardByNumber(cn);
+      searchInput.value = '';
+      acList.classList.remove('show');
+      if (card) openModal(card);
+      return;
+    }
+    // Clicking the row itself opens the modal
+    const row = e.target.closest('.ac-card-row');
+    if (!row) return;
+    const cn = row.dataset.cn;
     if (fabMode === 'pack' && currentPack) {
-      // Pack mode: open modal for inspection, add via modal buttons
       const card = getCardByNumber(cn);
       searchInput.value = '';
       acList.classList.remove('show');
       if (card) { _packModeAdding = true; openModal(card); }
     } else {
-      // Quick Add: open the modal so user can choose add/foil/variant
       const card = getCardByNumber(cn);
       searchInput.value = '';
       acList.classList.remove('show');
@@ -4906,26 +4987,27 @@ document.head.appendChild(manifestLink);
   }
 
   // ── Booster Pack Mode ──
-  const fabModeSlider = document.getElementById('fab-mode-slider');
   const fabQuickMode = document.getElementById('fab-quick-mode');
   const fabPackMode = document.getElementById('fab-pack-mode');
   const packStepContainer = document.getElementById('pack-step-container');
+  const fabQuickActions = document.getElementById('fab-quick-actions');
 
-  document.querySelectorAll('.fab-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.fab-mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      fabMode = btn.dataset.mode;
-      fabModeSlider.classList.toggle('right', fabMode === 'pack');
-      if (fabMode === 'quick') {
-        fabQuickMode.style.display = '';
-        fabPackMode.style.display = 'none';
-      } else {
-        fabQuickMode.style.display = 'none';
-        fabPackMode.style.display = 'flex';
-        renderPackMode();
-      }
-    });
+  document.getElementById('fab-qa-pack')?.addEventListener('click', () => {
+    fabQuickMode.style.display = 'none';
+    fabPackMode.style.display = 'flex';
+    fabQuickActions.style.display = 'none';
+    fabMode = 'pack';
+    renderPackMode();
+  });
+  document.getElementById('fab-qa-recent')?.addEventListener('click', () => {
+    fabQuickMode.style.display = '';
+    fabPackMode.style.display = 'none';
+    fabQuickActions.style.display = '';
+    fabMode = 'quick';
+    document.getElementById('search-input').value = '';
+    document.getElementById('autocomplete').innerHTML = '';
+    document.getElementById('autocomplete').classList.remove('show');
+    renderFabRecent();
   });
 
   function renderPackMode() {
@@ -5045,7 +5127,12 @@ document.head.appendChild(manifestLink);
     document.getElementById('pack-cancel-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       currentPack = null;
-      renderPackMode();
+      // Return to quick add mode after cancel
+      fabMode = 'quick';
+      fabQuickMode.style.display = '';
+      fabPackMode.style.display = 'none';
+      fabQuickActions.style.display = '';
+      renderFabRecent();
     });
 
     setTimeout(() => packSearchInput.focus(), 100);
@@ -5116,7 +5203,12 @@ document.head.appendChild(manifestLink);
     showPackSummary(pack, bestRarity);
 
     currentPack = null;
-    renderPackMode();
+    // Return to quick add mode after pack finalize
+    fabMode = 'quick';
+    fabQuickMode.style.display = '';
+    fabPackMode.style.display = 'none';
+    fabQuickActions.style.display = '';
+    renderFabRecent();
     if (document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
     if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
   }
