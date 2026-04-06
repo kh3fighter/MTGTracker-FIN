@@ -1244,6 +1244,36 @@
     cursor: default;
   }
 
+  /* ── Collector Gallery ── */
+  .coll-gallery-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  }
+  @media (max-width: 700px) {
+    .coll-gallery-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .coll-gallery-grid .card-slot { position: relative; overflow: hidden; }
+  .coll-gallery-grid .card-slot:hover {
+    transform: scale(1.05); z-index: 2;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+  .coll-pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--sp-3); margin-top: var(--sp-3);
+  }
+  .coll-pg-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--ff-border);
+    color: var(--text-muted); font-size: 0.8rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .coll-pg-btn:hover { background: var(--accent); color: #fff; }
+  .coll-pg-btn:disabled { opacity: 0.3; cursor: default; }
+  .coll-pg-btn:disabled:hover { background: var(--surface2); color: var(--text-muted); }
+  @media (max-width: 700px) {
+    .coll-pg-btn { width: 36px; height: 36px; min-height: 44px; }
+  }
+
   /* ── Timeline ── */
   .milestone-track {
     display: flex; align-items: center; justify-content: space-between;
@@ -6626,7 +6656,7 @@ document.head.appendChild(manifestLink);
     if (!el) return;
 
     // ── Filter state (closure-local) ──
-    let activeFilter = el._collFilter || 'All';
+    let activeFilter = el._collFilter || 'All Cards';
     let activeRarity = el._collRarity || '';
     let searchQuery  = el._collSearch || '';
     let collPage     = el._collPage   || 0;
@@ -6654,71 +6684,81 @@ document.head.appendChild(manifestLink);
         return s;
       }, 0);
 
-    // ── Helper: progress donut ──
-    function donutSVG(pct, color) {
-      const r = 22, cx = 28, cy = 28, circ = 2 * Math.PI * r;
+    // ── Mini donut helper ──
+    function miniDonut(pct, color) {
+      const r = 12, cx = 16, cy = 16, circ = 2 * Math.PI * r;
       const dash = (pct / 100) * circ;
-      return `<svg width="56" height="56" style="display:block">
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="5"/>
+      return `<svg width="32" height="32" style="display:block;flex-shrink:0">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="3"/>
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}"
-          stroke-width="5" stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
-          stroke-dashoffset="${(circ * 0.25).toFixed(2)}" stroke-linecap="round"
-          transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray 0.5s ease"/>
+          stroke-width="3" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+          stroke-dashoffset="${(circ * 0.25).toFixed(1)}" stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})"/>
         <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-          style="font-size:9px;font-weight:700;fill:var(--text)">${pct.toFixed(0)}%</text>
+          style="font-size:7px;font-weight:800;fill:var(--text)">${pct.toFixed(0)}%</text>
       </svg>`;
     }
 
-    // ── Stats bar HTML ──
+    // ── Compact stats row ──
     const statsHTML = `
-      <div class="dash-grid" style="margin-bottom:18px">
-        <div class="dash-card" style="display:flex;align-items:center;gap:16px">
-          ${donutSVG(ownedPct, 'var(--foil-color)')}
+      <div class="stats-row" style="margin-bottom:var(--sp-3)">
+        <div class="stat-pill" style="display:flex;align-items:center;gap:6px">
+          ${miniDonut(ownedPct, 'var(--foil-color)')}
           <div>
-            <h3>Collection</h3>
-            <div class="dash-big-num" style="font-size:1.4rem">${totalOwned} / ${totalCards}</div>
-            <div class="dash-sub">${ownedPct.toFixed(1)}% collected</div>
+            <div class="stat-num" style="color:var(--foil-color)">${totalOwned}/${totalCards}</div>
+            <div class="stat-label">Collected</div>
           </div>
         </div>
-        <div class="dash-card">
-          <h3>✦ Foils Owned</h3>
-          <div class="dash-big-num" style="font-size:1.4rem">${ownedFoilCount}</div>
-          <div class="dash-sub">across main set &amp; variants</div>
+        <div class="stat-pill">
+          <div class="stat-num" style="color:var(--gold)">\u2726 ${ownedFoilCount}</div>
+          <div class="stat-label">Foils</div>
         </div>
-        <div class="dash-card">
-          <h3>Total Value</h3>
-          <div class="dash-big-num" style="font-size:1.4rem">$${collValue.toFixed(2)}</div>
-          <div class="dash-sub">RM ${(collValue * USD_TO_MYR).toFixed(2)} (est.)</div>
+        <div class="stat-pill">
+          <div class="stat-num" style="color:var(--owned-border)">$${collValue.toFixed(0)}</div>
+          <div class="stat-label">Value</div>
         </div>
       </div>`;
 
-    // ── Filter bar HTML ──
-    const filterTypes = ['All', 'Owned', 'Foil', 'Extended Art', 'Showcase', 'Surge Foil', 'Chocobo Track'];
-    const rarities = ['C', 'U', 'R', 'M'];
-    const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
-
+    // ── Pill chip filter bar ──
+    const filterChips = ['All Cards', '\u2726 Foils', 'Extended Art', 'Showcase', 'Surge Foil', 'Chocobo Track'];
     const filterBarHTML = `
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${filterTypes.map(f => `<button class="btn ${activeFilter === f ? 'btn-primary' : 'btn-secondary'} coll-filter-type" data-type="${f}" style="padding:4px 12px;font-size:0.82rem">${f}</button>`).join('')}
-        </div>
-        <div style="display:flex;gap:5px">
-          ${rarities.map(r => `<button class="btn ${activeRarity === r ? 'btn-primary' : 'btn-secondary'} coll-filter-rarity" data-rarity="${r}" style="padding:4px 10px;font-size:0.8rem;font-weight:700">${r}</button>`).join('')}
-        </div>
-        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${searchQuery.replace(/"/g, '&quot;')}"
-          style="padding:5px 10px;border-radius:8px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text);font-size:0.85rem;min-width:160px">
+      <div class="pill-scroll" style="margin-bottom:var(--sp-2)">
+        ${filterChips.map(f => `<button class="pill-chip coll-filter-type${activeFilter === f ? ' active' : ''}" data-type="${f}">${f}</button>`).join('')}
       </div>`;
 
-    // ── Determine which cards to show ──
+    // ── Search + rarity row ──
+    const rarities = [
+      { key: 'C', label: 'C', cls: 'rc-common' },
+      { key: 'U', label: 'U', cls: 'rc-uncommon' },
+      { key: 'R', label: 'R', cls: 'rc-rare' },
+      { key: 'M', label: 'M', cls: 'rc-mythic' }
+    ];
+    const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
+    const searchRarityHTML = `
+      <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3)">
+        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${searchQuery.replace(/"/g, '&quot;')}"
+          style="flex:1;padding:5px 10px;border-radius:8px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text);font-size:0.85rem;min-width:0">
+        <div style="display:flex;gap:4px">
+          ${rarities.map(r => `<button class="rarity-circle ${r.cls}${activeRarity === r.key ? ' active' : ''} coll-filter-rarity" data-rarity="${r.key}">${r.label}</button>`).join('')}
+        </div>
+      </div>`;
+
+    // ── Variant color map ──
+    function variantColor(label) {
+      if (label === 'SURGE FOIL') return '#fde68a';
+      if (label === 'CHOCOBO TRACK FOIL') return '#6ee7b7';
+      if (label === 'EXTENDED ART') return '#93c5fd';
+      if (label === 'SHOWCASE') return '#fda4af';
+      if (label === 'FOIL') return '#c4b5fd';
+      return 'var(--text-muted)';
+    }
+
+    // ── Build card grid ──
     function buildGrid() {
       const spp = binderConfig.slotsPerPage;
       let cards;
 
-      if (activeFilter === 'Owned') {
-        cards = allPool
-          .filter(c => hasFoil(c.collector_number) || ownedSet.has(c.collector_number))
-          .sort((a, b) => compareCollector(a.collector_number, b.collector_number));
-      } else if (activeFilter === 'Foil') {
+      if (activeFilter === '\u2726 Foils') {
         cards = allCards.slice().sort((a, b) => compareCollector(a.collector_number, b.collector_number));
       } else if (activeFilter === 'Extended Art') {
         cards = variantCards.filter(c => (c.frame_effects || []).includes('extendedart'));
@@ -6729,7 +6769,7 @@ document.head.appendChild(manifestLink);
       } else if (activeFilter === 'Chocobo Track') {
         cards = variantCards.filter(c => isChocoboTrack(c));
       } else {
-        // All — main set + variants
+        // All Cards — main set + variants
         cards = [...allPool].sort((a, b) => compareCollector(a.collector_number, b.collector_number));
       }
 
@@ -6760,32 +6800,35 @@ document.head.appendChild(manifestLink);
           ? 'width:100%;height:100%;object-fit:cover;border-radius:4px'
           : 'width:100%;height:100%;object-fit:cover;border-radius:4px;filter:grayscale(0.75) brightness(0.45);opacity:0.55';
         const isVariant = !allCards.includes(card);
-        const label = isVariant ? getFoilVariantLabel(card) : '';
+        const label = isVariant ? getFoilVariantLabel(card) : (isFoilOwned ? 'FOIL' : '');
+        const lblColor = variantColor(label);
         const imgSrc = card.image_normal || card.image_small;
         return `<div class="card-slot foil-slot ${slotCls} ${esc(variantClass)} ${delayClass}" data-cn="${esc(card.collector_number)}" style="position:relative;cursor:pointer">
           <img data-src="${esc(imgSrc)}" alt="${displayNameText(card)}" style="${imgStyle}">
+          <div class="card-name-overlay">
+            <div class="overlay-name">${esc(card.name)}</div>
+            ${label ? `<div class="overlay-sub" style="color:${lblColor}">${esc(label)}</div>` : ''}
+          </div>
           ${isFoilOwned ? '<span class="foil-badge">\u2726</span>' : ''}
-          ${isNonfoilOwned && !isFoilOwned ? '<span style="position:absolute;top:2px;right:3px;font-size:0.7rem;color:#6bcb77;text-shadow:0 0 6px rgba(107,203,119,0.9);pointer-events:none">\u2713</span>' : ''}
-          ${label ? `<span style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:0.68rem;font-weight:700;letter-spacing:0.03em;color:#fff;background:rgba(0,0,0,0.7);border-radius:4px;padding:2px 5px;pointer-events:none;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis">${esc(label)}</span>` : ''}
         </div>`;
       }).join('');
 
-      return { html: `<div class="page-grid foil-card-grid" style="grid-template-columns:repeat(${binderConfig.gridCols},1fr);gap:6px">${slotsHTML}</div>`, totalPages };
+      return { html: `<div class="coll-gallery-grid">${slotsHTML}</div>`, totalPages };
     }
 
     // ── Assemble full tab ──
     const gridResult = buildGrid();
+    const tp = gridResult.totalPages;
     el.innerHTML = `
       <div style="padding:16px 12px">
         ${statsHTML}
         ${filterBarHTML}
-        <div class="binder-layout">
-          <button class="binder-nav" id="coll-prev-page" ${collPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
-          <div style="flex:1;min-width:0">
-            <div id="coll-grid-container">${gridResult.html}</div>
-            <div style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:6px">Page ${collPage + 1} of ${gridResult.totalPages}</div>
-          </div>
-          <button class="binder-nav" id="coll-next-page" ${collPage >= gridResult.totalPages - 1 ? 'disabled' : ''}>&rsaquo;</button>
+        ${searchRarityHTML}
+        <div id="coll-grid-container">${gridResult.html}</div>
+        <div class="coll-pagination">
+          <button class="coll-pg-btn" id="coll-prev-page" ${collPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
+          <span style="font-size:0.8rem;color:var(--text-muted)">${collPage + 1} / ${tp}</span>
+          <button class="coll-pg-btn" id="coll-next-page" ${collPage >= tp - 1 ? 'disabled' : ''}>&rsaquo;</button>
         </div>
       </div>`;
 
