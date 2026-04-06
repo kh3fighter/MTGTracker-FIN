@@ -5981,12 +5981,21 @@ document.head.appendChild(manifestLink);
       });
     });
 
-    // Wire search input
+    // Wire search input — only re-render spread + banner, NOT the search input itself
     const searchInput = document.getElementById('binder-search-input');
     searchInput.addEventListener('input', function() {
       binderSearchQuery = this.value;
       currentPage = 0;
-      renderBinder();
+      renderSpread();
+      renderBinderBannerOnly();
+      // Update match count
+      const filtered = isBinderFiltered();
+      const mcEl = controlsEl.querySelector('.match-count');
+      if (filtered) {
+        const count = getBinderFilteredCards().length;
+        if (mcEl) { mcEl.textContent = count + ' match' + (count !== 1 ? 'es' : ''); }
+        else { searchInput.parentNode.insertAdjacentHTML('beforeend', `<span class="match-count">${count} match${count !== 1 ? 'es' : ''}</span>`); }
+      } else if (mcEl) { mcEl.remove(); }
     });
 
     // Render the spread
