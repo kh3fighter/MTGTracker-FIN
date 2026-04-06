@@ -1758,6 +1758,48 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   }
 
+  /* ── Card Slot Polish ── */
+  @keyframes slot-breathe {
+    0%, 100% { box-shadow: 0 0 6px var(--ff-glow); }
+    50% { box-shadow: 0 0 12px var(--ff-glow); }
+  }
+  .card-slot.owned {
+    animation: slot-breathe 3s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(91,127,199,0.12);
+  }
+  .card-slot.owned:nth-child(2n) { animation-delay: 1s; }
+  .card-slot.owned:nth-child(3n) { animation-delay: 2s; }
+  /* Missing card silhouette */
+  .card-slot .placeholder-silhouette {
+    width: 70%; height: 75%;
+    border: 1px dashed rgba(138,144,168,0.12);
+    border-radius: 3px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+  }
+  .card-slot .placeholder-silhouette .sil-num {
+    font-size: 0.65rem; color: rgba(138,144,168,0.35); font-weight: 700;
+  }
+  .card-slot .placeholder-silhouette .sil-name {
+    font-size: 0.45rem; color: rgba(138,144,168,0.25);
+  }
+  .card-slot .quick-add-circle {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid rgba(91,127,199,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px; transition: all 0.2s;
+  }
+  .card-slot .quick-add-circle span {
+    font-size: 0.55rem; color: rgba(91,127,199,0.5);
+  }
+  .card-slot:hover .quick-add-circle {
+    border-color: var(--accent); background: rgba(91,127,199,0.1);
+  }
+  .card-slot:hover .quick-add-circle span { color: var(--accent); }
+  @media (max-width: 700px) {
+    .card-slot .quick-add-circle { width: 20px; height: 20px; }
+  }
+
   /* ── Binder Stats Banner ── */
   .binder-stats-banner {
     display: flex; align-items: center; justify-content: space-between;
@@ -6025,9 +6067,12 @@ document.head.appendChild(manifestLink);
         if (isOwned) {
           slot.innerHTML = `<img data-src="${esc(card.image_normal || card.image_small)}" alt="${displayNameText(card)}">`;
         } else {
-          slot.innerHTML = `<div class="placeholder">
-            <span class="num">#${esc(card.collector_number)}</span>
-            <span class="pname">${esc(card.name)}</span>
+          slot.innerHTML = `<div class="placeholder" style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;opacity:0.6">
+            <div class="placeholder-silhouette">
+              <span class="sil-num">#${esc(card.collector_number)}</span>
+              <span class="sil-name">${esc(card.name.length > 12 ? card.name.slice(0,12) + '\u2026' : card.name)}</span>
+              <div class="quick-add-circle"><span>+</span></div>
+            </div>
           </div>`;
         }
         slot.dataset.cn = card.collector_number;
@@ -6072,9 +6117,12 @@ document.head.appendChild(manifestLink);
             if (isOwned) {
               slot.innerHTML = `<img data-src="${esc(card.image_normal || card.image_small)}" alt="${displayNameText(card)}">`;
             } else {
-              slot.innerHTML = `<div class="placeholder">
-                <span class="num">#${esc(card.collector_number)}</span>
-                <span class="pname">${esc(card.name)}</span>
+              slot.innerHTML = `<div class="placeholder" style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;opacity:0.6">
+                <div class="placeholder-silhouette">
+                  <span class="sil-num">#${esc(card.collector_number)}</span>
+                  <span class="sil-name">${esc(card.name.length > 12 ? card.name.slice(0,12) + '\u2026' : card.name)}</span>
+                  <div class="quick-add-circle"><span>+</span></div>
+                </div>
               </div>`;
             }
             slot.dataset.cn = card.collector_number;
@@ -6223,6 +6271,32 @@ document.head.appendChild(manifestLink);
       if (document.getElementById('tab-binder').classList.contains('active')) renderBinder();
     }
   });
+
+  // ── Card Slot Parallax Tilt (desktop) ──
+  if (!('ontouchstart' in window)) {
+    document.addEventListener('mousemove', e => {
+      const slot = e.target.closest('.card-slot');
+      if (!slot || !slot.closest('#binder-spread, #tab-collector')) return;
+      const rect = slot.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      slot.style.transform = `perspective(600px) rotateX(${(-y * 8).toFixed(1)}deg) rotateY(${(x * 8).toFixed(1)}deg) scale(1.03)`;
+      slot.style.transition = 'transform 0.1s ease';
+    });
+    document.addEventListener('mouseleave', e => {
+      if (e.target.classList && e.target.classList.contains('card-slot')) {
+        e.target.style.transform = '';
+        e.target.style.transition = 'transform 0.3s ease';
+      }
+    }, true);
+    document.addEventListener('mouseout', e => {
+      const slot = e.target.closest('.card-slot');
+      if (slot && !slot.contains(e.relatedTarget)) {
+        slot.style.transform = '';
+        slot.style.transition = 'transform 0.3s ease';
+      }
+    });
+  }
 
   // ── Card Visualizer (modal — no drag, just flip/reset) ──
   const card3d = document.getElementById('card-3d');
