@@ -1740,6 +1740,13 @@
     .add-toast { padding: 20px 24px; min-width: 240px; max-width: 300px; }
     .add-toast img { width: 120px; }
     .toast-rarity-badge { font-size: 0.75rem; padding: 4px 14px; }
+
+    /* Pack modal — bottom sheet on mobile */
+    .pack-modal-overlay { padding: 0; align-items: flex-end; }
+    .pack-modal {
+      max-width: 100%; max-height: 90vh;
+      border-radius: 20px 20px 0 0;
+    }
   }
 
   /* Small phones — value grid single column */
@@ -2600,6 +2607,67 @@
   }
   .pack-summary .pack-stats span { color: var(--accent); font-weight: 700; }
 
+  /* ── Pack Opening Modal ── */
+  .pack-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 850;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    justify-content: center; align-items: center;
+    padding: 20px;
+  }
+  .pack-modal-overlay.visible {
+    display: flex;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .pack-modal-overlay.dimmed {
+    z-index: 840;
+  }
+  .pack-modal-overlay.dimmed .pack-modal {
+    opacity: 0.2; transform: scale(0.95);
+    pointer-events: none;
+  }
+  .pack-modal {
+    background: var(--surface); border-radius: 16px;
+    width: 100%; max-width: 400px; max-height: 80vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 16px 48px var(--shadow);
+    transition: opacity 0.3s, transform 0.3s;
+    animation: modalSlideUp 0.3s ease;
+  }
+  @keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .pack-modal-header {
+    padding: 16px 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--surface2);
+    flex-shrink: 0;
+  }
+  .pack-modal-title {
+    font-size: 1.05rem; font-weight: 700; color: var(--text);
+  }
+  .pack-modal-price {
+    font-size: 0.8rem; color: var(--text-muted);
+  }
+  .pack-modal-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+    line-height: 1;
+  }
+  .pack-modal-close:hover { color: var(--text); }
+  .pack-modal-body {
+    flex: 1; overflow-y: auto; min-height: 0;
+  }
+  .pack-modal-footer {
+    padding: 12px 16px; border-top: 1px solid var(--surface2);
+    display: flex; gap: 8px; flex-shrink: 0;
+  }
+  .pack-modal-footer:empty { display: none; }
+
   /* ── Celebration FX ── */
   .fx-container {
     position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden;
@@ -3126,6 +3194,21 @@ document.head.appendChild(manifestLink);
     </div>
   </div>
   <button class="fab-btn" id="fab-btn" title="Add Cards">+</button>
+</div>
+
+<!-- Pack Opening Modal -->
+<div class="pack-modal-overlay" id="pack-modal-overlay">
+  <div class="pack-modal" id="pack-modal">
+    <div class="pack-modal-header">
+      <div class="pack-modal-title" id="pack-modal-title">📦 Open Booster Pack</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="pack-modal-price" id="pack-modal-price"></span>
+        <button class="pack-modal-close" id="pack-modal-close">&times;</button>
+      </div>
+    </div>
+    <div class="pack-modal-body" id="pack-modal-body"></div>
+    <div class="pack-modal-footer" id="pack-modal-footer"></div>
+  </div>
 </div>
 
 <!-- Toast container -->
@@ -5102,6 +5185,146 @@ document.head.appendChild(manifestLink);
     headerAcList.classList.remove('show');
     if (card) openModal(card);
   });
+
+  // ── Pack Opening Modal ──
+  const packModalOverlay = document.getElementById('pack-modal-overlay');
+  const packModalBody = document.getElementById('pack-modal-body');
+  const packModalFooter = document.getElementById('pack-modal-footer');
+  const packModalTitle = document.getElementById('pack-modal-title');
+  const packModalPrice = document.getElementById('pack-modal-price');
+  const packModalClose = document.getElementById('pack-modal-close');
+
+  function openPackModal() {
+    currentPack = null;
+    renderPackModalStep1();
+    packModalOverlay.classList.add('visible');
+    packModalOverlay.classList.remove('dimmed');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePackModal(force) {
+    if (!force && currentPack && currentPack.cards.length > 0) {
+      if (!confirm(`Discard this pack? ${currentPack.cards.length} card(s) will be removed from your binder.`)) return;
+      for (const cn of currentPack.cards) {
+        ownedSet.delete(cn);
+      }
+      saveCollection();
+      renderProgress();
+    }
+    currentPack = null;
+    packModalOverlay.classList.remove('visible', 'dimmed');
+    document.body.style.overflow = '';
+    packModalTitle.textContent = '📦 Open Booster Pack';
+    packModalPrice.textContent = '';
+    packModalBody.innerHTML = '';
+    packModalFooter.innerHTML = '';
+  }
+
+  document.getElementById('header-pack-btn').addEventListener('click', openPackModal);
+  packModalClose.addEventListener('click', () => closePackModal(false));
+  packModalOverlay.addEventListener('click', (e) => {
+    if (e.target === packModalOverlay && !packModalOverlay.classList.contains('dimmed')) {
+      closePackModal(false);
+    }
+  });
+
+  function renderPackModalStep1() {
+    packModalTitle.textContent = '📦 Open Booster Pack';
+    packModalPrice.textContent = '';
+    packModalFooter.innerHTML = '';
+
+    packModalBody.innerHTML = `
+      <div style="padding:24px 20px;text-align:center;">
+        <div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:16px;">How much did this pack cost?</div>
+        <div class="pack-price-row" style="justify-content:center;">
+          <span class="pack-price-label">RM</span>
+          <input type="number" class="pack-price-input" id="pack-modal-price-input" placeholder="0.00" step="0.10" min="0" style="max-width:120px;text-align:center;font-size:1.2rem;">
+        </div>
+        <button class="pack-start-btn" id="pack-modal-start" style="margin-top:4px;">Start Opening</button>
+        <div style="color:var(--text-muted);font-size:0.75rem;margin-top:10px;">Price is optional \u2014 leave at 0 to skip</div>
+      </div>
+    `;
+
+    const startBtn = document.getElementById('pack-modal-start');
+    const priceInput = document.getElementById('pack-modal-price-input');
+
+    startBtn.addEventListener('click', () => {
+      const price = parseFloat(priceInput.value) || 0;
+      currentPack = { price, cards: [] };
+      renderPackModalStep2();
+    });
+    priceInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startBtn.click();
+    });
+    setTimeout(() => priceInput.focus(), 100);
+  }
+
+  function renderPackModalStep2() {
+    const packNum = boosterPacks.length + 1;
+    packModalTitle.textContent = `📦 Pack #${packNum}`;
+    packModalPrice.textContent = currentPack.price > 0 ? `RM ${currentPack.price.toFixed(2)}` : '';
+
+    packModalBody.innerHTML = `
+      <div style="padding:12px 16px 8px;position:relative;">
+        <input type="text" id="pack-modal-search" placeholder="Search cards to add to pack..." autocomplete="off"
+          style="width:100%;padding:10px 14px;font-size:0.9rem;background:var(--slot-bg);border:2px solid var(--surface2);border-radius:8px;color:var(--text);outline:none;font-family:'Rajdhani',sans-serif;">
+        <div class="header-autocomplete" id="pack-modal-ac" style="position:absolute;left:16px;right:16px;top:100%;border-radius:0 0 8px 8px;"></div>
+      </div>
+      <div class="pack-counter">
+        <span id="pack-modal-count">${currentPack.cards.length}</span> cards in this pack
+        ${currentPack.price > 0 ? ` \u00B7 RM ${currentPack.price.toFixed(2)}` : ''}
+      </div>
+      <div class="pack-card-list" id="pack-modal-card-list"></div>
+    `;
+
+    packModalFooter.innerHTML = `
+      <button class="pack-done-btn" id="pack-modal-done" ${currentPack.cards.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Done \u2014 Save Pack</button>
+      <button class="pack-cancel-btn" id="pack-modal-cancel">Cancel</button>
+    `;
+
+    renderPackModalCardList();
+    wirePackModalSearch();
+
+    document.getElementById('pack-modal-done').addEventListener('click', () => {
+      if (currentPack && currentPack.cards.length > 0) finalizePackModal();
+    });
+    document.getElementById('pack-modal-cancel').addEventListener('click', () => closePackModal(false));
+
+    setTimeout(() => document.getElementById('pack-modal-search')?.focus(), 100);
+  }
+
+  function renderPackModalCardList() {
+    const container = document.getElementById('pack-modal-card-list');
+    if (!container || !currentPack) return;
+    if (currentPack.cards.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:0.85rem;">Search and add cards from your pack</div>';
+      return;
+    }
+    container.innerHTML = currentPack.cards.map((cn, i) => {
+      const card = getCardByNumber(cn);
+      if (!card) return '';
+      const isFoilOwned = hasFoil(cn);
+      return `<div class="pack-card-entry" style="animation-delay:${i * 0.05}s">
+        <div class="pack-num">${i + 1}</div>
+        <img src="${esc(card.image_small)}" alt="${displayNameText(card)}">
+        <span class="pack-card-name">${displayName(card)}</span>
+        ${acVariantBadgeHTML(card)}
+        ${isFoilOwned ? '<span style="color:var(--foil-color);font-size:0.7rem;font-weight:700">\u2726</span>' : ''}
+        <span class="pack-card-rarity ${esc(card.rarity)}">${esc(card.rarity)}</span>
+      </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+
+    const doneBtn = document.getElementById('pack-modal-done');
+    if (doneBtn) {
+      doneBtn.disabled = currentPack.cards.length === 0;
+      doneBtn.style.opacity = currentPack.cards.length === 0 ? '0.5' : '';
+      doneBtn.style.cursor = currentPack.cards.length === 0 ? 'not-allowed' : '';
+    }
+  }
+
+  function wirePackModalSearch() { /* wired in Task 8 */ }
+  function finalizePackModal() { /* wired in Task 9 */ }
 
   // ── FAB (Floating Action Button) ──
   const fabBtn = document.getElementById('fab-btn');
