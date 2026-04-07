@@ -4953,6 +4953,16 @@ document.head.appendChild(manifestLink);
     }
   });
 
+  // Global keyboard shortcut: Ctrl+K or / to open search
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === 'k' && (e.ctrlKey || e.metaKey)) ||
+        (e.key === '/' && !e.target.closest('input, textarea'))) {
+      e.preventDefault();
+      if (headerSearchBar.classList.contains('open')) closeHeaderSearch();
+      else openHeaderSearch();
+    }
+  });
+
   // ── Header Search Autocomplete ──
   headerSearchInput.addEventListener('input', () => {
     const q = headerSearchInput.value.trim().toLowerCase();
