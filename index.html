@@ -5055,6 +5055,7 @@ document.head.appendChild(manifestLink);
       if (!confirm(`Discard this pack? ${currentPack.cards.length} card(s) will be removed from your binder.`)) return;
       for (const cn of currentPack.cards) {
         ownedSet.delete(cn);
+        if (hasFoil(cn)) removeFoil(cn);
       }
       saveCollection();
       renderProgress();
@@ -5785,7 +5786,7 @@ document.head.appendChild(manifestLink);
       journeyHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-muted)">' +
         '<div style="font-size:2rem;margin-bottom:8px">📭</div>' +
         '<div style="font-size:0.9rem;font-weight:600;margin-bottom:4px">Your collection journey starts here</div>' +
-        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="document.getElementById('header-search-btn').click()">Add Your First Card</button>' +
+        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="document.getElementById(\'header-search-btn\').click()">Add Your First Card</button>' +
       '</div>';
     } else {
       journeyHTML = '<div class="journey-timeline">';
@@ -6832,6 +6833,17 @@ document.head.appendChild(manifestLink);
     showModalBtn(toggleBtn, _showToggle);
     showModalBtn(foilToggleBtn, _showFoilToggle);
 
+    // Pack mode helper text
+    const existingHelper = document.querySelector('.pack-helper-text');
+    if (existingHelper) existingHelper.remove();
+    if (isPack) {
+      const helper = document.createElement('div');
+      helper.className = 'pack-helper-text';
+      helper.style.cssText = 'font-size:0.72rem;color:var(--text-muted);text-align:center;margin-top:6px;';
+      helper.textContent = 'Also adds to your binder';
+      toggleBtn.parentElement.appendChild(helper);
+    }
+
     // Foil shimmer overlay — apply variant-specific class for distinct effects
     const card3dEl = document.getElementById('card-3d');
     if (card3dEl) {
@@ -6879,11 +6891,15 @@ document.head.appendChild(manifestLink);
       // Return to pack modal if we were adding from pack mode
       if (wasPackMode && currentPack) {
         packModalOverlay.classList.remove('dimmed');
+        document.body.style.overflow = 'hidden';
         renderPackModalStep2();
       }
       // Re-focus header search if it was open
       if (headerSearchBar.classList.contains('open')) {
         headerSearchInput.focus();
+        if (headerSearchInput.value.trim()) {
+          headerSearchInput.dispatchEvent(new Event('input'));
+        }
       }
     }, 280);
   }
