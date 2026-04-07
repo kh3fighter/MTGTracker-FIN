@@ -157,47 +157,64 @@
   .header-search-bar {
     display: none;
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    align-items: center; gap: 8px;
-    padding: 0 16px;
+    align-items: center; gap: var(--sp-2);
+    padding: 0 var(--sp-4);
     background: var(--bg);
     z-index: 50;
-    animation: searchBarIn 0.2s ease;
+    animation: searchBarIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   }
   @keyframes searchBarIn {
-    from { opacity: 0; transform: translateY(-4px); }
+    from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .header-search-bar.open {
-    display: flex;
-  }
-  .header-search-icon {
-    flex-shrink: 0; color: var(--text-muted);
-  }
+  .header-search-bar.open { display: flex; }
+  .header-search-icon { flex-shrink: 0; color: var(--text-muted); }
   .header-search-bar input {
-    flex: 1; padding: 10px 12px; font-size: 0.95rem;
-    background: var(--slot-bg); border: 2px solid var(--accent);
-    border-radius: 8px; color: var(--text); outline: none;
-    font-family: 'Rajdhani', sans-serif;
+    flex: 1; padding: 10px 14px; font-size: 0.88rem;
+    background: var(--slot-bg);
+    border: 2px solid var(--ff-border);
+    border-radius: 6px; color: var(--text); outline: none;
+    font-family: 'Rajdhani', sans-serif; font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .header-search-bar input::placeholder { color: var(--text-muted); }
+  .header-search-bar input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px var(--ff-glow);
+  }
+  .header-search-bar input::placeholder {
+    color: var(--text-muted); font-weight: 500; opacity: 0.6;
+  }
   .header-search-esc {
-    background: var(--surface2); border: none; border-radius: 6px;
-    color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
-    padding: 5px 10px; cursor: pointer; flex-shrink: 0;
+    background: var(--surface); border: 1px solid var(--ff-border); border-radius: 4px;
+    color: var(--text-muted); font-size: 0.65rem; font-weight: 600;
+    padding: 4px 8px; cursor: pointer; flex-shrink: 0;
     font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
-  .header-search-esc:hover { color: var(--text); }
+  .header-search-esc:hover { color: var(--text); background: var(--surface2); }
 
   .header-autocomplete {
     display: none;
     position: absolute; top: 100%; left: 0; right: 0;
-    background: var(--surface); border: 1px solid var(--surface2);
-    border-top: none; border-radius: 0 0 12px 12px;
-    max-height: 400px; overflow-y: auto;
+    background: var(--ff-panel);
+    border: 2px solid var(--ff-border); border-top: none;
+    border-radius: 0 0 6px 6px;
+    max-height: 420px; overflow-y: auto; overflow-x: hidden;
     z-index: 49;
-    box-shadow: 0 8px 24px var(--shadow);
+    box-shadow: inset 0 0 0 1px var(--ff-border-inner), 0 0 14px var(--ff-glow), 0 8px 32px var(--shadow);
+    padding: var(--sp-1) 0 var(--sp-2);
   }
-  .header-autocomplete.show { display: block; }
+  .header-autocomplete.show { display: block; animation: acDropIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes acDropIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .header-autocomplete::-webkit-scrollbar { width: 5px; }
+  .header-autocomplete::-webkit-scrollbar-track { background: transparent; }
+  .header-autocomplete::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  .header-autocomplete::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   /* Light mode readability fixes */
   [data-theme="light"] {
     --foil-color: #8b6914;
@@ -977,10 +994,12 @@
 
   /* ── Pill Chips ── */
   .pill-chip {
-    padding: 6px 14px; border-radius: 20px;
+    padding: 5px 12px; border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
     font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
     white-space: nowrap; flex-shrink: 0;
-    cursor: pointer; transition: all 0.2s;
+    cursor: pointer; transition: all 0.15s;
     border: 1px solid var(--ff-border);
     background: transparent; color: var(--text-muted);
   }
@@ -997,8 +1016,9 @@
   .rarity-circle {
     width: 26px; height: 26px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.65rem; font-weight: 800; cursor: pointer;
-    transition: all 0.2s; border: 2px solid;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.68rem; font-weight: 800; cursor: pointer;
+    transition: all 0.15s; border: 2px solid;
     background: transparent;
   }
   .rarity-circle.active { color: #fff !important; }
@@ -1011,22 +1031,48 @@
   .rarity-circle.rc-mythic { border-color: #e8702a; color: #e8702a; }
   .rarity-circle.rc-mythic.active { background: #e8702a; }
 
+  /* ── Collector Search Input ── */
+  .coll-search-input {
+    flex: 1; padding: 6px 12px; min-width: 0;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.82rem; font-weight: 500;
+    letter-spacing: 0.02em;
+    background: var(--slot-bg);
+    border: 2px solid var(--ff-border);
+    border-radius: 6px; color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .coll-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px var(--ff-glow);
+  }
+  .coll-search-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+  .coll-search-row {
+    display: flex; align-items: center; gap: var(--sp-2);
+    margin-bottom: var(--sp-3);
+  }
+  .coll-rarity-group { display: flex; gap: 4px; }
+
   /* ── Compact Stats Row ── */
   .stats-row {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2);
     margin-bottom: var(--sp-3);
   }
   .stat-pill {
-    background: var(--surface); border-radius: 8px;
+    background: var(--ff-panel); border-radius: 6px;
     padding: var(--sp-3); text-align: center;
-    border: 1px solid var(--ff-border);
+    border: 2px solid var(--ff-border);
+    box-shadow: inset 0 0 0 1px var(--ff-border-inner), 0 0 14px var(--ff-glow);
   }
   .stat-pill .stat-num {
+    font-family: 'Rajdhani', sans-serif;
     font-size: 1.1rem; font-weight: 800;
   }
   .stat-pill .stat-label {
+    font-family: 'Rajdhani', sans-serif;
     font-size: 0.7rem; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.04em;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600;
   }
 
   /* ── Card Name Overlay ── */
@@ -1237,42 +1283,80 @@
   }
   .btn-foil:hover { filter: brightness(1.1); }
   .modal-foil-info {
-    display: flex; flex-wrap: wrap; gap: 5px;
+    display: flex; flex-direction: column; gap: 4px;
     min-height: 0;
   }
+  .foil-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4px; align-items: stretch;
+  }
+  .foil-row:has(> :only-child) {
+    grid-template-columns: 1fr;
+  }
   .foil-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 0.68rem; padding: 2px 8px;
-    border-radius: 20px; border: 1px solid;
-    line-height: 1.5;
-    transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.66rem; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--ff-border);
+    background: var(--slot-bg);
+    line-height: 1.3;
+    transition: all 0.15s;
     text-decoration: none;
+    position: relative;
+    overflow: hidden;
   }
   .foil-chip[data-switch-cn], .foil-chip[data-foil-preview] { cursor: pointer; }
+  /* Variant type indicator dot */
+  .vdot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    display: inline-block;
+    box-shadow: 0 0 4px currentColor;
+  }
+  .vdot-regular { color: var(--text-muted); background: var(--text-muted); }
+  .vdot-foil { color: var(--gold); background: var(--gold); }
+  .vdot-ext { color: #93c5fd; background: #93c5fd; }
+  .vdot-showcase { color: #fda4af; background: #fda4af; }
+  .vdot-surge { color: #fde68a; background: #fde68a; }
+  .vdot-chocobo { color: #6ee7b7; background: #6ee7b7; }
+  .vdot-collector { color: #e2e8f0; background: #e2e8f0; }
+  /* Split dots — variant + foil hybrid */
+  .vdot-ext-foil { color: #93c5fd; background: linear-gradient(135deg, #93c5fd 50%, var(--gold) 50%); }
+  .vdot-showcase-foil { color: #fda4af; background: linear-gradient(135deg, #fda4af 50%, var(--gold) 50%); }
+  .vdot-collector-foil { color: #e2e8f0; background: linear-gradient(135deg, #e2e8f0 50%, var(--gold) 50%); }
+  /* Owned checkmark */
+  .foil-chip-check {
+    color: var(--owned-border); font-weight: 800;
+    font-size: 0.62rem; margin-left: auto; flex-shrink: 0;
+    opacity: 0.9;
+  }
+  /* States */
   .foil-chip.active {
     border-color: var(--accent) !important;
-    background: rgba(91,127,199,0.18) !important;
+    background: rgba(91,127,199,0.12) !important;
     color: var(--text) !important;
-    box-shadow: 0 0 8px var(--ff-glow);
+    box-shadow: inset 0 0 0 1px rgba(91,127,199,0.15), 0 0 8px var(--ff-glow);
     font-weight: 700;
   }
   [data-theme="light"] .foil-chip.active {
-    background: rgba(200,140,40,0.15) !important;
+    background: rgba(200,140,40,0.1) !important;
     border-color: var(--accent) !important;
   }
   .foil-chip.owned {
-    border-color: rgba(255,217,61,0.6);
+    border-color: rgba(212,168,80,0.35);
     color: var(--foil-color);
     background: var(--foil-color-bg);
   }
   .foil-chip.owned:hover {
-    background: rgba(255,217,61,0.2);
-    border-color: rgba(255,217,61,0.8);
+    border-color: rgba(212,168,80,0.6);
+    background: rgba(212,168,80,0.12);
   }
   .foil-chip.unowned {
-    border-color: var(--surface2);
+    border-color: var(--ff-border);
     color: var(--text-muted);
-    background: transparent;
+    background: var(--slot-bg);
   }
   .foil-chip.unowned:hover {
     border-color: var(--accent);
@@ -1283,10 +1367,21 @@
     border-color: transparent;
     color: var(--text-muted);
     background: var(--surface2);
-    opacity: 0.75;
+    opacity: 0.7;
     font-style: italic;
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     cursor: default;
+  }
+  .foil-legend {
+    display: flex; flex-wrap: wrap; gap: 4px 10px;
+    padding-top: 3px;
+  }
+  .foil-legend-item {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.58rem; font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
   }
 
   /* ── Collector Gallery ── */
@@ -1709,7 +1804,7 @@
     .modal-info-col { align-items: flex-start; }
     .modal-info-col h3 { text-align: left; font-size: 0.95rem; }
     .modal-info-col .detail { text-align: left; }
-    .modal-info-col .modal-foil-info { justify-content: flex-start; }
+    .modal-info-col .modal-foil-info { }
     .modal-info-col .modal-actions { min-height: 40px; }
     .modal-info-col .modal-actions .btn { min-height: 40px; font-size: 0.78rem; padding: 6px 12px; }
     .modal .btn { min-height: 44px; }
@@ -1981,7 +2076,7 @@
   }
   .modal-info-col h3 { text-align: left; }
   .modal-info-col .detail { text-align: left; margin-bottom: 0; }
-  .modal-info-col .modal-foil-info { justify-content: flex-start; margin: 0; }
+  .modal-info-col .modal-foil-info { margin: 0; }
   .modal-info-col .modal-actions {
     display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start; margin-top: 4px;
     position: relative; min-height: 34px;
@@ -1992,6 +2087,23 @@
   }
   .modal-info-col .modal-actions .btn.modal-btn-hidden {
     position: absolute; opacity: 0; pointer-events: none;
+  }
+  .modal-variant-hint {
+    display: none; width: 100%;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .modal-variant-hint.visible { display: block; }
+  .modal-variant-hint .hint-icon {
+    display: inline-block; width: 14px; height: 14px;
+    border-radius: 50%; border: 1.5px solid var(--accent);
+    color: var(--accent); font-size: 0.6rem; font-weight: 800;
+    text-align: center; line-height: 12px;
+    margin-right: 4px; vertical-align: middle;
+    position: relative; top: -0.5px;
   }
   .modal-footer {
     display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -2265,22 +2377,34 @@
   }
 
   .ac-item {
-    padding: 8px 14px; cursor: pointer; display: flex;
+    padding: 6px var(--sp-3); cursor: pointer; display: flex;
     justify-content: space-between; align-items: center;
-    border-bottom: 1px solid var(--surface2); transition: background 0.15s;
+    border-bottom: 1px solid var(--ff-border-inner); transition: background 0.15s;
+    margin: 0 var(--sp-2); border-radius: 4px;
   }
   .ac-item:hover, .ac-item.hl { background: var(--surface2); }
-  .ac-item .card-name { font-size: 0.9rem; }
-  .ac-item .card-num { color: var(--text-muted); font-size: 0.78rem; }
+  .ac-item .card-name {
+    font-family: 'Rajdhani', sans-serif; font-size: 0.88rem; font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .ac-item .card-num {
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text-muted); font-size: 0.72rem; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
   .ac-item .owned-tag {
-    font-size: 0.68rem; color: var(--owned-border);
-    padding: 2px 6px; border: 1px solid var(--owned-border); border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.68rem; font-weight: 700; color: var(--owned-border);
+    letter-spacing: 0.04em; text-transform: uppercase;
   }
 
   /* Variant type badges in autocomplete */
   .ac-variant-badge {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;
-    padding: 2px 7px; border-radius: 4px; white-space: nowrap; line-height: 1.5;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 5px; border-radius: 3px; white-space: nowrap; line-height: 1.4;
+    vertical-align: middle; position: relative; top: -1px;
   }
   .ac-variant-badge.vb-traditional { color: #c4b5fd; border: 1px solid #7c3aed44; background: #7c3aed18; }
   .ac-variant-badge.vb-extended    { color: #93c5fd; border: 1px solid #3b82f644; background: #3b82f618; }
@@ -2297,8 +2421,10 @@
 
   /* Foil add button styles */
   .ac-foil-toggle {
-    background: none; border: 1px solid var(--surface3); border-radius: 12px;
-    padding: 1px 8px; font-size: 0.68rem; cursor: pointer; color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif;
+    background: none; border: 1px solid var(--surface3); border-radius: 4px;
+    padding: 1px 7px; font-size: 0.65rem; font-weight: 700; cursor: pointer; color: var(--text-muted);
+    letter-spacing: 0.04em; text-transform: uppercase;
     line-height: 1.5; transition: all 0.15s; white-space: nowrap;
   }
   .ac-foil-toggle:hover { border-color: var(--foil-color); color: var(--foil-color); }
@@ -2312,45 +2438,109 @@
   /* ── Smart Panel Autocomplete ── */
   .ac-card-row {
     display: flex; align-items: center; gap: var(--sp-3);
-    padding: var(--sp-2) var(--sp-3);
-    transition: background 0.15s, border-color 0.15s;
-    border: 1px solid transparent; border-radius: 8px;
-    margin: 0 var(--sp-2) var(--sp-1);
+    padding: 6px var(--sp-3);
+    transition: background 0.15s;
+    border-radius: 4px;
+    margin: 0 var(--sp-2);
     cursor: pointer;
+    animation: acRowIn 0.15s ease both;
+  }
+  .ac-card-row:nth-child(1) { animation-delay: 0s; }
+  .ac-card-row:nth-child(2) { animation-delay: 0.02s; }
+  .ac-card-row:nth-child(3) { animation-delay: 0.03s; }
+  .ac-card-row:nth-child(4) { animation-delay: 0.04s; }
+  .ac-card-row:nth-child(5) { animation-delay: 0.05s; }
+  .ac-card-row:nth-child(n+6) { animation-delay: 0.06s; }
+  @keyframes acRowIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .ac-card-row:hover, .ac-card-row.hl {
     background: var(--surface2);
-    border-color: var(--accent);
   }
+  .ac-card-row + .ac-card-row {
+    border-top: 1px solid var(--ff-border-inner);
+  }
+  .ac-card-row:hover + .ac-card-row,
+  .ac-card-row.hl + .ac-card-row,
+  .ac-card-row:hover,
+  .ac-card-row.hl { border-top-color: transparent; }
+  /* Card thumbnail */
   .ac-card-row img {
-    width: 48px; height: 67px; border-radius: 6px;
+    width: 40px; height: 56px; border-radius: 3px;
     object-fit: cover; flex-shrink: 0;
+    border: 1px solid var(--ff-border);
+    background: var(--slot-bg);
   }
-  .ac-card-row .ac-info { flex: 1; min-width: 0; }
-  .ac-card-row .ac-name { font-weight: 700; font-size: 0.9rem; }
-  .ac-card-row .ac-detail { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
-  .ac-card-row .ac-prices { display: flex; gap: 6px; margin-top: 4px; }
-  .ac-card-row .ac-prices span { font-size: 0.7rem; font-weight: 600; }
-  .ac-card-row .ac-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .ac-img-owned { border-color: var(--owned-border); }
+  /* Card info — all left-aligned */
+  .ac-card-row .ac-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .ac-card-row .ac-name {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    font-size: 0.88rem; line-height: 1.2;
+    letter-spacing: 0.02em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    text-align: left;
+  }
+  .ac-card-row .ac-detail {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem; font-weight: 500; color: var(--text-muted);
+    letter-spacing: 0.02em; text-transform: capitalize;
+    text-align: left;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Right-side status column */
+  .ac-card-row .ac-actions {
+    display: flex; align-items: center;
+    gap: var(--sp-2); flex-shrink: 0;
+  }
   .ac-add-btn {
     background: var(--accent); color: #fff; border: none;
-    border-radius: 6px; padding: 6px 12px; font-size: 0.75rem;
+    border-radius: 4px; padding: 5px 10px; font-size: 0.72rem;
     font-weight: 700; cursor: pointer; transition: all 0.15s;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Rajdhani', sans-serif; letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .ac-add-btn:hover { filter: brightness(1.1); }
   .ac-add-btn.success { background: var(--owned-border); }
   .ac-foil-btn {
     background: none; border: 1px solid var(--gold);
-    color: var(--gold); border-radius: 6px; padding: 4px 10px;
+    color: var(--gold); border-radius: 4px; padding: 4px 8px;
     font-size: 0.68rem; font-weight: 700; cursor: pointer;
     transition: all 0.15s; font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.04em; text-transform: uppercase;
   }
   .ac-foil-btn:hover { background: rgba(212,168,80,0.1); }
   .ac-owned-badge {
-    font-size: 0.68rem; color: var(--owned-border);
-    padding: 4px 8px; border: 1px solid var(--owned-border);
-    border-radius: 6px; font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.68rem; color: var(--owned-border); font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .ac-foil-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.68rem; color: var(--gold); font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .ac-price-usd { color: var(--owned-border); font-weight: 600; text-transform: none; }
+  .ac-price-foil { color: var(--gold); font-weight: 600; text-transform: none; }
+  .ac-collector-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.58rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 1px 5px; border-radius: 3px;
+    opacity: 0.7;
+  }
+  .ac-chevron {
+    color: var(--text-muted); font-size: 0.9rem; opacity: 0.3;
+    transition: opacity 0.15s, transform 0.15s;
+    margin-left: 2px;
+  }
+  .ac-card-row:hover .ac-chevron, .ac-card-row.hl .ac-chevron {
+    opacity: 0.7; transform: translateX(1px);
   }
   /* Pack mode styles */
   .pack-step {
@@ -2586,7 +2776,7 @@
   /* ── Toast ── */
   .toast-container {
     position: fixed; inset: 0;
-    z-index: 950; display: flex;
+    z-index: 1100; display: flex;
     justify-content: center; align-items: center;
     pointer-events: none;
   }
@@ -3122,6 +3312,7 @@ document.head.appendChild(manifestLink);
         <div class="modal-actions">
           <button class="btn btn-primary" id="modal-toggle"></button>
           <button class="btn btn-foil modal-btn-hidden" id="modal-foil-toggle">Add Foil ✦</button>
+          <div class="modal-variant-hint" id="modal-variant-hint"></div>
         </div>
       </div>
     </div>
@@ -4835,7 +5026,7 @@ document.head.appendChild(manifestLink);
       <img src="${esc(card.image_normal || card.image_small)}" alt="${displayNameText(card)}">
       <div class="toast-name">#${esc(card.collector_number)} ${displayName(card)}</div>
       <div class="toast-foil-msg">${esc(msg)}</div>
-      ${p.page !== '?' ? `<div class="toast-placement">Page ${p.page}, Slot ${p.slot}${priceStr}</div>` : priceStr ? `<div class="toast-placement">${priceStr.trim()}</div>` : ''}
+      ${p.page !== '?' ? `<div class="toast-placement">Page ${p.page}, Slot ${p.slot}${priceStr}</div>` : `<div class="toast-placement">Collector collection${priceStr}</div>`}
     `;
     container.appendChild(toast);
 
@@ -4979,25 +5170,25 @@ document.head.appendChild(manifestLink);
     headerAcList.innerHTML = matches.map((c, i) => {
       const isOwned = ownedSet.has(c.collector_number);
       const isFoilOwned = hasFoil(c.collector_number);
-      const vInfo = getCardVariantInfo(c);
-      const variantBadge = vInfo.label
-        ? `<span class="ac-variant-badge ${vInfo.cssClass}">${vInfo.label}</span>` : '';
+      const isVar = !allCards.includes(c);
       const ownedBadge = isOwned
-        ? `<span class="ac-owned-badge" style="font-size:0.65rem">\u2713 Owned</span>`
+        ? `<span class="ac-owned-badge">\u2713 Owned</span>`
         : '';
       const foilBadge = isFoilOwned
-        ? `<span style="color:var(--gold);font-size:0.65rem;font-weight:700">\u2726 Foil</span>` : '';
-      return `<div class="ac-card-row" data-cn="${esc(c.collector_number)}" data-index="${i}">
-        <img src="${esc(c.image_small)}" alt="${displayNameText(c)}" loading="lazy"${isOwned ? ' style="border:2px solid var(--owned-border);border-radius:6px"' : ''}>
+        ? `<span class="ac-foil-badge">\u2726 Foil</span>` : '';
+      const collectorBadge = isVar
+        ? `<span class="ac-collector-badge">Collector</span>` : '';
+      // Build detail fragments: collector #, rarity, then prices inline
+      let detailParts = [`#${esc(c.collector_number)}`, esc(c.rarity)];
+      if (c.price_usd > 0) detailParts.push(`<span class="ac-price-usd">$${c.price_usd.toFixed(2)}</span>`);
+      if (c.price_usd_foil > 0) detailParts.push(`<span class="ac-price-foil">\u2726 $${c.price_usd_foil.toFixed(2)}</span>`);
+      return `<div class="ac-card-row${isVar ? ' ac-variant-row' : ''}" data-cn="${esc(c.collector_number)}" data-index="${i}">
+        <img src="${esc(c.image_small)}" alt="${displayNameText(c)}" loading="lazy"${isOwned ? ' class="ac-img-owned"' : ''}>
         <div class="ac-info">
-          <div class="ac-name">${displayName(c)} ${variantBadge}</div>
-          <div class="ac-detail">#${esc(c.collector_number)} \u00B7 ${esc(c.rarity)} \u00B7 ${esc(c.type_line || '')}</div>
-          <div class="ac-prices">
-            ${c.price_usd > 0 ? `<span style="color:var(--owned-border)">$${c.price_usd.toFixed(2)}</span>` : ''}
-            ${c.price_usd_foil > 0 ? `<span style="color:var(--gold)">\u2726 $${c.price_usd_foil.toFixed(2)}</span>` : ''}
-          </div>
+          <div class="ac-name">${displayName(c)}</div>
+          <div class="ac-detail">${detailParts.join(' \u00B7 ')}</div>
         </div>
-        <div class="ac-actions">${ownedBadge}${foilBadge}<span style="color:var(--text-muted);font-size:1rem">\u203A</span></div>
+        <div class="ac-actions">${collectorBadge}${ownedBadge}${foilBadge}<span class="ac-chevron">\u203A</span></div>
       </div>`;
     }).join('');
     headerAcList.classList.add('show');
@@ -5116,8 +5307,8 @@ document.head.appendChild(manifestLink);
     packModalBody.innerHTML = `
       <div style="padding:12px 16px 8px;position:relative;">
         <input type="text" id="pack-modal-search" placeholder="Search cards to add to pack..." autocomplete="off"
-          style="width:100%;padding:10px 14px;font-size:0.9rem;background:var(--slot-bg);border:2px solid var(--surface2);border-radius:8px;color:var(--text);outline:none;font-family:'Rajdhani',sans-serif;">
-        <div class="header-autocomplete" id="pack-modal-ac" style="position:absolute;left:16px;right:16px;top:100%;border-radius:0 0 8px 8px;"></div>
+          style="width:100%;padding:10px 14px;font-size:0.88rem;background:var(--slot-bg);border:2px solid var(--ff-border);border-radius:6px;color:var(--text);outline:none;font-family:'Rajdhani',sans-serif;font-weight:500;letter-spacing:0.02em;">
+        <div class="header-autocomplete" id="pack-modal-ac" style="position:absolute;left:16px;right:16px;top:100%;border-radius:0 0 6px 6px;"></div>
       </div>
       <div class="pack-counter">
         <span id="pack-modal-count">${currentPack.cards.length}</span> cards in this pack
@@ -5398,7 +5589,7 @@ document.head.appendChild(manifestLink);
         }).join('')}</div>`
       : `<div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:0.82rem">
           Open a pack or search for cards to get started
-          <br><button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="document.getElementById('header-search-btn').click()">Add Cards</button>
+          <br><button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();document.getElementById('header-search-btn').click()">Add Cards</button>
         </div>`;
 
     // Binder mini-map
@@ -5487,9 +5678,9 @@ document.head.appendChild(manifestLink);
     for (const r of rarities) rarityValues[r] = ownedCards.filter(c => c.rarity === r).reduce((s, c) => s + c.price_usd, 0);
     const totalRarVal = Math.max(Object.values(rarityValues).reduce((a, b) => a + b, 0), 1);
 
-    // Top owned (effective price = max of regular or foil)
+    // Top owned (effective price = max of regular or foil) — includes main set + variants
     const getEffectivePrice = (c) => Math.max(c.price_usd || 0, hasFoil(c.collector_number) ? (c.price_usd_foil || 0) : 0);
-    const topOwned = [...ownedCards].sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a)).slice(0, 5);
+    const topOwned = [...ownedCards, ...variantOwned].sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a)).slice(0, 5);
     const topMissing = allCards.filter(c => !ownedSet.has(c.collector_number)).sort((a, b) => b.price_usd - a.price_usd).slice(0, 5);
 
     // Card carousel helper
@@ -5786,7 +5977,7 @@ document.head.appendChild(manifestLink);
       journeyHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-muted)">' +
         '<div style="font-size:2rem;margin-bottom:8px">📭</div>' +
         '<div style="font-size:0.9rem;font-weight:600;margin-bottom:4px">Your collection journey starts here</div>' +
-        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="document.getElementById(\'header-search-btn\').click()">Add Your First Card</button>' +
+        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();document.getElementById(\'header-search-btn\').click()">Add Your First Card</button>' +
       '</div>';
     } else {
       journeyHTML = '<div class="journey-timeline">';
@@ -6535,7 +6726,7 @@ document.head.appendChild(manifestLink);
   }
 
   function buildFoilInfoHTML(card) {
-    var chips = [];
+    var rows = [];
     var cn = card.collector_number;
     var isVariantCard = !allCards.includes(card);
     var collEnabled = binderConfig.scope && binderConfig.scope.collectorBinder;
@@ -6549,62 +6740,121 @@ document.head.appendChild(manifestLink);
       return v.oracle_id === familyOracleId;
     }) : [];
 
-    // 1. Regular pill (main card) — switchable
+    // Helper: colored indicator dot per variant type
+    function vdot(v) {
+      if (!v) return '<span class="vdot vdot-regular"></span>';
+      if (isSurgeFoil(v)) return '<span class="vdot vdot-surge"></span>';
+      if (isChocoboTrack(v)) return '<span class="vdot vdot-chocobo"></span>';
+      if ((v.frame_effects || []).includes('extendedart')) return '<span class="vdot vdot-ext"></span>';
+      if (isShowcase(v)) return '<span class="vdot vdot-showcase"></span>';
+      return '<span class="vdot vdot-collector"></span>';
+    }
+    // Split dot for foil versions of variants (half variant color, half gold)
+    function vdotFoil(v) {
+      if (!v) return '<span class="vdot vdot-foil"></span>';
+      if ((v.frame_effects || []).includes('extendedart')) return '<span class="vdot vdot-ext-foil"></span>';
+      if (isShowcase(v)) return '<span class="vdot vdot-showcase-foil"></span>';
+      return '<span class="vdot vdot-collector-foil"></span>';
+    }
+
+    // Helper: build a single chip — dot + label + optional ✓
+    function chip(cls, data, dot, label, isOwned) {
+      var ownMark = isOwned ? '<span class="foil-chip-check">\u2713</span>' : '';
+      return '<span class="foil-chip ' + cls + '" ' + data + '>' + dot + '<span>' + label + '</span>' + ownMark + '</span>';
+    }
+
+    // 1. Main card row: Regular + Foil (if applicable)
     if (mainCard) {
       var mOwned = ownedSet.has(mainCard.collector_number);
       var isActive = cn === mainCard.collector_number;
-      chips.push(
-        '<span class="foil-chip ' + (mOwned ? 'owned' : 'unowned') + (isActive ? ' active' : '') + '" data-switch-cn="' + esc(mainCard.collector_number) + '">' +
-        'Regular' + (mOwned ? ' \u00B7 Owned' : '') +
-        '</span>'
+      var left = chip(
+        (mOwned ? 'owned' : 'unowned') + (isActive ? ' active' : ''),
+        'data-switch-cn="' + esc(mainCard.collector_number) + '"',
+        vdot(null), 'Regular', mOwned
       );
-    }
-
-    // 2. Foil pill for main card — clickable to preview foil shimmer
-    if (mainCard && (mainCard.finishes || []).includes('foil')) {
-      var isMainSpecial = isSurgeFoil(mainCard) || isChocoboTrack(mainCard) || isShowcase(mainCard) || (mainCard.frame_effects || []).includes('extendedart');
-      if (!isMainSpecial) {
-        var fOwned = hasFoil(mainCard.collector_number);
-        chips.push(
-          '<span class="foil-chip ' + (fOwned ? 'owned' : 'unowned') + '" data-foil-preview="' + esc(mainCard.collector_number) + '">' +
-          '\u2726 Foil' + (fOwned ? ' \u00B7 Owned' : '') +
-          '</span>'
-        );
+      var right = '';
+      if ((mainCard.finishes || []).includes('foil')) {
+        var isMainSpecial = isSurgeFoil(mainCard) || isChocoboTrack(mainCard) || isShowcase(mainCard) || (mainCard.frame_effects || []).includes('extendedart');
+        if (!isMainSpecial) {
+          var fOwned = hasFoil(mainCard.collector_number);
+          right = chip(
+            fOwned ? 'owned' : 'unowned',
+            'data-foil-preview="' + esc(mainCard.collector_number) + '"',
+            '<span class="vdot vdot-foil"></span>', 'Foil', fOwned
+          );
+        }
       }
+      rows.push('<div class="foil-row">' + left + right + '</div>');
     }
 
-    // 3. Variant pills — switchable, with foil sub-pills for variants that have foil pricing
+    // 2. Variant rows — each variant gets a row with optional foil pill
     if (variants.length > 0) {
       variants.forEach(function(v) {
         var vOwned = hasFoil(v.collector_number);
-        var label = getVariantLabel(v);
+        var baseLabel = getVariantLabel(v);
+        var label = baseLabel + ' #' + v.collector_number;
         var isActive = cn === v.collector_number && !_foilPreviewActive;
-        chips.push(
-          '<span class="foil-chip ' + (vOwned ? 'owned' : 'unowned') + (isActive ? ' active' : '') + '" data-switch-cn="' + esc(v.collector_number) + '">' +
-          '\u2726 ' + esc(label) + (vOwned ? ' \u00B7 Owned' : '') +
-          '</span>'
+        var isInherentFoil = isSurgeFoil(v) || isChocoboTrack(v);
+        var left = chip(
+          (vOwned ? 'owned' : 'unowned') + (isActive ? ' active' : ''),
+          'data-switch-cn="' + esc(v.collector_number) + '"',
+          vdot(v), esc(label), vOwned
         );
-        // Foil pill for this variant (if it has a distinct foil price and isn't inherently foil)
-        if (v.price_usd_foil > 0 && v.price_usd_foil !== v.price_usd && !isSurgeFoil(v) && !isChocoboTrack(v)) {
+        var right = '';
+        if (!isInherentFoil && v.price_usd_foil > 0 && v.price_usd_foil !== v.price_usd) {
           var vfOwned = hasFoil(v.collector_number);
-          chips.push(
-            '<span class="foil-chip ' + (vfOwned ? 'owned' : 'unowned') + '" data-foil-preview="' + esc(v.collector_number) + '">' +
-            '\u2726 ' + esc(label) + ' Foil' + (vfOwned ? ' \u00B7 Owned' : '') +
-            '</span>'
+          right = chip(
+            vfOwned ? 'owned' : 'unowned',
+            'data-foil-preview="' + esc(v.collector_number) + '"',
+            vdotFoil(v), esc(label), vfOwned
           );
         }
+        rows.push('<div class="foil-row">' + left + right + '</div>');
       });
     } else if (!collEnabled) {
-      chips.push(
+      rows.push(
+        '<div class="foil-row">' +
         '<span class="foil-chip unavailable">' +
         'Surge &amp; special foil variants are Collector Booster exclusives \u2014 ' +
         '<a href="#" onclick="document.querySelector(\'[data-tab=\\\"settings\\\"]\').click();closeModal();return false;" ' +
         'style="color:var(--accent);text-decoration:none;font-style:normal">Enable Collector Variants</a>' +
-        '</span>'
+        '</span></div>'
       );
     }
 
-    return chips.join('');
+    // 3. Legend — always show Regular + Foil, plus variant types and their foil hybrids
+    var legendItems = [
+      ['regular', 'Regular'],
+      ['foil', 'Foil']
+    ];
+    if (variants.length > 0) {
+      var seen = {};
+      var variantTypes = [
+        ['ext', 'Extended Art', 'ext-foil', function(v) { return (v.frame_effects || []).includes('extendedart'); }],
+        ['showcase', 'Showcase', 'showcase-foil', function(v) { return isShowcase(v); }],
+        ['surge', 'Surge Foil', null, function(v) { return isSurgeFoil(v); }],
+        ['chocobo', 'Chocobo Track', null, function(v) { return isChocoboTrack(v); }]
+      ];
+      variants.forEach(function(v) {
+        variantTypes.forEach(function(t) {
+          if (!seen[t[0]] && t[3](v)) {
+            seen[t[0]] = true;
+            legendItems.push([t[0], t[1]]);
+            // Add foil hybrid legend for non-inherently-foil variants
+            if (t[2]) legendItems.push([t[2], t[1] + ' Foil']);
+          }
+        });
+      });
+    }
+    rows.push(
+      '<div class="foil-legend">' +
+      legendItems.map(function(t) {
+        return '<span class="foil-legend-item"><span class="vdot vdot-' + t[0] + '"></span>' + t[1] + '</span>';
+      }).join('') +
+      '</div>'
+    );
+
+    return rows.join('');
   }
 
   // ── Modal ──
@@ -6676,7 +6926,9 @@ document.head.appendChild(manifestLink);
 
     for (const fc of familyCards) {
       const fcInfo = getCardVariantInfo(fc);
-      const fcLabel = fcInfo.label ? fcInfo.short : 'Main';
+      const baseLabel = fcInfo.label ? fcInfo.short : 'Main';
+      // Always append #CN for variants to match the pill labels
+      const fcLabel = fcInfo.label ? `${baseLabel} #${fc.collector_number}` : baseLabel;
       if (fc.price_usd > 0)
         chips.push(priceChip(fcLabel, fc.price_usd, fc.price_usd * USD_TO_MYR, 'usd', fc.collector_number, false));
       if (fc.price_usd_foil > 0 && !(fc.price_usd > 0 && fc.price_usd_foil === fc.price_usd))
@@ -6732,11 +6984,11 @@ document.head.appendChild(manifestLink);
 
     function addToPackAndReturn(cn, asFoil) {
       addCardToPackModal(cn, asFoil);
-      _packModeAdding = false;
       const addedCard = getCardByNumber(cn);
       const cardName = addedCard ? addedCard.name : '';
       const allSearchable = [...allCards, ...variantCards];
       const sameNameCount = cardName ? allSearchable.filter(c => c.name === cardName).length : 0;
+      // Keep _packModeAdding = true so closeModal() restores the pack modal
       closeModal();
       setTimeout(() => {
         if (sameNameCount > 1) {
@@ -6777,8 +7029,8 @@ document.head.appendChild(manifestLink);
       toggleBtn.onclick = () => {
         if (isOwned) removeCard(card.collector_number);
         else addCard(card.collector_number);
-        closeModal();
-        if (document.getElementById('tab-collector')?.classList.contains('active')) renderCollectorTab();
+        // Re-open the same card modal to reflect updated ownership state
+        openModal(card);
       };
     }
 
@@ -6788,13 +7040,15 @@ document.head.appendChild(manifestLink);
       const canBeFoil = (card.finishes || []).includes('foil');
       if (isPack && canBeFoil) {
         _showFoilToggle = true;
+        const typeAlreadyFoilPack = isVariant && variantType.toLowerCase().includes('foil');
+        const packFoilLabel = isVariant ? (typeAlreadyFoilPack ? variantType : `${variantType} Foil`) : 'Foil';
         if (isFoilOwned) {
-          foilToggleBtn.textContent = 'Foil Already Owned \u2726';
+          foilToggleBtn.textContent = `${packFoilLabel} Already Owned \u2726`;
           foilToggleBtn.className = 'btn btn-secondary';
           foilToggleBtn.disabled = true;
           foilToggleBtn.onclick = null;
         } else {
-          foilToggleBtn.textContent = 'Add as Foil \u2726';
+          foilToggleBtn.textContent = `Add as ${packFoilLabel} \u2726`;
           foilToggleBtn.className = 'btn btn-foil';
           foilToggleBtn.disabled = false;
           foilToggleBtn.onclick = () => addToPackAndReturn(card.collector_number, true);
@@ -6815,14 +7069,8 @@ document.head.appendChild(manifestLink);
         foilToggleBtn.onclick = () => {
           if (isFoilOwned) removeFoil(card.collector_number);
           else addFoil(card.collector_number);
-          const _c3d = document.getElementById('card-3d');
-          if (_c3d) _c3d.classList.toggle('foil-owned', !isFoilOwned);
-          const _fi = document.getElementById('modal-foil-info');
-          if (_fi) _fi.innerHTML = buildFoilInfoHTML(card);
-          closeModal();
-          if (document.getElementById('tab-collector')?.classList.contains('active')) {
-            renderCollectorTab();
-          }
+          // Re-open the same card modal to reflect the updated foil state
+          openModal(card);
         };
       } else {
         _showFoilToggle = false;
@@ -6842,6 +7090,22 @@ document.head.appendChild(manifestLink);
       helper.style.cssText = 'font-size:0.72rem;color:var(--text-muted);text-align:center;margin-top:6px;';
       helper.textContent = 'Also adds to your binder';
       toggleBtn.parentElement.appendChild(helper);
+    }
+
+    // Collector hint — context-sensitive
+    const variantHint = document.getElementById('modal-variant-hint');
+    if (variantHint) {
+      if (isVariant && !isPack) {
+        // Variant cards always go to collector
+        variantHint.innerHTML = '<span class="hint-icon">i</span> Goes to Collector collection, not main binder';
+        variantHint.classList.add('visible');
+      } else if (_showFoilToggle && !isPack) {
+        // Foil button is visible initially (inherently-foil cards) — show foil hint
+        variantHint.innerHTML = '<span class="hint-icon">i</span> Foils are tracked in Collector collection';
+        variantHint.classList.add('visible');
+      } else {
+        variantHint.classList.remove('visible');
+      }
     }
 
     // Foil shimmer overlay — apply variant-specific class for distinct effects
@@ -6983,6 +7247,9 @@ document.head.appendChild(manifestLink);
       showModalBtn(document.getElementById('modal-toggle'), false);
       showModalBtn(document.getElementById('modal-foil-toggle'), true);
       highlightPriceChips(previewCN, true);
+      // Show collector hint for foil preview
+      const _hintEl1 = document.getElementById('modal-variant-hint');
+      if (_hintEl1) { _hintEl1.innerHTML = '<span class="hint-icon">i</span> Foils are tracked in Collector collection'; _hintEl1.classList.add('visible'); }
       return;
     }
 
@@ -7013,6 +7280,9 @@ document.head.appendChild(manifestLink);
       showModalBtn(document.getElementById('modal-toggle'), true);
       showModalBtn(document.getElementById('modal-foil-toggle'), false);
       highlightPriceChipsByCn(targetCN);
+      // Hide collector hint when viewing regular (non-foil) card
+      const _hintEl2 = document.getElementById('modal-variant-hint');
+      if (_hintEl2) _hintEl2.classList.remove('visible');
       return;
     }
     _foilPreviewActive = false;
@@ -7444,10 +7714,9 @@ document.head.appendChild(manifestLink);
     ];
     const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
     const searchRarityHTML = `
-      <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-3)">
-        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${searchQuery.replace(/"/g, '&quot;')}"
-          style="flex:1;padding:5px 10px;border-radius:8px;border:1px solid var(--surface3);background:var(--surface2);color:var(--text);font-size:0.85rem;min-width:0">
-        <div style="display:flex;gap:4px">
+      <div class="coll-search-row">
+        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${searchQuery.replace(/"/g, '&quot;')}">
+        <div class="coll-rarity-group">
           ${rarities.map(r => `<button class="rarity-circle ${r.cls}${activeRarity === r.key ? ' active' : ''} coll-filter-rarity" data-rarity="${r.key}">${r.label}</button>`).join('')}
         </div>
       </div>`;
