@@ -11,6 +11,30 @@
 *.pem
 *.token
 
+# Screenshots, images, and media (dev artifacts — not part of the app)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.webm
+
+# Playwright MCP output
+.playwright-mcp/
+
+# Node / npm (no build step — deps are dev-only tooling)
+node_modules/
+package.json
+package-lock.json
+
+# Spec / design docs (local reference only)
+*.md
+!CLAUDE.md
+!README.md
+
+# FFmpeg CLI scripts (local tooling)
+ffmpeg-cli/
+
 # OS junk
 Thumbs.db
 Desktop.ini

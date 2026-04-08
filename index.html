@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com; manifest-src blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com; manifest-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FIN Binder Tracker</title>
 <!-- iOS PWA -->
@@ -17,7 +17,7 @@
 <meta name="msapplication-tap-highlight" content="no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -70,7 +70,7 @@
   }
 
   body {
-    font-family: 'Rajdhani', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -94,7 +94,7 @@
   /* Typography hierarchy */
   .font-display { font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 0.1em; line-height: 1.2; }
   .font-ui { font-family: 'Rajdhani', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.3; }
-  .font-body { font-family: 'Inter', -apple-system, sans-serif; line-height: 1.4; }
+  .font-body { font-family: 'Rajdhani', -apple-system, sans-serif; line-height: 1.4; }
   .font-num { font-variant-numeric: tabular-nums; line-height: 1.1; }
 
   #app {
@@ -1075,6 +1075,162 @@
     font-weight: 600;
   }
 
+  /* ── Collection Value Card ── */
+  .value-card {
+    position: relative; overflow: hidden;
+    margin-bottom: var(--sp-3);
+    background: var(--ff-panel);
+    border-radius: 6px;
+    border: 2px solid var(--ff-border);
+    box-shadow: inset 0 0 0 1px var(--ff-border-inner), 0 0 14px var(--ff-glow), 0 4px 16px rgba(0,0,0,0.3);
+    animation: card-enter 0.4s ease both;
+  }
+  .value-card::before {
+    content: ''; position: absolute; inset: 2px;
+    border: 1px solid rgba(80,90,130,0.06);
+    border-radius: 4px; pointer-events: none;
+  }
+  .value-card:hover {
+    transform: translateY(-4px);
+    box-shadow: inset 0 0 0 1px var(--ff-border-inner), 0 0 20px var(--ff-glow), 0 8px 24px var(--shadow);
+    border-color: var(--accent);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .value-card-body {
+    padding: clamp(16px, 3vw, 24px);
+    padding-bottom: clamp(12px, 2vw, 16px);
+  }
+  /* decorative corner filigree */
+  .value-card-body::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 140px; height: 140px;
+    background:
+      radial-gradient(ellipse at 100% 0%, rgba(212,168,80,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(91,127,199,0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .value-card-body::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 100px; height: 80px;
+    background: radial-gradient(ellipse at 0% 100%, rgba(212,168,80,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .value-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: clamp(10px, 2vw, 16px);
+  }
+  .value-card-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.14em;
+    font-weight: 600;
+  }
+  .value-card-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(74,173,94,0.1);
+    border: 1px solid rgba(74,173,94,0.25);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.68rem; font-weight: 700;
+    color: var(--owned-border);
+    font-variant-numeric: tabular-nums;
+  }
+  .value-card-badge::before {
+    content: ''; display: block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--owned-border);
+    box-shadow: 0 0 4px rgba(74,173,94,0.5);
+  }
+  .value-card-amount {
+    display: flex; align-items: baseline; gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .value-card-myr {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(2rem, 6vw, 2.6rem);
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(212,168,80,0.15);
+    font-variant-numeric: tabular-nums;
+  }
+  .value-card-usd {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+    font-weight: 700;
+    color: var(--text-muted);
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+  }
+  .value-card-gauge {
+    display: flex; gap: 3px; margin-top: clamp(12px, 2vw, 18px);
+    height: 8px; border-radius: 4px; overflow: hidden;
+    background: var(--chart-empty);
+  }
+  .value-card-gauge-seg {
+    height: 100%; border-radius: 4px;
+    position: relative;
+    transition: flex 0.5s ease;
+  }
+  .value-card-gauge-seg::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+    border-radius: inherit;
+  }
+  .value-card-rarity-legend {
+    display: flex; gap: clamp(8px, 2vw, 16px); flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .value-card-rarity-item {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.72rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .value-card-rarity-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+  }
+  /* Collapsible metadata footer */
+  .value-card-meta {
+    border-top: 1px solid var(--ff-border);
+    padding: 0 clamp(16px, 3vw, 24px);
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .value-card-meta.open {
+    max-height: 120px;
+    padding: 10px clamp(16px, 3vw, 24px) 12px;
+  }
+  .value-card-meta-row {
+    font-size: 0.65rem; color: var(--text-muted); line-height: 1.7;
+  }
+  .value-card-meta-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; padding: 6px 0;
+    background: none; border: none; border-top: 1px solid var(--ff-border);
+    cursor: pointer; color: var(--text-muted); font-size: 0.65rem;
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    transition: color 0.15s, background 0.15s;
+  }
+  .value-card-meta-toggle:hover {
+    color: var(--accent); background: rgba(91,127,199,0.05);
+  }
+  .value-card-meta-toggle .chevron {
+    display: inline-block; transition: transform 0.3s ease;
+    font-size: 0.6rem;
+  }
+  .value-card-meta-toggle.open .chevron { transform: rotate(180deg); }
+  [data-theme="light"] .value-card { background: var(--ff-panel); border: 1.5px solid var(--ff-border); box-shadow: 0 2px 8px var(--ff-glow); }
+  [data-theme="light"] .value-card:hover { border-color: var(--accent); }
+  [data-theme="light"] .value-card-badge { background: rgba(85,136,51,0.1); border-color: rgba(85,136,51,0.25); }
+  [data-theme="light"] .value-card-myr { text-shadow: none; }
+
   /* ── Card Name Overlay ── */
   .card-name-overlay {
     position: absolute; bottom: 0; left: 0; right: 0;
@@ -1178,60 +1334,50 @@
     50%  { background-position: 100% 100%; }
     100% { background-position: 0% 0%; }
   }
+  @keyframes foil-drift {
+    0%   { background-position: 30% 40%; }
+    20%  { background-position: 55% 25%; }
+    40%  { background-position: 70% 55%; }
+    60%  { background-position: 45% 70%; }
+    80%  { background-position: 25% 50%; }
+    100% { background-position: 30% 40%; }
+  }
   @keyframes foil-neon-pulse {
     0%, 100% { opacity: 0.4; }
     50%       { opacity: 1; }
   }
+  /* Surge foil — slow drift of the canvas pattern itself */
+  @keyframes surge-drift {
+    0%   { background-position: 50% 50%;  opacity: 0.42; }
+    25%  { background-position: 55% 45%;  opacity: 0.48; }
+    50%  { background-position: 48% 54%;  opacity: 0.52; }
+    75%  { background-position: 44% 47%;  opacity: 0.46; }
+    100% { background-position: 50% 50%;  opacity: 0.42; }
+  }
 
-  /* Base overlay — foil rainbow */
+  /* Base overlay — holographic spectral bands with luminance-dependent blend */
   .foil-slot.slot-foil-owned::after {
     content: ''; position: absolute; inset: 0; border-radius: 4px;
     pointer-events: none; z-index: 1;
-    will-change: background-position;
-    background: linear-gradient(115deg,
-      transparent 25%, rgba(255,107,157,0.3) 35%,
-      rgba(77,150,255,0.25) 48%, rgba(107,203,119,0.25) 58%,
-      rgba(255,217,61,0.3) 68%, transparent 78%);
-    background-size: 300% 300%;
-    mix-blend-mode: screen;
-    animation: foil-card-shimmer 4s ease-in-out infinite;
+    background: repeating-linear-gradient(
+      20deg,
+      #1a0aff 0%, #00c8ff 8%, #00e5a0 18%, #39ff14 28%,
+      #c8ff00 36%, #ffea00 44%, #ff9500 54%, #ff3d00 62%,
+      #ff00aa 72%, #c040ff 82%, #7b2fff 90%, #1a0aff 100%
+    );
+    background-size: 350% 350%;
+    mix-blend-mode: hard-light;
+    opacity: 0.22;
+    animation: foil-drift 12s ease-in-out infinite;
+    filter: blur(0.4px);
+    transition: opacity 0.3s ease;
   }
-  /* Surge foil — full-surface prismatic caustic ripple
-     Real surge foil: entire card shimmers with organic water-caustic ripples,
-     rainbow refraction moves corner-to-corner, glossy & "in your face",
-     no selective underprint — everything shimmers uniformly. */
-  @keyframes surge-sweep {
-    0%   { background-position: 0% 0%, 100% 100%, 0% 0%; }
-    33%  { background-position: 100% 50%, 0% 30%, 50% 100%; }
-    66%  { background-position: 30% 100%, 70% 0%, 100% 30%; }
-    100% { background-position: 0% 0%, 100% 100%, 0% 0%; }
-  }
-  .foil-slot.foil-variant-surge.slot-foil-owned::after {
-    background:
-      /* Organic caustic blob 1 — large cyan-magenta patch */
-      radial-gradient(ellipse 90% 70% at 25% 30%,
-        rgba(60,210,235,0.5), rgba(190,70,200,0.35) 45%, transparent 72%),
-      /* Organic caustic blob 2 — gold-green patch, offset */
-      radial-gradient(ellipse 75% 85% at 72% 68%,
-        rgba(255,195,60,0.45), rgba(80,225,155,0.35) 45%, transparent 68%),
-      /* Full-surface diagonal rainbow (corner-to-corner refraction) */
-      linear-gradient(135deg,
-        rgba(60,200,235,0.55) 0%,
-        rgba(120,130,255,0.45) 14%,
-        rgba(210,70,200,0.55) 28%,
-        rgba(255,110,160,0.45) 42%,
-        rgba(255,205,65,0.55) 56%,
-        rgba(85,230,155,0.45) 70%,
-        rgba(90,160,255,0.55) 84%,
-        rgba(190,100,240,0.45) 100%
-      );
-    background-size: 250% 250%, 250% 250%, 300% 300%;
-    mix-blend-mode: screen;
-    animation: surge-sweep 5s ease-in-out infinite;
-    opacity: 0.9;
-  }
-  .foil-slot.foil-variant-surge.slot-foil-owned:hover::after {
-    opacity: 1;
+  .foil-slot.slot-foil-owned:hover::after {
+    opacity: 0.30;
+    animation: none;
+    background-position: var(--foil-x, 50%) var(--foil-y, 50%);
+    filter: blur(0.3px);
+    transition: opacity 0.3s ease, background-position 0.08s ease-out;
   }
   /* Neon ink — pulsing radial glow */
   .foil-slot.foil-variant-neon.slot-foil-owned::after {
@@ -1239,6 +1385,23 @@
       rgba(255,80,180,0.35) 0%, rgba(80,220,255,0.25) 50%, transparent 75%);
     background-size: 100% 100%;
     animation: foil-neon-pulse 2s ease-in-out infinite;
+  }
+  /* Surge Foil — canvas-generated jagged polygon streaks, static idle, sweep on hover */
+  .foil-slot.foil-variant-surge.slot-foil-owned::after {
+    background: var(--surge-foil-bg);
+    background-size: 130% 130%;
+    background-position: 50% 50%;
+    mix-blend-mode: hard-light;
+    filter: saturate(1.4);
+    animation: surge-drift 8s ease-in-out infinite;
+  }
+  .foil-slot.foil-variant-surge.slot-foil-owned:hover::after {
+    opacity: 0.60;
+    filter: saturate(1.7) brightness(1.1);
+    animation: none;
+  }
+  .foil-slot.foil-variant-surge.slot-foil-owned {
+    box-shadow: 0 0 14px rgba(0,180,230,0.4), 0 0 6px rgba(180,140,255,0.25) !important;
   }
   /* Serialized — slow gold sweep */
   .foil-slot.foil-variant-serialized.slot-foil-owned::after {
@@ -1261,9 +1424,6 @@
   .foil-delay-2::after { animation-delay: 2.7s; }
 
   /* Variant-specific border glow overrides */
-  .foil-slot.foil-variant-surge.slot-foil-owned {
-    box-shadow: 0 0 10px rgba(50,200,220,0.3), 0 0 18px rgba(200,60,180,0.2) !important;
-  }
   .foil-slot.foil-variant-neon.slot-foil-owned {
     box-shadow: 0 0 14px rgba(255,80,200,0.5) !important;
   }
@@ -1720,14 +1880,17 @@
   }
 
   .binder-nav {
-    width: 48px; height: 48px; border-radius: 50%; border: none;
+    width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--ff-border);
     background: var(--surface2); color: var(--text);
-    font-size: 1.4rem; cursor: pointer;
+    cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; flex-shrink: 0;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1); flex-shrink: 0;
   }
-  .binder-nav:hover { background: var(--accent); color: #fff; }
-  .binder-nav:disabled { opacity: 0.2; cursor: default; }
+  .binder-nav svg { transition: transform 0.2s; }
+  .binder-nav:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .binder-nav:hover svg { transform: scale(1.15); }
+  .binder-nav:active { transform: scale(0.92); }
+  .binder-nav:disabled { opacity: 0.15; cursor: default; pointer-events: none; }
   .binder-nav:disabled:hover { background: var(--surface2); color: var(--text); }
 
   .binder-spread-wrapper {
@@ -1762,8 +1925,23 @@
 
     /* Binder */
     .binder-spread { grid-template-columns: 1fr; }
-    .binder-nav { width: 40px; height: 40px; font-size: 1.2rem; min-height: 44px; }
-    .binder-layout { gap: 6px; }
+    .binder-layout { gap: 0; position: relative; }
+    .binder-nav {
+      position: absolute; top: 50%; z-index: 10;
+      width: 36px; height: 56px;
+      border-radius: 8px;
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--ff-border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transform: translateY(-50%);
+    }
+    .binder-nav#prev-page { left: -4px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+    .binder-nav#next-page { right: -4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+    .binder-nav:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .binder-nav:active { transform: translateY(-50%) scale(0.94); }
+    .binder-spread-wrapper { padding: 0 18px; }
     .page-nav-widget { min-width: 160px; }
 
     /* Utilities — inline in header on mobile */
@@ -1898,16 +2076,9 @@
   }
 
   /* ── Card Slot Polish ── */
-  @keyframes slot-breathe {
-    0%, 100% { box-shadow: 0 0 6px var(--ff-glow); }
-    50% { box-shadow: 0 0 12px var(--ff-glow); }
-  }
   .card-slot.owned {
-    animation: slot-breathe 3s ease-in-out infinite;
     box-shadow: 0 2px 8px rgba(91,127,199,0.12);
   }
-  .card-slot.owned:nth-child(2n) { animation-delay: 1s; }
-  .card-slot.owned:nth-child(3n) { animation-delay: 2s; }
   /* Missing card silhouette */
   .card-slot .placeholder-silhouette {
     width: 70%; height: 75%;
@@ -2162,32 +2333,44 @@
     position: absolute; inset: 0; border-radius: 12px;
     pointer-events: none; backface-visibility: hidden;
     opacity: 0; transition: opacity 0.5s ease;
-    background: linear-gradient(115deg,
-      rgba(255,107,157,0.28) 0%, rgba(255,217,61,0.28) 20%,
-      rgba(107,203,119,0.28) 40%, rgba(77,150,255,0.28) 60%,
-      rgba(199,125,255,0.28) 80%, rgba(255,107,157,0.28) 100%);
-    background-size: 300% 300%;
-    mix-blend-mode: screen;
+    background:
+      radial-gradient(ellipse at var(--foil-mx, 50%) var(--foil-my, 30%),
+        rgba(255,255,255,0.1) 0%, transparent 55%),
+      repeating-linear-gradient(
+        20deg,
+        #1a0aff 0%, #00c8ff 8%, #00e5a0 18%, #39ff14 28%,
+        #c8ff00 36%, #ffea00 44%, #ff9500 54%, #ff3d00 62%,
+        #ff00aa 72%, #c040ff 82%, #7b2fff 90%, #1a0aff 100%
+      );
+    background-size: 100% 100%, 400% 400%;
+    background-position: center, var(--foil-bx, 50%) var(--foil-by, 50%);
+    mix-blend-mode: hard-light;
+    filter: blur(0.4px);
     z-index: 2;
+    transition: background-position 0.08s ease-out, opacity 0.5s ease;
   }
   #card-3d.foil-owned .foil-overlay {
-    opacity: 1;
-    animation: foil-shimmer 3s ease infinite;
+    opacity: 0.35;
   }
   #card-3d.foil-owned.foil-variant-surge .foil-overlay {
     background:
-      radial-gradient(ellipse 90% 70% at 25% 30%,
-        rgba(60,210,235,0.45), rgba(190,70,200,0.3) 45%, transparent 72%),
-      radial-gradient(ellipse 75% 85% at 72% 68%,
-        rgba(255,195,60,0.4), rgba(80,225,155,0.3) 45%, transparent 68%),
-      linear-gradient(135deg,
-        rgba(60,200,235,0.5) 0%, rgba(120,130,255,0.4) 14%,
-        rgba(210,70,200,0.5) 28%, rgba(255,110,160,0.4) 42%,
-        rgba(255,205,65,0.5) 56%, rgba(85,230,155,0.4) 70%,
-        rgba(90,160,255,0.5) 84%, rgba(190,100,240,0.4) 100%
-      );
-    background-size: 250% 250%, 250% 250%, 300% 300%;
-    animation: surge-sweep 5s ease-in-out infinite;
+      radial-gradient(ellipse at var(--foil-mx, 50%) var(--foil-my, 30%),
+        rgba(255,255,255,0.12) 0%, transparent 50%),
+      linear-gradient(
+        115deg,
+        transparent 0%, transparent 20%,
+        rgba(255,60,80,0.2) 28%, rgba(255,200,60,0.25) 35%,
+        rgba(60,255,120,0.25) 42%, rgba(60,180,255,0.3) 50%,
+        rgba(160,80,255,0.25) 58%, rgba(255,80,200,0.2) 65%,
+        transparent 73%, transparent 100%
+      ),
+      var(--surge-foil-card, var(--surge-foil-bg));
+    background-size: 100% 100%, 400% 400%, cover;
+    background-position: center, var(--foil-bx, 50%) var(--foil-by, 50%), center;
+    mix-blend-mode: hard-light;
+    opacity: 0.50;
+    filter: saturate(1.4);
+    transition: background-position 0.08s ease-out, opacity 0.5s ease;
   }
   #card-3d.foil-owned.foil-variant-neon .foil-overlay {
     background: radial-gradient(ellipse at center,
@@ -2330,31 +2513,45 @@
   .inspect-foil-overlay {
     position: absolute; inset: 0; border-radius: 14px;
     pointer-events: none; backface-visibility: hidden;
-    opacity: 0; transition: opacity 0.5s ease;
-    background: linear-gradient(115deg,
-      rgba(255,107,157,0.28) 0%, rgba(255,217,61,0.28) 20%,
-      rgba(107,203,119,0.28) 40%, rgba(77,150,255,0.28) 60%,
-      rgba(199,125,255,0.28) 80%, rgba(255,107,157,0.28) 100%);
-    background-size: 300% 300%;
-    mix-blend-mode: screen; z-index: 2;
+    opacity: 0;
+    background:
+      radial-gradient(ellipse at var(--foil-mx, 50%) var(--foil-my, 30%),
+        rgba(255,255,255,0.1) 0%, transparent 55%),
+      repeating-linear-gradient(
+        20deg,
+        #1a0aff 0%, #00c8ff 8%, #00e5a0 18%, #39ff14 28%,
+        #c8ff00 36%, #ffea00 44%, #ff9500 54%, #ff3d00 62%,
+        #ff00aa 72%, #c040ff 82%, #7b2fff 90%, #1a0aff 100%
+      );
+    background-size: 100% 100%, 400% 400%;
+    background-position: center, var(--foil-bx, 50%) var(--foil-by, 50%);
+    mix-blend-mode: hard-light;
+    filter: blur(0.5px);
+    z-index: 2;
+    transition: background-position 0.08s ease-out, opacity 0.5s ease;
   }
   .inspect-3d.foil-owned .inspect-foil-overlay {
-    opacity: 1; animation: foil-shimmer 3s ease infinite;
+    opacity: 0.35;
   }
   .inspect-3d.foil-owned.foil-variant-surge .inspect-foil-overlay {
     background:
-      radial-gradient(ellipse 90% 70% at 25% 30%,
-        rgba(60,210,235,0.45), rgba(190,70,200,0.3) 45%, transparent 72%),
-      radial-gradient(ellipse 75% 85% at 72% 68%,
-        rgba(255,195,60,0.4), rgba(80,225,155,0.3) 45%, transparent 68%),
-      linear-gradient(135deg,
-        rgba(60,200,235,0.5) 0%, rgba(120,130,255,0.4) 14%,
-        rgba(210,70,200,0.5) 28%, rgba(255,110,160,0.4) 42%,
-        rgba(255,205,65,0.5) 56%, rgba(85,230,155,0.4) 70%,
-        rgba(90,160,255,0.5) 84%, rgba(190,100,240,0.4) 100%
-      );
-    background-size: 250% 250%, 250% 250%, 300% 300%;
-    animation: surge-sweep 5s ease-in-out infinite;
+      radial-gradient(ellipse at var(--foil-mx, 50%) var(--foil-my, 30%),
+        rgba(255,255,255,0.12) 0%, transparent 50%),
+      linear-gradient(
+        115deg,
+        transparent 0%, transparent 20%,
+        rgba(255,60,80,0.2) 28%, rgba(255,200,60,0.25) 35%,
+        rgba(60,255,120,0.25) 42%, rgba(60,180,255,0.3) 50%,
+        rgba(160,80,255,0.25) 58%, rgba(255,80,200,0.2) 65%,
+        transparent 73%, transparent 100%
+      ),
+      var(--surge-foil-card, var(--surge-foil-bg));
+    background-size: 100% 100%, 400% 400%, cover;
+    background-position: center, var(--foil-bx, 50%) var(--foil-by, 50%), center;
+    mix-blend-mode: hard-light;
+    opacity: 0.50;
+    filter: saturate(1.4);
+    transition: background-position 0.08s ease-out, opacity 0.5s ease;
   }
   .inspect-3d.foil-owned.foil-variant-neon .inspect-foil-overlay {
     background: radial-gradient(ellipse at center,
@@ -2571,15 +2768,16 @@
 
   /* Pack card list */
   .pack-card-list {
-    flex: 1; overflow-y: auto; padding: 0 18px 8px;
+    padding: 0 18px 8px;
   }
   .pack-counter {
     text-align: center; padding: 8px 0;
-    font-size: 0.85rem; color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 600;
+    color: var(--text-muted); letter-spacing: 0.02em;
     transition: all 0.2s;
   }
   .pack-counter span {
-    font-weight: 800; font-size: 1.1rem; color: var(--accent);
+    font-weight: 800; font-size: 1rem; color: var(--accent);
     display: inline-block;
   }
   .pack-counter span.bump {
@@ -2600,40 +2798,131 @@
     to { opacity: 1; transform: translateX(0); }
   }
   .pack-card-entry .pack-num {
-    width: 22px; height: 22px; border-radius: 50%;
-    background: var(--surface2); color: var(--text);
-    font-size: 0.7rem; font-weight: 700;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--surface2); color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .pack-card-entry img { width: 32px; border-radius: 3px; }
-  .pack-card-entry .pack-card-name { flex: 1; font-size: 0.82rem; font-weight: 600; }
+  .pack-card-entry img { width: 30px; border-radius: 3px; flex-shrink: 0; }
+  .pack-card-entry .pack-card-name {
+    flex: 1; font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   .pack-card-entry .pack-card-rarity {
-    font-size: 0.68rem; padding: 2px 6px; border-radius: 4px;
-    text-transform: uppercase; font-weight: 700;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; font-weight: 700; flex-shrink: 0;
   }
   .pack-card-entry .pack-card-rarity.mythic { background: #e8702a22; color: #e8702a; }
   .pack-card-entry .pack-card-rarity.rare { background: #c9a14e22; color: #c9a14e; }
   .pack-card-entry .pack-card-rarity.uncommon { background: #72b5b522; color: #72b5b5; }
   .pack-card-entry .pack-card-rarity.common { background: #88888822; color: #888; }
 
+  /* Pack quick-add autocomplete items */
+  .pack-ac-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; cursor: default;
+    border-bottom: 1px solid var(--ff-border-inner);
+    transition: background 0.12s;
+    animation: pack-card-in 0.15s ease both;
+  }
+  .pack-ac-item:last-child { border-bottom: none; }
+  .pack-ac-item.hl { background: var(--surface2); }
+  .pack-ac-item .pack-ac-thumb {
+    width: 30px; height: 42px; border-radius: 3px;
+    object-fit: cover; flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .pack-ac-item .pack-ac-info {
+    flex: 1; min-width: 0; cursor: pointer;
+  }
+  .pack-ac-item .pack-ac-info:hover .pack-ac-name { color: var(--accent); }
+  .pack-ac-item .pack-ac-name {
+    font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: color 0.15s;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pack-ac-item .pack-ac-cn {
+    font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 700;
+    color: var(--accent); opacity: 0.85;
+    font-variant-numeric: tabular-nums; flex-shrink: 0;
+  }
+  .pack-ac-item .pack-ac-meta {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.66rem; color: var(--text-muted);
+  }
+  .pack-ac-actions {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  }
+  .pack-ac-add {
+    width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--ff-border);
+    background: var(--surface2); color: var(--text);
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s cubic-bezier(.4,0,.2,1);
+    line-height: 1;
+  }
+  .pack-ac-add:hover { background: var(--accent); color: #fff; border-color: var(--accent); transform: scale(1.08); }
+  .pack-ac-add:active { transform: scale(0.92); }
+  .pack-ac-add-foil {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1.5px solid rgba(200, 170, 255, 0.25);
+    background: transparent;
+    color: var(--foil-color, #c4b5fd);
+    font-size: 0.75rem; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s cubic-bezier(.4,0,.2,1);
+    line-height: 1;
+  }
+  .pack-ac-add-foil:hover { background: linear-gradient(135deg, rgba(120,80,200,0.35), rgba(200,150,255,0.25)); border-color: var(--foil-color, #c4b5fd); transform: scale(1.08); }
+  .pack-ac-add-foil:active { transform: scale(0.92); }
+  .pack-ac-added {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1.5px solid var(--accent);
+    background: var(--accent); color: #fff;
+    font-size: 0.82rem; cursor: default;
+    display: flex; align-items: center; justify-content: center;
+    animation: pack-ac-check 0.35s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes pack-ac-check {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .pack-ac-added-foil {
+    background: linear-gradient(135deg, rgba(120,80,200,0.25), rgba(200,150,255,0.15));
+    border-color: var(--foil-color, #c4b5fd);
+    color: var(--foil-color, #c4b5fd);
+  }
+  .pack-ac-in-pack {
+    font-family: 'Rajdhani', sans-serif; font-size: 0.62rem; font-weight: 700;
+    color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em;
+    white-space: nowrap; opacity: 0.8;
+  }
+
   .pack-done-row {
     padding: 10px 18px; border-top: 1px solid var(--surface2);
     display: flex; gap: 8px;
   }
   .pack-done-btn {
-    flex: 1; padding: 10px; border: none; border-radius: 10px;
-    background: var(--owned-border); color: #080818;
-    font-size: 0.9rem; font-weight: 700; cursor: pointer;
-    transition: all 0.2s;
+    flex: 1; padding: 11px; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-family: 'Rajdhani', sans-serif;
+    font-size: 0.88rem; font-weight: 700; letter-spacing: 0.03em;
+    cursor: pointer; transition: all 0.2s;
   }
-  .pack-done-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
+  .pack-done-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--shadow); filter: brightness(1.1); }
+  .pack-done-btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.5); }
+  .pack-done-btn:disabled:hover { transform: none; box-shadow: none; filter: grayscale(0.5); }
   .pack-cancel-btn {
-    padding: 10px 14px; border: none; border-radius: 10px;
+    padding: 11px 14px; border: none; border-radius: 10px;
     background: var(--surface2); color: var(--text-muted);
-    font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.88rem; font-weight: 600; letter-spacing: 0.02em;
+    cursor: pointer; transition: all 0.2s;
   }
-  .pack-cancel-btn:hover { color: var(--accent); }
+  .pack-cancel-btn:hover { color: var(--text); background: var(--surface3, var(--surface2)); }
 
   /* Pack summary toast */
   .pack-summary-overlay {
@@ -2695,6 +2984,10 @@
     transition: opacity 0.3s, transform 0.3s;
     animation: modalSlideUp 0.3s ease;
   }
+  .pack-modal-content-wrap {
+    display: flex; flex-direction: column;
+    flex: 1; min-height: 0;
+  }
   @keyframes modalSlideUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -2706,10 +2999,12 @@
     flex-shrink: 0;
   }
   .pack-modal-title {
-    font-size: 1.05rem; font-weight: 700; color: var(--text);
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+    color: var(--text); letter-spacing: 0.02em;
   }
   .pack-modal-price {
-    font-size: 0.8rem; color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 600;
+    color: var(--text-muted);
   }
   .pack-modal-close {
     background: none; border: none; color: var(--text-muted);
@@ -2717,9 +3012,33 @@
     line-height: 1;
   }
   .pack-modal-close:hover { color: var(--text); }
+  .pack-modal-search-area {
+    display: flex; flex-direction: column;
+    flex-shrink: 1; min-height: 0;
+  }
+  .pack-modal-search-area:empty { display: none; }
+  .pack-modal-search-area .header-autocomplete {
+    position: static !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    border-left: none !important; border-right: none !important;
+    border-top: none !important;
+    box-shadow: none !important;
+    flex-shrink: 1; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--surface3) transparent;
+  }
+  .pack-modal-search-area .header-autocomplete::-webkit-scrollbar { width: 5px; }
+  .pack-modal-search-area .header-autocomplete::-webkit-scrollbar-track { background: transparent; }
+  .pack-modal-search-area .header-autocomplete::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  .pack-modal-search-area .header-autocomplete::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   .pack-modal-body {
     flex: 1; overflow-y: auto; min-height: 0;
+    scrollbar-width: thin; scrollbar-color: var(--surface3) transparent;
   }
+  .pack-modal-body::-webkit-scrollbar { width: 5px; }
+  .pack-modal-body::-webkit-scrollbar-track { background: transparent; }
+  .pack-modal-body::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  .pack-modal-body::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   .pack-modal-footer {
     padding: 12px 16px; border-top: 1px solid var(--surface2);
     display: flex; gap: 8px; flex-shrink: 0;
@@ -2774,6 +3093,26 @@
   }
 
   /* ── Toast ── */
+  /* ── Toast Backdrop Blur ── */
+  .toast-blur-backdrop {
+    position: fixed; inset: 0; z-index: 1099;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%);
+    backdrop-filter: blur(6px) saturate(0.7);
+    -webkit-backdrop-filter: blur(6px) saturate(0.7);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .toast-blur-backdrop.active {
+    opacity: 1; pointer-events: auto;
+  }
+  .toast-blur-backdrop.fade-out {
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  [data-theme="light"] .toast-blur-backdrop {
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, rgba(180,160,120,0.35) 100%);
+  }
+
   .toast-container {
     position: fixed; inset: 0;
     z-index: 1100; display: flex;
@@ -3111,7 +3450,7 @@ document.head.appendChild(manifestLink);
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
         <button class="fab-util-btn" id="header-pack-btn" title="Open Booster Pack">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" rx="2" width="14" height="20"/><path d="M12 2v20"/><path d="M5 7h14"/><path d="M5 17h14"/><circle cx="12" cy="12" r="2.5"/></svg>
         </button>
         <button class="fab-util-btn" id="theme-toggle" title="Toggle theme"></button>
         <button class="fab-util-btn" id="sync-btn" title="Cloud Sync">
@@ -3122,7 +3461,7 @@ document.head.appendChild(manifestLink);
       <!-- Inline header search -->
       <div class="header-search-bar" id="header-search-bar">
         <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="header-search-input" placeholder="Search cards by name or #..." autocomplete="off">
+        <input type="search" id="header-search-input" placeholder="Search cards by name or #..." autocomplete="off" inputmode="search">
         <button class="header-search-esc" id="header-search-esc">ESC</button>
       </div>
       <div class="header-autocomplete" id="header-autocomplete"></div>
@@ -3139,54 +3478,54 @@ document.head.appendChild(manifestLink);
 
     <div class="tabs">
       <button class="tab-btn active" data-tab="dashboard">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="m92.906 94.813 60.438 79.75 78.125-79.75H92.905zm189.25 0L359.25 173.5l58.688-78.688H282.155zm-25.344.843-84.718 86.47H341.53l-84.717-86.47zm177.907 7.906-58.626 78.563H494.53l-59.81-78.563zm-358.064.75-57.78 77.813h116.78l-59-77.813zm-58.5 96.5L226.562 429.22l-83.218-228.41H18.156zm145.063 0 93.593 256.844 93.593-256.844H163.22zm207.06 0L287.064 429.22l208.405-228.41H370.28z"/></svg>
         Dashboard
       </button>
       <button class="tab-btn" data-tab="portfolio">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="M146.857 20.842c-12.535-.036-24.268 2.86-37.285 9.424C61.356 54.6 19.966 120.734 17.982 175.91l41.848 14.236c4.33-61.89 47.057-128.37 101.527-155.86a133.652 133.652 0 0 1 13.185-5.8l-22.26-7.45a83.687 83.687 0 0 0-5.428-.194zm59.34 20.19c-10.478-.09-22.832 3.093-36.424 9.943-48.23 24.34-89.625 90.513-91.548 145.436l156.485 53.24c3.865-62.22 46.797-129.372 101.613-157.035a134.399 134.399 0 0 1 12.832-5.666l-134.54-45.036a43.905 43.905 0 0 0-8.427-.873zm174.97 58.323c-10.476-.09-22.83 3.092-36.42 9.94-48.577 24.518-90.225 91.473-91.586 146.623l46.205 15.72c3.914-62.188 46.825-129.274 101.607-156.92a128.588 128.588 0 0 1 13.53-5.91l-26.544-8.884a44.788 44.788 0 0 0-6.785-.57zm63.554 22.014c-10.267.093-22.094 3.353-35.333 10.034-47.158 23.8-87.777 87.587-91.362 141.75l174.55-73.726c-.404-39.01-10.754-61.304-24.415-71.082a36.057 36.057 0 0 0-7.55-4.137l-4.735-1.584c-3.48-.887-7.195-1.327-11.144-1.29zM17.9 195.622v187.484L59.46 397.58V209.764zm60.25 20.498v187.962l156.282 54.37V269.288l-29.053-9.886v119.43L104.325 344.75V225.025zm414.22 3.683L318.433 293.27v189.236l173.935-73.504zm-369.354 11.582v99.947l63.675 21.477v-99.763zm31.306 28.797c9.705 0 17.573 7.867 17.573 17.572 0 6.34-3.37 11.88-8.407 14.97v28.53h-18.69v-28.746c-4.838-3.13-8.048-8.562-8.048-14.754 0-9.705 7.867-17.572 17.572-17.572zm98.797 15.464v189.307l46.626 16.22V291.51z"/></svg>
         Portfolio
       </button>
       <button class="tab-btn" data-tab="timeline">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="M92.656 19.188v41.5h331.72v-41.5H92.655zM119.5 79.374V433.53h22.28V79.376H119.5zm46.594 0c3.212 43.324 13.312 82.022 27.78 110.906 17.685 35.304 40.845 54.75 64.064 54.75 23.218 0 46.346-19.446 64.03-54.75 14.47-28.883 24.57-67.58 27.782-110.905H166.094zm209.156 0V433.53h22.28V79.376h-22.28zm-117.313 185.22c-23.218 0-46.378 19.415-64.062 54.717-14.835 29.614-25.098 69.562-28.03 114.22H350c-2.933-44.658-13.197-84.606-28.03-114.22-17.686-35.302-40.814-54.718-64.033-54.718zM92.657 452.218v41.467h331.718V452.22H92.655z"/></svg>
         Timeline
       </button>
       <button class="tab-btn" data-tab="binder">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="M319.61 20.654c13.145 33.114 13.144 33.115-5.46 63.5 33.114-13.145 33.116-13.146 63.5 5.457-13.145-33.114-13.146-33.113 5.457-63.498-33.114 13.146-33.113 13.145-63.498-5.459zM113.024 38.021c-11.808 21.04-11.808 21.04-35.724 24.217 21.04 11.809 21.04 11.808 24.217 35.725 11.808-21.04 11.808-21.04 35.724-24.217-21.04-11.808-21.04-11.808-24.217-35.725zm76.55 56.184c-.952 50.588-.95 50.588-41.991 80.18 50.587.95 50.588.95 80.18 41.99.95-50.588.95-50.588 41.99-80.18-50.588-.95-50.588-.95-80.18-41.99zm191.177 55.885c-.046 24.127-.048 24.125-19.377 38.564 24.127.047 24.127.046 38.566 19.375.047-24.126.046-24.125 19.375-38.564-24.126-.047-24.125-.046-38.564-19.375zm-184.086 83.88a96.38 96.38 0 0 0-3.492.134c-18.591 1.064-41.868 8.416-77.445 22.556L76.012 433.582c78.487-20.734 132.97-21.909 170.99-4.615V247.71c-18.076-8.813-31.79-13.399-46.707-13.737a91.166 91.166 0 0 0-3.629-.002zm122.686 11.42a209.3 209.3 0 0 0-8.514.098c-12.81.417-27.638 2.215-45.84 4.522v177.135c43.565-7.825 106.85-4.2 171.244 7.566l-39.78-177.197c-35.904-8.37-56.589-11.91-77.11-12.123zm2.289 16.95c18.889.204 36.852 2.768 53.707 5.02l4.437 16.523c-23.78-3.75-65.966-4.906-92.467-.98l-.636-17.805c11.959-2.154 23.625-2.88 34.959-2.758zm-250.483 4.658L60.54 313.002h24.094l10.326-46.004H71.158zm345.881 0 39.742 177.031 2.239 9.973 22.591-.152-40.855-186.852h-23.717zm-78.857 57.82c16.993.026 33.67.791 49.146 2.223l3.524 17.174c-32.645-3.08-72.58-2.889-102.995 0l-.709-17.174c16.733-1.533 34.04-2.248 51.034-2.223zm-281.793 6.18-6.924 30.004h24.394l6.735-30.004H56.389zm274.418 27.244c4.656.021 9.487.085 14.716.203l2.555 17.498c-19.97-.471-47.115.56-59.728 1.05l-.7-17.985c16.803-.493 29.189-.828 43.157-.766zm41.476.447c8.268.042 16.697.334 24.121.069l2.58 17.74c-8.653-.312-24.87-.83-32.064-.502l-2.807-17.234a257.25 257.25 0 0 1 8.17-.073zm-326.97 20.309-17.985 77.928 25.035-.17 17.455-77.758H45.313zm303.164 11.848c19.608-.01 38.66.774 56.449 2.572l2.996 20.787c-34.305-4.244-85.755-7.697-119.1-3.244l-.14-17.922c20.02-1.379 40.186-2.183 59.795-2.193zm-166.606 44.05c-30.112.09-67.916 6.25-115.408 19.76l-7.22 2.053 187.759-1.27v-6.347c-16.236-9.206-37.42-14.278-65.13-14.196zm134.41 6.174c-19.63.067-37.112 1.439-51.283 4.182v10.064l177.594-1.203c-44.322-8.634-89.137-13.17-126.31-13.043zM26 475v18h460v-18H26z"/></svg>
         Binder
       </button>
       <button class="tab-btn" data-tab="collector" id="tab-btn-collector" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="m408.256 119.46-37.7 52.165 19.57 44.426 34.8-37.214-16.67-59.375zm86.074 12.513L384.44 249.498 334.01 135.02l-75.162 132.947-86.948-131.78-33.334 114.122L17.922 132.83l39.3 127.6c1.945-.348 3.94-.54 5.98-.54 18.812 0 34.26 15.452 34.26 34.262 0 13.823-8.346 25.822-20.235 31.22l5.337 17.33c12.425 25.466 71.863 45.152 176.582 47.206 110.805 2.174 178.12-17.54 189.854-47.207l4.357-20.26c-16.836-2.114-30.02-16.612-30.02-33.986 0-18.81 15.45-34.262 34.263-34.262 3.513 0 6.91.54 10.11 1.54l26.622-123.762zm-391.77 2.04 1.22 56.337 25.56 24.89 9.592-32.842-36.37-48.386zm150.585 2.91-24.483 51.36 28.955 43.885 24.922-44.08-29.395-51.166zm204.453 135.962c-8.712 0-15.575 6.862-15.575 15.572 0 8.71 6.863 15.574 15.575 15.574s15.572-6.863 15.572-15.573-6.86-15.572-15.572-15.572zM63.2 278.58c-8.71 0-15.573 6.864-15.573 15.574s6.862 15.573 15.574 15.573c8.713 0 15.573-6.862 15.573-15.573 0-8.71-6.86-15.574-15.572-15.574zm130.33 17.842c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.26-34.262zm131.234 0c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.262-34.262zm-131.235 18.69c-8.713 0-15.573 6.86-15.573 15.572 0 8.71 6.86 15.574 15.572 15.574 8.71 0 15.572-6.864 15.572-15.574s-6.86-15.573-15.573-15.573zm131.234 0c-8.712 0-15.573 6.86-15.573 15.572 0 8.71 6.862 15.574 15.574 15.574s15.574-6.864 15.574-15.574-6.862-15.573-15.574-15.573z"/></svg>
         Collector ✦
       </button>
       <button class="tab-btn" data-tab="settings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 512 512"><path fill="currentColor" d="M234.875 18.78c-26.087 2.367-51.557 8.56-74.875 18.782 15.37 32.763 14.222 66.706-6.72 82.407-20.835 15.617-54.055 7.965-81.124-15.69-16.246 19.452-29.336 41.36-38.875 65.626 33.83 12.333 56.635 37.665 52.94 63.5-3.698 25.835-32.697 43.74-68.626 46.094 2.338 25.796 8.91 50.778 18.937 73.875 17.81-8.182 35.793-11.09 51.095-8.938 13.032 1.87 23.927 7.015 31.156 16.657 15.817 21.097 7.603 54.713-16.78 81.97 19.516 16.35 42.216 29.444 66.594 39.03 12.33-33.828 37.655-56.634 63.5-52.938 25.844 3.697 43.74 32.696 46.094 68.625 26.087-2.365 51.557-8.555 74.875-18.78-15.766-32.997-14.26-67.588 6.843-83.406 9.64-7.23 22.568-9.022 35.594-7.125 15.112 2.16 31.19 10.25 45.563 22.78 16.088-19.345 29.4-41.51 38.875-65.594-33.83-12.332-56.635-37.653-52.938-63.5 3.697-25.846 32.665-43.772 68.594-46.125-2.36-25.944-8.774-50.663-18.906-73.874-32.612 15.117-66.66 13.145-82.282-7.687-15.696-20.944-7.252-53.86 16.688-81-19.52-16.352-42.248-29.447-66.625-39.032-12.332 33.828-37.657 56.66-63.5 52.968-25.846-3.693-43.744-32.696-46.095-68.625zm21.656 95.126c79.626 0 144.376 64.752 144.376 144.375 0 79.626-64.75 144.376-144.375 144.376-79.624 0-144.374-64.75-144.374-144.375 0-79.624 64.75-144.374 144.375-144.374zm0 18.688c-69.524 0-125.686 56.162-125.686 125.687 0 69.526 56.162 125.69 125.687 125.69 69.526 0 125.69-56.164 125.69-125.69 0-69.522-56.164-125.686-125.69-125.686zm.033 15.125c61.094 0 110.625 49.53 110.625 110.624 0 61.095-49.53 110.625-110.625 110.625s-110.625-49.53-110.625-110.626c0-61.095 49.53-110.625 110.625-110.625z"/></svg>
         Settings
       </button>
     </div>
 
     <nav class="bottom-nav" id="bottom-nav">
       <button class="bnav-btn active" data-tab="dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="m92.906 94.813 60.438 79.75 78.125-79.75H92.905zm189.25 0L359.25 173.5l58.688-78.688H282.155zm-25.344.843-84.718 86.47H341.53l-84.717-86.47zm177.907 7.906-58.626 78.563H494.53l-59.81-78.563zm-358.064.75-57.78 77.813h116.78l-59-77.813zm-58.5 96.5L226.562 429.22l-83.218-228.41H18.156zm145.063 0 93.593 256.844 93.593-256.844H163.22zm207.06 0L287.064 429.22l208.405-228.41H370.28z"/></svg>
         <span class="bnav-label">Home</span>
       </button>
       <button class="bnav-btn" data-tab="portfolio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="M146.857 20.842c-12.535-.036-24.268 2.86-37.285 9.424C61.356 54.6 19.966 120.734 17.982 175.91l41.848 14.236c4.33-61.89 47.057-128.37 101.527-155.86a133.652 133.652 0 0 1 13.185-5.8l-22.26-7.45a83.687 83.687 0 0 0-5.428-.194zm59.34 20.19c-10.478-.09-22.832 3.093-36.424 9.943-48.23 24.34-89.625 90.513-91.548 145.436l156.485 53.24c3.865-62.22 46.797-129.372 101.613-157.035a134.399 134.399 0 0 1 12.832-5.666l-134.54-45.036a43.905 43.905 0 0 0-8.427-.873zm174.97 58.323c-10.476-.09-22.83 3.092-36.42 9.94-48.577 24.518-90.225 91.473-91.586 146.623l46.205 15.72c3.914-62.188 46.825-129.274 101.607-156.92a128.588 128.588 0 0 1 13.53-5.91l-26.544-8.884a44.788 44.788 0 0 0-6.785-.57zm63.554 22.014c-10.267.093-22.094 3.353-35.333 10.034-47.158 23.8-87.777 87.587-91.362 141.75l174.55-73.726c-.404-39.01-10.754-61.304-24.415-71.082a36.057 36.057 0 0 0-7.55-4.137l-4.735-1.584c-3.48-.887-7.195-1.327-11.144-1.29zM17.9 195.622v187.484L59.46 397.58V209.764zm60.25 20.498v187.962l156.282 54.37V269.288l-29.053-9.886v119.43L104.325 344.75V225.025zm414.22 3.683L318.433 293.27v189.236l173.935-73.504zm-369.354 11.582v99.947l63.675 21.477v-99.763zm31.306 28.797c9.705 0 17.573 7.867 17.573 17.572 0 6.34-3.37 11.88-8.407 14.97v28.53h-18.69v-28.746c-4.838-3.13-8.048-8.562-8.048-14.754 0-9.705 7.867-17.572 17.572-17.572zm98.797 15.464v189.307l46.626 16.22V291.51z"/></svg>
         <span class="bnav-label">Value</span>
       </button>
       <button class="bnav-btn" data-tab="timeline">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="M92.656 19.188v41.5h331.72v-41.5H92.655zM119.5 79.374V433.53h22.28V79.376H119.5zm46.594 0c3.212 43.324 13.312 82.022 27.78 110.906 17.685 35.304 40.845 54.75 64.064 54.75 23.218 0 46.346-19.446 64.03-54.75 14.47-28.883 24.57-67.58 27.782-110.905H166.094zm209.156 0V433.53h22.28V79.376h-22.28zm-117.313 185.22c-23.218 0-46.378 19.415-64.062 54.717-14.835 29.614-25.098 69.562-28.03 114.22H350c-2.933-44.658-13.197-84.606-28.03-114.22-17.686-35.302-40.814-54.718-64.033-54.718zM92.657 452.218v41.467h331.718V452.22H92.655z"/></svg>
         <span class="bnav-label">Activity</span>
       </button>
       <button class="bnav-btn" data-tab="binder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="M319.61 20.654c13.145 33.114 13.144 33.115-5.46 63.5 33.114-13.145 33.116-13.146 63.5 5.457-13.145-33.114-13.146-33.113 5.457-63.498-33.114 13.146-33.113 13.145-63.498-5.459zM113.024 38.021c-11.808 21.04-11.808 21.04-35.724 24.217 21.04 11.809 21.04 11.808 24.217 35.725 11.808-21.04 11.808-21.04 35.724-24.217-21.04-11.808-21.04-11.808-24.217-35.725zm76.55 56.184c-.952 50.588-.95 50.588-41.991 80.18 50.587.95 50.588.95 80.18 41.99.95-50.588.95-50.588 41.99-80.18-50.588-.95-50.588-.95-80.18-41.99zm191.177 55.885c-.046 24.127-.048 24.125-19.377 38.564 24.127.047 24.127.046 38.566 19.375.047-24.126.046-24.125 19.375-38.564-24.126-.047-24.125-.046-38.564-19.375zm-184.086 83.88a96.38 96.38 0 0 0-3.492.134c-18.591 1.064-41.868 8.416-77.445 22.556L76.012 433.582c78.487-20.734 132.97-21.909 170.99-4.615V247.71c-18.076-8.813-31.79-13.399-46.707-13.737a91.166 91.166 0 0 0-3.629-.002zm122.686 11.42a209.3 209.3 0 0 0-8.514.098c-12.81.417-27.638 2.215-45.84 4.522v177.135c43.565-7.825 106.85-4.2 171.244 7.566l-39.78-177.197c-35.904-8.37-56.589-11.91-77.11-12.123zm2.289 16.95c18.889.204 36.852 2.768 53.707 5.02l4.437 16.523c-23.78-3.75-65.966-4.906-92.467-.98l-.636-17.805c11.959-2.154 23.625-2.88 34.959-2.758zm-250.483 4.658L60.54 313.002h24.094l10.326-46.004H71.158zm345.881 0 39.742 177.031 2.239 9.973 22.591-.152-40.855-186.852h-23.717zm-78.857 57.82c16.993.026 33.67.791 49.146 2.223l3.524 17.174c-32.645-3.08-72.58-2.889-102.995 0l-.709-17.174c16.733-1.533 34.04-2.248 51.034-2.223zm-281.793 6.18-6.924 30.004h24.394l6.735-30.004H56.389zm274.418 27.244c4.656.021 9.487.085 14.716.203l2.555 17.498c-19.97-.471-47.115.56-59.728 1.05l-.7-17.985c16.803-.493 29.189-.828 43.157-.766zm41.476.447c8.268.042 16.697.334 24.121.069l2.58 17.74c-8.653-.312-24.87-.83-32.064-.502l-2.807-17.234a257.25 257.25 0 0 1 8.17-.073zm-326.97 20.309-17.985 77.928 25.035-.17 17.455-77.758H45.313zm303.164 11.848c19.608-.01 38.66.774 56.449 2.572l2.996 20.787c-34.305-4.244-85.755-7.697-119.1-3.244l-.14-17.922c20.02-1.379 40.186-2.183 59.795-2.193zm-166.606 44.05c-30.112.09-67.916 6.25-115.408 19.76l-7.22 2.053 187.759-1.27v-6.347c-16.236-9.206-37.42-14.278-65.13-14.196zm134.41 6.174c-19.63.067-37.112 1.439-51.283 4.182v10.064l177.594-1.203c-44.322-8.634-89.137-13.17-126.31-13.043zM26 475v18h460v-18H26z"/></svg>
         <span class="bnav-label">Binder</span>
       </button>
       <button class="bnav-btn" data-tab="collector" id="bnav-btn-collector" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="m408.256 119.46-37.7 52.165 19.57 44.426 34.8-37.214-16.67-59.375zm86.074 12.513L384.44 249.498 334.01 135.02l-75.162 132.947-86.948-131.78-33.334 114.122L17.922 132.83l39.3 127.6c1.945-.348 3.94-.54 5.98-.54 18.812 0 34.26 15.452 34.26 34.262 0 13.823-8.346 25.822-20.235 31.22l5.337 17.33c12.425 25.466 71.863 45.152 176.582 47.206 110.805 2.174 178.12-17.54 189.854-47.207l4.357-20.26c-16.836-2.114-30.02-16.612-30.02-33.986 0-18.81 15.45-34.262 34.263-34.262 3.513 0 6.91.54 10.11 1.54l26.622-123.762zm-391.77 2.04 1.22 56.337 25.56 24.89 9.592-32.842-36.37-48.386zm150.585 2.91-24.483 51.36 28.955 43.885 24.922-44.08-29.395-51.166zm204.453 135.962c-8.712 0-15.575 6.862-15.575 15.572 0 8.71 6.863 15.574 15.575 15.574s15.572-6.863 15.572-15.573-6.86-15.572-15.572-15.572zM63.2 278.58c-8.71 0-15.573 6.864-15.573 15.574s6.862 15.573 15.574 15.573c8.713 0 15.573-6.862 15.573-15.573 0-8.71-6.86-15.574-15.572-15.574zm130.33 17.842c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.26-34.262zm131.234 0c18.812 0 34.26 15.45 34.26 34.262 0 18.81-15.448 34.26-34.26 34.26-18.813 0-34.262-15.45-34.262-34.26s15.45-34.262 34.262-34.262zm-131.235 18.69c-8.713 0-15.573 6.86-15.573 15.572 0 8.71 6.86 15.574 15.572 15.574 8.71 0 15.572-6.864 15.572-15.574s-6.86-15.573-15.573-15.573zm131.234 0c-8.712 0-15.573 6.86-15.573 15.572 0 8.71 6.862 15.574 15.574 15.574s15.574-6.864 15.574-15.574-6.862-15.573-15.574-15.573z"/></svg>
         <span class="bnav-label">Collector</span>
       </button>
       <button class="bnav-btn" data-tab="settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg viewBox="0 0 512 512"><path fill="currentColor" d="M234.875 18.78c-26.087 2.367-51.557 8.56-74.875 18.782 15.37 32.763 14.222 66.706-6.72 82.407-20.835 15.617-54.055 7.965-81.124-15.69-16.246 19.452-29.336 41.36-38.875 65.626 33.83 12.333 56.635 37.665 52.94 63.5-3.698 25.835-32.697 43.74-68.626 46.094 2.338 25.796 8.91 50.778 18.937 73.875 17.81-8.182 35.793-11.09 51.095-8.938 13.032 1.87 23.927 7.015 31.156 16.657 15.817 21.097 7.603 54.713-16.78 81.97 19.516 16.35 42.216 29.444 66.594 39.03 12.33-33.828 37.655-56.634 63.5-52.938 25.844 3.697 43.74 32.696 46.094 68.625 26.087-2.365 51.557-8.555 74.875-18.78-15.766-32.997-14.26-67.588 6.843-83.406 9.64-7.23 22.568-9.022 35.594-7.125 15.112 2.16 31.19 10.25 45.563 22.78 16.088-19.345 29.4-41.51 38.875-65.594-33.83-12.332-56.635-37.653-52.938-63.5 3.697-25.846 32.665-43.772 68.594-46.125-2.36-25.944-8.774-50.663-18.906-73.874-32.612 15.117-66.66 13.145-82.282-7.687-15.696-20.944-7.252-53.86 16.688-81-19.52-16.352-42.248-29.447-66.625-39.032-12.332 33.828-37.657 56.66-63.5 52.968-25.846-3.693-43.744-32.696-46.095-68.625zm21.656 95.126c79.626 0 144.376 64.752 144.376 144.375 0 79.626-64.75 144.376-144.375 144.376-79.624 0-144.374-64.75-144.374-144.375 0-79.624 64.75-144.374 144.375-144.374zm0 18.688c-69.524 0-125.686 56.162-125.686 125.687 0 69.526 56.162 125.69 125.687 125.69 69.526 0 125.69-56.164 125.69-125.69 0-69.522-56.164-125.686-125.69-125.686zm.033 15.125c61.094 0 110.625 49.53 110.625 110.624 0 61.095-49.53 110.625-110.625 110.625s-110.625-49.53-110.625-110.626c0-61.095 49.53-110.625 110.625-110.625z"/></svg>
         <span class="bnav-label">Settings</span>
       </button>
     </nav>
@@ -3206,11 +3545,11 @@ document.head.appendChild(manifestLink);
     <div id="tab-binder" class="tab-content">
       <div id="binder-controls"></div>
       <div class="binder-layout">
-        <button class="binder-nav" id="prev-page" style="width:28px;height:28px;font-size:1rem">&lsaquo;</button>
+        <button class="binder-nav" id="prev-page" aria-label="Previous page"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="binder-spread-wrapper">
           <div class="binder-spread" id="binder-spread"></div>
         </div>
-        <button class="binder-nav" id="next-page" style="width:28px;height:28px;font-size:1rem">&rsaquo;</button>
+        <button class="binder-nav" id="next-page" aria-label="Next page"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4L13 10L7 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div id="binder-scrubber"></div>
     </div>
@@ -3232,18 +3571,22 @@ document.head.appendChild(manifestLink);
 <div class="pack-modal-overlay" id="pack-modal-overlay">
   <div class="pack-modal" id="pack-modal">
     <div class="pack-modal-header">
-      <div class="pack-modal-title" id="pack-modal-title">📦 Open Booster Pack</div>
+      <div class="pack-modal-title" id="pack-modal-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><rect x="5" y="2" rx="2" width="14" height="20"/><path d="M12 2v20"/><path d="M5 7h14"/><path d="M5 17h14"/><circle cx="12" cy="12" r="2.5"/></svg>Open Booster Pack</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="pack-modal-price" id="pack-modal-price"></span>
         <button class="pack-modal-close" id="pack-modal-close">&times;</button>
       </div>
     </div>
-    <div class="pack-modal-body" id="pack-modal-body"></div>
+    <div class="pack-modal-content-wrap">
+      <div class="pack-modal-search-area" id="pack-modal-search-area"></div>
+      <div class="pack-modal-body" id="pack-modal-body"></div>
+    </div>
     <div class="pack-modal-footer" id="pack-modal-footer"></div>
   </div>
 </div>
 
 <!-- Toast container -->
+<div class="toast-blur-backdrop" id="toast-blur-backdrop"></div>
 <div class="toast-container" id="toast-container"></div>
 
 <!-- Confirm Dialog -->
@@ -3264,7 +3607,7 @@ document.head.appendChild(manifestLink);
     <h3>Cloud Sync</h3>
     <div class="sync-desc">
       Sync your collection across browsers using a private GitHub Gist.<br>
-      <a href="https://github.com/settings/tokens/new?scopes=gist&description=FIN+Binder+Tracker" target="_blank" rel="noopener">Generate a token here</a> (select only the <strong>gist</strong> scope).
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a> with <strong>Gists read &amp; write</strong> permission only. Set a 90-day expiry for safety. This token can access your Gists &mdash; never share it.
     </div>
     <label>GitHub Personal Access Token</label>
     <input type="password" id="sync-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
@@ -3753,7 +4096,7 @@ document.head.appendChild(manifestLink);
         '<label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">GitHub Personal Access Token</label>' +
         '<input type="password" id="sf-sync-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" style="width:100%;padding:10px 12px;font-size:0.9rem;background:var(--slot-bg);border:2px solid var(--surface2);border-radius:8px;color:var(--text);outline:none;margin-bottom:8px;font-family:monospace">' +
         '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px">' +
-          '<a href="https://github.com/settings/tokens/new?scopes=gist&description=FIN+Binder+Tracker" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">Generate a token here</a> (select only <strong>gist</strong> scope)' +
+          '<a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">Create a fine-grained token</a> &mdash; Gists read &amp; write only, 90-day expiry' +
         '</div>' +
         '<button class="btn btn-primary" id="sf-sync-connect" style="width:100%">Save &amp; Connect</button>';
     }
@@ -4218,6 +4561,7 @@ document.head.appendChild(manifestLink);
     saveFoil();
     const card = getCardByNumber(cn);
     celebrateFoil(card);
+    refreshAfterFoilChange();
   }
 
   function removeFoil(cn) {
@@ -4225,6 +4569,13 @@ document.head.appendChild(manifestLink);
     foilOwned[cn] = foilOwned[cn].filter(f => f !== 'foil');
     if (!foilOwned[cn].length) delete foilOwned[cn];
     saveFoil();
+    refreshAfterFoilChange();
+  }
+
+  function refreshAfterFoilChange() {
+    if (document.getElementById('tab-collector')?.classList.contains('active')) renderCollectorTab();
+    if (document.getElementById('tab-dashboard')?.classList.contains('active')) renderDashboard();
+    if (document.getElementById('tab-portfolio')?.classList.contains('active')) renderPortfolio();
   }
 
   let allCards = [];
@@ -4232,6 +4583,15 @@ document.head.appendChild(manifestLink);
   let binderConfig = loadConfig();
   let foilOwned    = {};   // { collector_number: ['foil'] }
   let variantCards = [];   // collector booster exclusive cards
+  let cardByCN = new Map();     // collector_number → card (main + variants)
+  let mainSetCNs = new Set();   // fast O(1) "is this a main-set card?" check
+
+  function rebuildLookups() {
+    cardByCN.clear();
+    mainSetCNs.clear();
+    for (const c of allCards) { cardByCN.set(c.collector_number, c); mainSetCNs.add(c.collector_number); }
+    for (const c of variantCards) { cardByCN.set(c.collector_number, c); }
+  }
   let wizardStep   = 1;    // 1 | 2 | 3 — current wizard step
   let packSession = [];
   let currentPage = 0;
@@ -4403,15 +4763,15 @@ document.head.appendChild(manifestLink);
       if (!file) throw new Error('No data file in Gist');
 
       const payload = JSON.parse(file.content);
-      if (payload.collection?.owned) ownedSet = new Set(payload.collection.owned);
-      if (payload.packs?.packs) boosterPacks = payload.packs.packs;
-      if (payload.timeline?.events) timelineEvents = payload.timeline.events;
+      if (payload.collection?.owned) ownedSet = new Set(sanitizeOwned(payload.collection.owned));
+      if (payload.packs?.packs) boosterPacks = sanitizePacks(payload.packs.packs);
+      if (payload.timeline?.events) timelineEvents = sanitizeTimeline(payload.timeline.events);
       if (payload.binderConfig) {
-        binderConfig = payload.binderConfig;
-        localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(binderConfig));
+        const safeCfg = sanitizeBinderConfig(payload.binderConfig);
+        if (safeCfg) { binderConfig = safeCfg; localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(binderConfig)); }
       }
       if (payload.foil) {
-        foilOwned = payload.foil;
+        foilOwned = sanitizeFoil(payload.foil);
         localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
       }
 
@@ -4691,6 +5051,77 @@ document.head.appendChild(manifestLink);
     saveTimeline();
   }
 
+  // ── Import/Sync data validation ──
+  const VALID_CN = /^\d+[a-z]?$/;
+  const VALID_ISO = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z?$/;
+  const VALID_PRESET = /^[\w\s\-×()…]+$/;
+
+  function sanitizeOwned(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(cn => typeof cn === 'string' && VALID_CN.test(cn));
+  }
+
+  function sanitizeFoil(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+    const clean = {};
+    for (const [cn, val] of Object.entries(obj)) {
+      if (!VALID_CN.test(cn)) continue;
+      if (Array.isArray(val) && val.every(v => typeof v === 'string' && v.length < 20)) {
+        clean[cn] = val;
+      }
+    }
+    return clean;
+  }
+
+  function sanitizeTimeline(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(e =>
+      e && typeof e === 'object' &&
+      typeof e.type === 'string' && (e.type === 'add' || e.type === 'remove') &&
+      typeof e.cn === 'string' && VALID_CN.test(e.cn) &&
+      typeof e.date === 'string' && VALID_ISO.test(e.date)
+    ).map(e => ({
+      type: e.type, cn: e.cn, date: e.date,
+      source: typeof e.source === 'string' && e.source.length < 20 ? e.source : 'quick'
+    }));
+  }
+
+  function sanitizePacks(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(p =>
+      p && typeof p === 'object' &&
+      (typeof p.price === 'number' || typeof p.price === 'undefined') &&
+      (!p.cards || Array.isArray(p.cards))
+    ).map(p => ({
+      price: typeof p.price === 'number' && isFinite(p.price) ? p.price : 0,
+      cards: Array.isArray(p.cards) ? p.cards.filter(c => {
+        if (typeof c === 'string') return VALID_CN.test(c);
+        if (c && typeof c === 'object' && typeof c.cn === 'string') return VALID_CN.test(c.cn);
+        return false;
+      }) : [],
+      date: typeof p.date === 'string' && VALID_ISO.test(p.date) ? p.date : undefined,
+    }));
+  }
+
+  function sanitizeBinderConfig(cfg) {
+    if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) return null;
+    const rows = parseInt(cfg.gridRows); const cols = parseInt(cfg.gridCols);
+    if (!(rows >= 1 && rows <= 10) || !(cols >= 1 && cols <= 10)) return null;
+    const spp = rows * cols;
+    return {
+      gridRows: rows, gridCols: cols,
+      slotsPerPage: spp,
+      pageCount: typeof cfg.pageCount === 'number' ? Math.max(1, Math.min(999, Math.floor(cfg.pageCount))) : calcPageCount(spp),
+      presetName: typeof cfg.presetName === 'string' && VALID_PRESET.test(cfg.presetName) && cfg.presetName.length <= 30
+        ? cfg.presetName : (spp + '-pocket'),
+      scope: {
+        mainSet: true,
+        collectorBinder: !!(cfg.scope && cfg.scope.collectorBinder),
+      },
+      configured: !!cfg.configured,
+    };
+  }
+
   // ── Binder placement ──
   function getPlacement(card) {
     const idx = allCards.indexOf(card);
@@ -4702,8 +5133,7 @@ document.head.appendChild(manifestLink);
   }
 
   function getCardByNumber(cn) {
-    return allCards.find(c => c.collector_number === cn)
-        || variantCards.find(c => c.collector_number === cn);
+    return cardByCN.get(cn);
   }
 
   function isSurgeFoil(card) {
@@ -4742,7 +5172,7 @@ document.head.appendChild(manifestLink);
   // Returns { label, cssClass, short } for autocomplete badge rendering
   function getCardVariantInfo(card) {
     if (!card) return { label: '', cssClass: 'vb-normal', short: '' };
-    const isVariant = !allCards.includes(card);
+    const isVariant = !mainSetCNs.has(card.collector_number);
     const fe = card.frame_effects || [];
     if (isSurgeFoil(card))          return { label: 'SURGE FOIL', cssClass: 'vb-surge', short: 'Surge' };
     if (isChocoboTrack(card))       return { label: 'CHOCOBO TRACK', cssClass: 'vb-chocobo', short: 'Chocobo' };
@@ -4755,6 +5185,83 @@ document.head.appendChild(manifestLink);
     }
     return { label: '', cssClass: 'vb-normal', short: '' };
   }
+
+  // ── Surge Foil Canvas Pattern Generator (from SURGE_FOIL_OVERLAY.md) ──
+  var _surgeFoilSharedURL = '';
+
+  function drawSurgeFoil(ctx, W, H, seed) {
+    var spectral = [
+      [30,0,200],[0,80,255],[0,180,240],[0,230,180],
+      [40,240,100],[160,240,40],[230,220,0],[255,170,0],
+      [255,80,30],[240,30,100],[180,0,220],[100,20,255],
+      [0,120,255],[0,210,200],[60,250,80],[200,230,0],
+      [255,140,0],[255,50,80],[200,0,180]
+    ];
+    var s = seed;
+    function rand() { s = (s * 16807) % 2147483647; return s / 2147483647; }
+    var angle = 20 * Math.PI / 180;
+
+    for (var i = 0; i < 65; i++) {
+      var t = rand();
+      var col = spectral[Math.floor(t * spectral.length) % spectral.length];
+      var cx = rand() * W;
+      var cy = rand() * H;
+
+      var r = rand();
+      var length;
+      if (r < 0.3) length = 40 + rand() * 100;
+      else if (r < 0.6) length = 120 + rand() * 200;
+      else if (r < 0.85) length = 280 + rand() * 250;
+      else length = 450 + rand() * 250;
+
+      var baseWidth = 5 + rand() * 16;
+      var steps = 15 + Math.floor(rand() * 25);
+      var leftPts = [], rightPts = [];
+
+      var wobble = (rand() - 0.5) * 0.1;
+      var dX = Math.cos(angle + wobble + Math.PI / 2) * -1;
+      var dY = Math.sin(angle + wobble + Math.PI / 2) * -1;
+      var nX = Math.cos(angle + wobble);
+      var nY = Math.sin(angle + wobble);
+
+      for (var st = 0; st <= steps; st++) {
+        var frac = st / steps;
+        var px = cx + dX * (frac - 0.5) * length;
+        var py = cy + dY * (frac - 0.5) * length;
+        var taper = Math.pow(Math.sin(frac * Math.PI), 0.7);
+        var w = Math.max(2.5, baseWidth * taper * (0.5 + 0.5 * rand()));
+        var jagL = (rand() - 0.5) * 9;
+        var jagR = (rand() - 0.5) * 9;
+        leftPts.push([px + nX * (w + jagL), py + nY * (w + jagL)]);
+        rightPts.push([px - nX * (w + jagR), py - nY * (w + jagR)]);
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(leftPts[0][0], leftPts[0][1]);
+      for (var st2 = 1; st2 < leftPts.length; st2++) ctx.lineTo(leftPts[st2][0], leftPts[st2][1]);
+      for (var st3 = rightPts.length - 1; st3 >= 0; st3--) ctx.lineTo(rightPts[st3][0], rightPts[st3][1]);
+      ctx.closePath();
+
+      ctx.fillStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (0.13 + rand() * 0.28).toFixed(3) + ')';
+      ctx.fill();
+    }
+  }
+
+  function generateSurgeFoilURL(w, h, seed) {
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d');
+    drawSurgeFoil(ctx, w, h, seed);
+    return c.toDataURL('image/png');
+  }
+
+  function _initSurgeFoilPattern() {
+    _surgeFoilSharedURL = generateSurgeFoilURL(260, 364, 42);
+    document.documentElement.style.setProperty('--surge-foil-bg', 'url(' + _surgeFoilSharedURL + ')');
+  }
+
+  // Generate shared pattern immediately
+  _initSurgeFoilPattern();
 
   function acVariantBadgeHTML(card) {
     const info = getCardVariantInfo(card);
@@ -4970,9 +5477,38 @@ document.head.appendChild(manifestLink);
     setTimeout(() => container.remove(), 1800);
   }
 
+  // ── Toast blur backdrop helper ──
+  let _toastBlurTimer = null;
+  function showToastBlur() {
+    const bd = document.getElementById('toast-blur-backdrop');
+    if (!bd) return;
+    clearTimeout(_toastBlurTimer);
+    bd.classList.remove('fade-out');
+    bd.classList.add('active');
+  }
+  function hideToastBlur(delay) {
+    const bd = document.getElementById('toast-blur-backdrop');
+    if (!bd) return;
+    clearTimeout(_toastBlurTimer);
+    _toastBlurTimer = setTimeout(() => {
+      bd.classList.add('fade-out');
+      bd.classList.remove('active');
+    }, delay || 0);
+  }
+
+  document.getElementById('toast-blur-backdrop').addEventListener('click', () => {
+    hideToastBlur(0);
+    const container = document.getElementById('toast-container');
+    container.querySelectorAll('.add-toast').forEach(t => {
+      t.classList.add('removing');
+      setTimeout(() => t.remove(), 400);
+    });
+  });
+
   function showAddToast(card, cfg) {
     const container = document.getElementById('toast-container');
     container.querySelectorAll('.add-toast').forEach(t => t.remove());
+    showToastBlur();
 
     const msg = cfg.msgs[Math.floor(Math.random() * cfg.msgs.length)];
     const p = getPlacement(card);
@@ -4984,10 +5520,10 @@ document.head.appendChild(manifestLink);
     toast.style.setProperty('--toast-glow', cfg.glow);
     toast.style.setProperty('--toast-glow-color', cfg.border);
     const rarityLabels = { mythic: 'MYTHIC RARE', rare: 'RARE', uncommon: 'UNCOMMON', common: 'COMMON' };
-    const isVariant = !allCards.includes(card);
+    const isVariant = !mainSetCNs.has(card.collector_number);
     const placementStr = isVariant
-      ? `Collector Variant${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}`
-      : `Page ${p.page}, Slot ${p.slot}${card.price_usd > 0 ? ` \u00B7 $${card.price_usd.toFixed(2)}` : ''}`;
+      ? `Collector Variant${card.price_usd > 0 ? ` \u00B7 RM ${(card.price_usd * USD_TO_MYR).toFixed(2)}` : ''}`
+      : `Page ${p.page}, Slot ${p.slot}${card.price_usd > 0 ? ` \u00B7 RM ${(card.price_usd * USD_TO_MYR).toFixed(2)}` : ''}`;
     toast.innerHTML = `
       <div class="toast-rarity-badge ${esc(card.rarity)}">${(rarityLabels[card.rarity] || esc(card.rarity)) + esc(variantTag)}</div>
       <img src="${esc(card.image_normal || card.image_small)}" alt="${displayNameText(card)}">
@@ -4998,6 +5534,7 @@ document.head.appendChild(manifestLink);
     container.appendChild(toast);
 
     const dismissTime = card.rarity === 'mythic' ? 4000 : card.rarity === 'rare' ? 3500 : 3000;
+    hideToastBlur(dismissTime - 200);
     setTimeout(() => {
       toast.classList.add('removing');
       setTimeout(() => toast.remove(), 400);
@@ -5013,10 +5550,11 @@ document.head.appendChild(manifestLink);
     const label = getFoilVariantLabel(card);
     const p = getPlacement(card);
     const price = card.price_usd_foil > 0 ? card.price_usd_foil : card.price_usd;
-    const priceStr = price > 0 ? ` \u00B7 $${price.toFixed(2)}${card.price_usd_foil > 0 ? ' foil' : ''}` : '';
+    const priceStr = price > 0 ? ` \u00B7 RM ${(price * USD_TO_MYR).toFixed(2)}${card.price_usd_foil > 0 ? ' foil' : ''}` : '';
 
     const container = document.getElementById('toast-container');
     container.querySelectorAll('.add-toast').forEach(t => t.remove());
+    showToastBlur();
 
     const toast = document.createElement('div');
     toast.className = 'add-toast foil';
@@ -5031,6 +5569,7 @@ document.head.appendChild(manifestLink);
     container.appendChild(toast);
 
     const dismissTime = 3000;
+    hideToastBlur(dismissTime - 200);
     setTimeout(() => {
       toast.classList.add('removing');
       setTimeout(() => toast.remove(), 400);
@@ -5039,6 +5578,8 @@ document.head.appendChild(manifestLink);
 
   function celebrateAdd(card) {
     if (!card) return;
+    // Suppress celebrations while building a pack — show them at finalize
+    if (currentPack) return;
     const cfg = rarityConfig[card.rarity] || rarityConfig.common;
 
     // Screen flash (rare + mythic)
@@ -5062,6 +5603,8 @@ document.head.appendChild(manifestLink);
 
   function celebrateFoil(card) {
     if (!card) return;
+    // Suppress celebrations while building a pack — show them at finalize
+    if (currentPack) return;
     spawnGlowRing('rgba(199,125,255,0.7)');
     spawnRainbowBurst();
     showFoilToast(card);
@@ -5115,7 +5658,9 @@ document.head.appendChild(manifestLink);
 
   function openHeaderSearch() {
     headerSearchBar.classList.add('open');
-    setTimeout(() => headerSearchInput.focus(), 50);
+    headerSearchInput.focus();
+    // Double-tap focus for mobile keyboards that need a slight delay after display change
+    setTimeout(() => { headerSearchInput.blur(); headerSearchInput.focus(); }, 50);
   }
 
   function closeHeaderSearch() {
@@ -5170,7 +5715,7 @@ document.head.appendChild(manifestLink);
     headerAcList.innerHTML = matches.map((c, i) => {
       const isOwned = ownedSet.has(c.collector_number);
       const isFoilOwned = hasFoil(c.collector_number);
-      const isVar = !allCards.includes(c);
+      const isVar = !mainSetCNs.has(c.collector_number);
       const ownedBadge = isOwned
         ? `<span class="ac-owned-badge">\u2713 Owned</span>`
         : '';
@@ -5180,8 +5725,8 @@ document.head.appendChild(manifestLink);
         ? `<span class="ac-collector-badge">Collector</span>` : '';
       // Build detail fragments: collector #, rarity, then prices inline
       let detailParts = [`#${esc(c.collector_number)}`, esc(c.rarity)];
-      if (c.price_usd > 0) detailParts.push(`<span class="ac-price-usd">$${c.price_usd.toFixed(2)}</span>`);
-      if (c.price_usd_foil > 0) detailParts.push(`<span class="ac-price-foil">\u2726 $${c.price_usd_foil.toFixed(2)}</span>`);
+      if (c.price_usd > 0) detailParts.push(`<span class="ac-price-usd">RM ${(c.price_usd * USD_TO_MYR).toFixed(2)}</span>`);
+      if (c.price_usd_foil > 0) detailParts.push(`<span class="ac-price-foil">\u2726 RM ${(c.price_usd_foil * USD_TO_MYR).toFixed(2)}</span>`);
       return `<div class="ac-card-row${isVar ? ' ac-variant-row' : ''}" data-cn="${esc(c.collector_number)}" data-index="${i}">
         <img src="${esc(c.image_small)}" alt="${displayNameText(c)}" loading="lazy"${isOwned ? ' class="ac-img-owned"' : ''}>
         <div class="ac-info">
@@ -5227,11 +5772,13 @@ document.head.appendChild(manifestLink);
 
   // ── Pack Opening Modal ──
   const packModalOverlay = document.getElementById('pack-modal-overlay');
+  const packModalSearchArea = document.getElementById('pack-modal-search-area');
   const packModalBody = document.getElementById('pack-modal-body');
   const packModalFooter = document.getElementById('pack-modal-footer');
   const packModalTitle = document.getElementById('pack-modal-title');
   const packModalPrice = document.getElementById('pack-modal-price');
   const packModalClose = document.getElementById('pack-modal-close');
+  const PACK_ICON_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><rect x="5" y="2" rx="2" width="14" height="20"/><path d="M12 2v20"/><path d="M5 7h14"/><path d="M5 17h14"/><circle cx="12" cy="12" r="2.5"/></svg>';
 
   function openPackModal() {
     currentPack = null;
@@ -5244,7 +5791,8 @@ document.head.appendChild(manifestLink);
   function closePackModal(force) {
     if (!force && currentPack && currentPack.cards.length > 0) {
       if (!confirm(`Discard this pack? ${currentPack.cards.length} card(s) will be removed from your binder.`)) return;
-      for (const cn of currentPack.cards) {
+      for (const entry of currentPack.cards) {
+        const cn = typeof entry === 'string' ? entry : entry.cn;
         ownedSet.delete(cn);
         if (hasFoil(cn)) removeFoil(cn);
       }
@@ -5254,8 +5802,9 @@ document.head.appendChild(manifestLink);
     currentPack = null;
     packModalOverlay.classList.remove('visible', 'dimmed');
     document.body.style.overflow = '';
-    packModalTitle.textContent = '📦 Open Booster Pack';
+    packModalTitle.innerHTML = PACK_ICON_SVG + 'Open Booster Pack';
     packModalPrice.textContent = '';
+    packModalSearchArea.innerHTML = '';
     packModalBody.innerHTML = '';
     packModalFooter.innerHTML = '';
   }
@@ -5269,8 +5818,9 @@ document.head.appendChild(manifestLink);
   });
 
   function renderPackModalStep1() {
-    packModalTitle.textContent = '📦 Open Booster Pack';
+    packModalTitle.innerHTML = PACK_ICON_SVG + 'Open Booster Pack';
     packModalPrice.textContent = '';
+    packModalSearchArea.innerHTML = '';
     packModalFooter.innerHTML = '';
 
     packModalBody.innerHTML = `
@@ -5301,15 +5851,18 @@ document.head.appendChild(manifestLink);
 
   function renderPackModalStep2() {
     const packNum = boosterPacks.length + 1;
-    packModalTitle.textContent = `📦 Pack #${packNum}`;
+    packModalTitle.innerHTML = PACK_ICON_SVG + `Pack #${packNum}`;
     packModalPrice.textContent = currentPack.price > 0 ? `RM ${currentPack.price.toFixed(2)}` : '';
 
-    packModalBody.innerHTML = `
-      <div style="padding:12px 16px 8px;position:relative;">
-        <input type="text" id="pack-modal-search" placeholder="Search cards to add to pack..." autocomplete="off"
+    packModalSearchArea.innerHTML = `
+      <div style="padding:12px 16px 8px;flex-shrink:0;">
+        <input type="search" id="pack-modal-search" placeholder="Type card name or collector #..." autocomplete="off" inputmode="search"
           style="width:100%;padding:10px 14px;font-size:0.88rem;background:var(--slot-bg);border:2px solid var(--ff-border);border-radius:6px;color:var(--text);outline:none;font-family:'Rajdhani',sans-serif;font-weight:500;letter-spacing:0.02em;">
-        <div class="header-autocomplete" id="pack-modal-ac" style="position:absolute;left:16px;right:16px;top:100%;border-radius:0 0 6px 6px;"></div>
       </div>
+      <div class="header-autocomplete" id="pack-modal-ac"></div>
+    `;
+
+    packModalBody.innerHTML = `
       <div class="pack-counter">
         <span id="pack-modal-count">${currentPack.cards.length}</span> cards in this pack
         ${currentPack.price > 0 ? ` \u00B7 RM ${currentPack.price.toFixed(2)}` : ''}
@@ -5318,7 +5871,7 @@ document.head.appendChild(manifestLink);
     `;
 
     packModalFooter.innerHTML = `
-      <button class="pack-done-btn" id="pack-modal-done" ${currentPack.cards.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Done \u2014 Save Pack</button>
+      <button class="pack-done-btn" id="pack-modal-done" ${currentPack.cards.length === 0 ? 'disabled' : ''}>Done \u2014 Save Pack</button>
       <button class="pack-cancel-btn" id="pack-modal-cancel">Cancel</button>
     `;
 
@@ -5330,7 +5883,8 @@ document.head.appendChild(manifestLink);
     });
     document.getElementById('pack-modal-cancel').addEventListener('click', () => closePackModal(false));
 
-    setTimeout(() => document.getElementById('pack-modal-search')?.focus(), 100);
+    const packSearchEl = document.getElementById('pack-modal-search');
+    if (packSearchEl) { packSearchEl.focus(); setTimeout(() => { packSearchEl.blur(); packSearchEl.focus(); }, 50); }
   }
 
   function renderPackModalCardList() {
@@ -5340,16 +5894,17 @@ document.head.appendChild(manifestLink);
       container.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:0.85rem;">Search and add cards from your pack</div>';
       return;
     }
-    container.innerHTML = currentPack.cards.map((cn, i) => {
+    container.innerHTML = currentPack.cards.map((entry, i) => {
+      const cn = typeof entry === 'string' ? entry : entry.cn;
+      const isFoilEntry = typeof entry === 'object' && entry.foil;
       const card = getCardByNumber(cn);
       if (!card) return '';
-      const isFoilOwned = hasFoil(cn);
       return `<div class="pack-card-entry" style="animation-delay:${i * 0.05}s">
         <div class="pack-num">${i + 1}</div>
         <img src="${esc(card.image_small)}" alt="${displayNameText(card)}">
         <span class="pack-card-name">${displayName(card)}</span>
         ${acVariantBadgeHTML(card)}
-        ${isFoilOwned ? '<span style="color:var(--foil-color);font-size:0.7rem;font-weight:700">\u2726</span>' : ''}
+        ${isFoilEntry ? '<span style="color:var(--foil-color);font-size:0.7rem;font-weight:700">\u2726 FOIL</span>' : ''}
         <span class="pack-card-rarity ${esc(card.rarity)}">${esc(card.rarity)}</span>
       </div>`;
     }).join('');
@@ -5358,8 +5913,6 @@ document.head.appendChild(manifestLink);
     const doneBtn = document.getElementById('pack-modal-done');
     if (doneBtn) {
       doneBtn.disabled = currentPack.cards.length === 0;
-      doneBtn.style.opacity = currentPack.cards.length === 0 ? '0.5' : '';
-      doneBtn.style.cursor = currentPack.cards.length === 0 ? 'not-allowed' : '';
     }
   }
 
@@ -5368,61 +5921,111 @@ document.head.appendChild(manifestLink);
     const acList = document.getElementById('pack-modal-ac');
     let acHl = -1;
 
-    searchInput.addEventListener('input', () => {
+    function buildPackAcHTML() {
       const q = searchInput.value.trim().toLowerCase();
-      if (q.length < 1) { acList.classList.remove('show'); acList.innerHTML = ''; return; }
+      if (q.length < 1) return '';
       const allSearchable = [...allCards, ...variantCards];
       const matches = allSearchable.filter(c =>
         c.name.toLowerCase().includes(q) || c.collector_number.toLowerCase() === q
-      ).slice(0, 15);
-      acHl = -1;
-      if (matches.length === 0) { acList.classList.remove('show'); acList.innerHTML = ''; return; }
-      acList.innerHTML = matches.map((c, i) => {
-        const isOwned = ownedSet.has(c.collector_number);
-        const isFoilOwned = hasFoil(c.collector_number);
-        const inPack = currentPack.cards.includes(c.collector_number);
-        return `<div class="ac-item" data-cn="${esc(c.collector_number)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
-            <span class="ac-rarity-dot ${esc(c.rarity)}"></span>
-            <span class="card-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span>
-            <span class="card-num" style="flex-shrink:0">#${esc(c.collector_number)}</span>
-          </span>
-          <span style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-            ${acVariantBadgeHTML(c)}
-            ${inPack ? '<span class="owned-tag">in pack</span>' : (isOwned || isFoilOwned) ? '<span class="owned-tag">' + (isFoilOwned ? '\u2726 ' : '') + 'owned</span>' : ''}
-          </span>
-        </div>`;
+      ).slice(0, 12);
+      if (matches.length === 0) return '';
+      return matches.map((c, i) => {
+        const cn = c.collector_number;
+        const isOwned = ownedSet.has(cn);
+        const isFoilOwned = hasFoil(cn);
+        const hasNonFoilInPack = currentPack && currentPack.cards.some(e => (typeof e === 'string' ? e : e.cn) === cn && !(typeof e === 'object' && e.foil));
+        const hasFoilInPack = currentPack && currentPack.cards.some(e => typeof e === 'object' && e.cn === cn && e.foil);
+        const canBeFoil = (c.finishes || []).includes('foil');
+        const cardAdded = hasNonFoilInPack || isOwned;
+
+        let actionsHTML = '';
+        // Non-foil button: show ✓ if already owned/in-pack, otherwise show +
+        if (cardAdded) {
+          actionsHTML += '<span class="pack-ac-added" title="Added">&#10003;</span>';
+        } else {
+          actionsHTML += '<button class="pack-ac-add" data-cn="' + esc(cn) + '" title="Add to pack">+</button>';
+        }
+        // Foil button: always show if card can be foil, ✓ if foil already added
+        if (canBeFoil) {
+          if (isFoilOwned || hasFoilInPack) {
+            actionsHTML += '<span class="pack-ac-added pack-ac-added-foil" title="Foil added">&#10022;</span>';
+          } else {
+            actionsHTML += '<button class="pack-ac-add-foil" data-cn="' + esc(cn) + '" data-foil="1" title="Add as foil">&#10022;</button>';
+          }
+        }
+
+        return '<div class="pack-ac-item" data-cn="' + esc(cn) + '" style="animation-delay:' + (i * 0.03) + 's">' +
+          '<img class="pack-ac-thumb" src="' + esc(c.image_small) + '" alt="" loading="lazy">' +
+          '<div class="pack-ac-info" data-cn="' + esc(cn) + '">' +
+            '<div class="pack-ac-name">' +
+              '<span class="ac-rarity-dot ' + esc(c.rarity) + '"></span>' +
+              '<span class="pack-ac-cn">#' + esc(cn) + '</span> ' +
+              esc(c.name) +
+            '</div>' +
+            '<div class="pack-ac-meta">' +
+              acVariantBadgeHTML(c) +
+              ((hasNonFoilInPack || hasFoilInPack) ? ' <span class="pack-ac-in-pack">in pack</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="pack-ac-actions">' + actionsHTML + '</div>' +
+        '</div>';
       }).join('');
+    }
+
+    function renderPackAcResults() {
+      const html = buildPackAcHTML();
+      acHl = -1;
+      if (!html) { acList.classList.remove('show'); acList.innerHTML = ''; return; }
+      acList.innerHTML = html;
       acList.classList.add('show');
-    });
+    }
+
+    function quickAddToPack(cn, asFoil) {
+      if (!currentPack) return;
+      addCardToPackModal(cn, asFoil);
+      renderPackAcResults();
+      searchInput.focus();
+    }
+
+    searchInput.addEventListener('input', renderPackAcResults);
 
     searchInput.addEventListener('keydown', (e) => {
-      const items = acList.querySelectorAll('.ac-item');
+      const items = acList.querySelectorAll('.pack-ac-item');
       if (!items.length) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); acHl = Math.min(acHl + 1, items.length - 1); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); acHl = Math.max(acHl - 1, 0); }
-      else if (e.key === 'Enter' && acHl >= 0) { e.preventDefault(); items[acHl].click(); }
+      else if (e.key === 'Enter' && acHl >= 0) {
+        e.preventDefault();
+        const cn = items[acHl].dataset.cn;
+        const hasNonFoil = ownedSet.has(cn) || (currentPack && currentPack.cards.some(e => (typeof e === 'string' ? e : e.cn) === cn && !(typeof e === 'object' && e.foil)));
+        if (cn && !hasNonFoil) {
+          quickAddToPack(cn, false);
+        }
+      }
       items.forEach((el, i) => el.classList.toggle('hl', i === acHl));
     });
 
     acList.addEventListener('click', (e) => {
-      const item = e.target.closest('.ac-item');
-      if (!item) return;
-      const cn = item.dataset.cn;
-      const card = getCardByNumber(cn);
-      searchInput.value = '';
-      acList.classList.remove('show');
-      if (card) {
-        _packModeAdding = true;
-        packModalOverlay.classList.add('dimmed');
-        openModal(card);
+      const addBtn = e.target.closest('.pack-ac-add');
+      if (addBtn) { quickAddToPack(addBtn.dataset.cn, false); return; }
+      const foilBtn = e.target.closest('.pack-ac-add-foil');
+      if (foilBtn) { quickAddToPack(foilBtn.dataset.cn, true); return; }
+      const infoArea = e.target.closest('.pack-ac-info');
+      if (infoArea) {
+        const cn = infoArea.dataset.cn;
+        const card = getCardByNumber(cn);
+        if (card) {
+          _packModeAdding = true;
+          packModalOverlay.classList.add('dimmed');
+          openModal(card);
+        }
       }
     });
   }
 
   function addCardToPackModal(cn, asFoil) {
     if (!currentPack) return;
-    currentPack.cards.push(cn);
+    currentPack.cards.push({ cn, foil: !!asFoil });
     addCard(cn);
     if (asFoil) addFoil(cn);
     renderPackModalCardList();
@@ -5438,11 +6041,13 @@ document.head.appendChild(manifestLink);
   function finalizePackModal() {
     if (!currentPack || currentPack.cards.length === 0) return;
 
+    // Normalize cards to plain CN strings for storage (backward compat)
+    const packCards = currentPack.cards.map(e => typeof e === 'string' ? e : e.cn);
     const pack = {
       id: Date.now(),
       date: new Date().toISOString(),
       price: currentPack.price,
-      cards: [...currentPack.cards],
+      cards: packCards,
     };
     boosterPacks.push(pack);
     savePacks();
@@ -5459,6 +6064,7 @@ document.head.appendChild(manifestLink);
     currentPack = null;
     packModalOverlay.classList.remove('visible', 'dimmed');
     document.body.style.overflow = '';
+    packModalSearchArea.innerHTML = '';
     packModalBody.innerHTML = '';
     packModalFooter.innerHTML = '';
 
@@ -5523,11 +6129,10 @@ document.head.appendChild(manifestLink);
     const rarities = ['mythic', 'rare', 'uncommon', 'common'];
     const rarityColors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
     const rarityCounts = {};
-    for (const r of rarities) {
-      rarityCounts[r] = {
-        total: allCards.filter(c => c.rarity === r).length,
-        owned: allCards.filter(c => c.rarity === r && ownedSet.has(c.collector_number)).length,
-      };
+    for (const r of rarities) rarityCounts[r] = { total: 0, owned: 0 };
+    for (const c of allCards) {
+      const b = rarityCounts[c.rarity];
+      if (b) { b.total++; if (ownedSet.has(c.collector_number)) b.owned++; }
     }
     const foilCount = Object.keys(foilOwned).length;
     const packCount = boosterPacks.length;
@@ -5615,7 +6220,7 @@ document.head.appendChild(manifestLink);
       <div class="stats-row">
         <div class="stat-pill"><div class="stat-num" style="color:var(--gold)">✦ ${foilCount}</div><div class="stat-label">Foils</div></div>
         <div class="stat-pill"><div class="stat-num" style="color:var(--accent)">${packCount}</div><div class="stat-label">Packs</div></div>
-        <div class="stat-pill"><div class="stat-num" style="color:var(--owned-border)">$${collValue.toFixed(0)}</div><div class="stat-label">Value</div></div>
+        <div class="stat-pill"><div class="stat-num" style="color:var(--owned-border)">RM ${(collValue * USD_TO_MYR).toFixed(0)}</div><div class="stat-label">Value</div></div>
       </div>
 
       <div class="dash-card" style="margin-bottom:var(--sp-3)">
@@ -5657,25 +6262,36 @@ document.head.appendChild(manifestLink);
     const rarities = ['mythic', 'rare', 'uncommon', 'common'];
     const rarityColors = { mythic: '#e8702a', rare: '#c9a14e', uncommon: '#72b5b5', common: '#777' };
 
-    const ownedCards = allCards.filter(c => ownedSet.has(c.collector_number));
-    const collectionValueUSD = ownedCards.reduce((s, c) => s + c.price_usd, 0);
+    // Single pass over allCards for owned stats, rarity values, foil stats
+    const ownedCards = [];
+    let collectionValueUSD = 0, totalSetValueUSD = 0, foilValueUSD = 0, foilCount = 0;
+    const rarityValues = {};
+    for (const r of rarities) rarityValues[r] = 0;
+    for (const c of allCards) {
+      totalSetValueUSD += c.price_usd;
+      const isOwned = ownedSet.has(c.collector_number);
+      const isFoil = hasFoil(c.collector_number);
+      if (isOwned) {
+        ownedCards.push(c);
+        collectionValueUSD += c.price_usd;
+        if (rarityValues[c.rarity] !== undefined) rarityValues[c.rarity] += c.price_usd;
+      }
+      if (isFoil) {
+        foilCount++;
+        if (c.price_usd_foil > 0) foilValueUSD += c.price_usd_foil;
+      }
+    }
     const collectionValueMYR = collectionValueUSD * USD_TO_MYR;
-    const missingValueUSD = allCards.reduce((s, c) => s + c.price_usd, 0) - collectionValueUSD;
+    const missingValueUSD = totalSetValueUSD - collectionValueUSD;
     const totalSpentPacks = boosterPacks.reduce((s, p) => s + (p.price || 0), 0);
 
-    // Foil + variant values
-    const foilOwnedCards = allCards.filter(c => hasFoil(c.collector_number) && c.price_usd_foil > 0);
-    const foilValueUSD = foilOwnedCards.reduce((s, c) => s + c.price_usd_foil, 0);
-    const foilCount = allCards.filter(c => hasFoil(c.collector_number)).length;
+    // Variant values
     const variantOwned = variantCards.filter(c => hasFoil(c.collector_number) || ownedSet.has(c.collector_number));
     const variantValueUSD = variantOwned.reduce((s, c) => {
       if (hasFoil(c.collector_number)) return s + (c.price_usd_foil || c.price_usd || 0);
       return s + (c.price_usd || 0);
     }, 0);
 
-    // Rarity values
-    const rarityValues = {};
-    for (const r of rarities) rarityValues[r] = ownedCards.filter(c => c.rarity === r).reduce((s, c) => s + c.price_usd, 0);
     const totalRarVal = Math.max(Object.values(rarityValues).reduce((a, b) => a + b, 0), 1);
 
     // Top owned (effective price = max of regular or foil) — includes main set + variants
@@ -5692,16 +6308,21 @@ document.head.appendChild(manifestLink);
         <img src="${esc(card.image_small)}" alt="${displayNameText(card)}"
           style="border:1.5px solid ${isOwned ? borderColor : 'rgba(46,58,82,0.5)'};${glow}" loading="lazy">
         <div class="cc-name">${displayName(card)}</div>
-        <div class="cc-price" style="color:${opts.priceColor || 'var(--owned-border)'}">$${(opts.price || 0).toFixed(2)}</div>
+        <div class="cc-price" style="color:${opts.priceColor || 'var(--owned-border)'}">RM ${((opts.price || 0) * USD_TO_MYR).toFixed(2)}</div>
       </div>`;
     }
 
-    // Rarity value bar
-    const rarityBar = rarities.map(r => {
+    // Rarity value gauge segments + legend
+    const rarityGauge = rarities.map(r => {
       const w = (rarityValues[r] / totalRarVal) * 100;
-      return w > 0 ? `<div style="flex:${w};text-align:center">
-        <div style="height:6px;background:${rarityColors[r]};border-radius:3px;margin-bottom:3px"></div>
-        <div style="font-size:0.65rem;color:${rarityColors[r]}">${r.charAt(0).toUpperCase() + r.slice(1)} $${rarityValues[r].toFixed(0)}</div>
+      return w > 0 ? `<div class="value-card-gauge-seg" style="flex:${w};background:${rarityColors[r]}"></div>` : '';
+    }).join('');
+    const rarityLegend = rarities.map(r => {
+      const val = rarityValues[r];
+      return val > 0 ? `<div class="value-card-rarity-item">
+        <div class="value-card-rarity-dot" style="background:${rarityColors[r]};color:${rarityColors[r]}"></div>
+        <span style="color:${rarityColors[r]}">${r.charAt(0).toUpperCase() + r.slice(1)}</span>
+        <span style="color:var(--text-muted);font-weight:500">RM ${(val * USD_TO_MYR).toFixed(0)}</span>
       </div>` : '';
     }).join('');
 
@@ -5743,7 +6364,7 @@ document.head.appendChild(manifestLink);
           <polygon points="${areaPoints}" fill="url(#portfolio-grad)"/>
           <polyline points="${linePoints}" fill="none" stroke="var(--owned-border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           ${points.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="var(--owned-border)">
-            <title>${chartDays[i]}: $${dailyValues[chartDays[i]].toFixed(2)}</title></circle>`).join('')}
+            <title>${chartDays[i]}: RM ${(dailyValues[chartDays[i]] * USD_TO_MYR).toFixed(2)}</title></circle>`).join('')}
         </svg>
         <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:2px">
           <span>${chartDays[0]}</span><span>${chartDays[chartDays.length - 1]}</span>
@@ -5760,21 +6381,30 @@ document.head.appendChild(manifestLink);
       : 'offline (fallback)';
     const refreshIcon = `<button id="portfolio-refresh-btn" style="background:none;border:1px solid var(--surface3);border-radius:6px;cursor:pointer;color:var(--text-muted);font-size:0.72rem;padding:3px 10px;transition:all 0.15s;margin-top:4px;display:inline-flex;align-items:center;gap:4px" title="Refresh prices"><span style="font-size:0.85rem">↻</span> Refresh Prices</button>`;
 
+    // Note: all values below are derived from internal app state (allCards, ownedSet, etc.) — no user input is interpolated unsanitized
     el.innerHTML = `
       <div class="dashboard">
-        <div class="dash-card" style="margin-bottom:var(--sp-3);position:relative;overflow:hidden">
-          <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(74,173,94,0.06),transparent 70%);pointer-events:none"></div>
-          <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:4px">Collection Value</div>
-          <div style="display:flex;align-items:baseline;gap:var(--sp-2);margin-bottom:2px">
-            <div style="font-size:clamp(1.6rem,5vw,2rem);font-weight:900;color:var(--owned-border)">$${collectionValueUSD.toFixed(2)}</div>
-            <div style="font-size:1rem;font-weight:700;color:var(--accent)">RM ${collectionValueMYR.toFixed(2)}</div>
+        <div class="value-card">
+          <div class="value-card-body">
+            <div class="value-card-header">
+              <div class="value-card-label">Collection Value</div>
+              <div class="value-card-badge">$${collectionValueUSD.toFixed(2)} USD</div>
+            </div>
+            <div class="value-card-amount">
+              <div class="value-card-myr">RM ${collectionValueMYR.toFixed(2)}</div>
+              <div class="value-card-usd">${owned} / ${total} cards</div>
+            </div>
+            <div class="value-card-gauge">${rarityGauge}</div>
+            <div class="value-card-rarity-legend">${rarityLegend}</div>
           </div>
-          <div id="portfolio-price-info" style="font-size:0.68rem;color:var(--text-muted);margin-bottom:var(--sp-3);line-height:1.6">
-            <div>${owned} cards · Prices via <span style="color:var(--accent2)">Scryfall / TCGPlayer</span> · fetched ${priceTime} · ${dataFetchedAt ? timeAgo(new Date(dataFetchedAt)) : ''}</div>
-            <div>FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive ? ' · via ExchangeRate-API · fetched ' + fxTime + ' · ' + timeAgo(new Date(fxFetchedAt)) : ' · <span style="color:var(--accent)">offline fallback rate</span>'}</div>
-            ${refreshIcon}
+          <div class="value-card-meta" id="portfolio-meta-panel">
+            <div class="value-card-meta-row">Prices via Scryfall / TCGPlayer · fetched ${esc(priceTime)}${dataFetchedAt ? ' · ' + esc(timeAgo(new Date(dataFetchedAt))) : ''}</div>
+            <div class="value-card-meta-row">FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive ? ' · via ExchangeRate-API · ' + esc(timeAgo(new Date(fxFetchedAt))) : ' · offline fallback'}</div>
+            <div style="margin-top:6px">${refreshIcon}</div>
           </div>
-          <div style="display:flex;gap:6px">${rarityBar}</div>
+          <button class="value-card-meta-toggle" id="portfolio-meta-toggle" type="button">
+            <span>Price Details</span><span class="chevron">&#9660;</span>
+          </button>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
@@ -5788,8 +6418,8 @@ document.head.appendChild(manifestLink);
           </div>
           <div class="dash-card">
             <h3 style="margin-bottom:4px">Still Need</h3>
-            <div style="font-size:1.2rem;font-weight:800;color:var(--accent)">$${missingValueUSD.toFixed(2)}</div>
-            <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px">${total - owned} cards remaining</div>
+            <div style="font-size:1.2rem;font-weight:800;color:var(--accent)">RM ${(missingValueUSD * USD_TO_MYR).toFixed(2)}</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px">${total - owned} cards · $${missingValueUSD.toFixed(2)}</div>
           </div>
         </div>
 
@@ -5818,13 +6448,13 @@ document.head.appendChild(manifestLink);
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2);margin-bottom:var(--sp-3)">
           <div class="dash-card">
             <div style="font-size:0.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">✦ Foil Value</div>
-            <div style="font-size:1rem;font-weight:800;color:var(--gold)">$${foilValueUSD.toFixed(2)}</div>
-            <div style="font-size:0.72rem;color:var(--text-muted)">${foilCount} foils owned</div>
+            <div style="font-size:1rem;font-weight:800;color:var(--gold)">RM ${(foilValueUSD * USD_TO_MYR).toFixed(2)}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${foilCount} foils · $${foilValueUSD.toFixed(2)}</div>
           </div>
           <div class="dash-card">
             <div style="font-size:0.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px">◈ Variants</div>
-            <div style="font-size:1rem;font-weight:800;color:var(--accent)">$${variantValueUSD.toFixed(2)}</div>
-            <div style="font-size:0.72rem;color:var(--text-muted)">${variantOwned.length} / ${variantCards.length} owned</div>
+            <div style="font-size:1rem;font-weight:800;color:var(--accent)">RM ${(variantValueUSD * USD_TO_MYR).toFixed(2)}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">${variantOwned.length} / ${variantCards.length} · $${variantValueUSD.toFixed(2)}</div>
           </div>
         </div>
 
@@ -5841,12 +6471,22 @@ document.head.appendChild(manifestLink);
     });
 
     // Wire portfolio refresh button — in-place, no full page reload
+    // Wire meta toggle
+    const metaToggle = document.getElementById('portfolio-meta-toggle');
+    const metaPanel = document.getElementById('portfolio-meta-panel');
+    if (metaToggle && metaPanel) {
+      metaToggle.addEventListener('click', () => {
+        metaPanel.classList.toggle('open');
+        metaToggle.classList.toggle('open');
+      });
+    }
+
     const portfolioRefreshBtn = document.getElementById('portfolio-refresh-btn');
     if (portfolioRefreshBtn) {
       portfolioRefreshBtn.addEventListener('click', async function(e) {
         e.preventDefault();
         const btn = this;
-        const infoEl = document.getElementById('portfolio-price-info');
+        const infoEl = document.getElementById('portfolio-meta-panel');
         btn.disabled = true;
         btn.innerHTML = '<span style="font-size:0.85rem;animation:spin-refresh 0.7s linear infinite;display:inline-block">↻</span> Refreshing prices...';
 
@@ -5855,6 +6495,7 @@ document.head.appendChild(manifestLink);
           localStorage.removeItem(CACHE_KEY);
           localStorage.removeItem(VARIANT_KEY);
           allCards = await loadCards();
+          rebuildLookups();
           if (binderConfig.scope?.collectorBinder) await fetchVariants();
 
           // Refresh FX rate
@@ -5875,9 +6516,9 @@ document.head.appendChild(manifestLink);
           const newFxTime = fxFetchedAt
             ? new Date(fxFetchedAt).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) + ' MYT'
             : 'offline (fallback)';
-          const infoLines = infoEl.querySelectorAll('div');
-          if (infoLines[0]) infoLines[0].innerHTML = `${ownedSet.size} cards · Prices via <span style="color:var(--accent2)">Scryfall / TCGPlayer</span> · fetched ${newPriceTime} · just now`;
-          if (infoLines[1]) infoLines[1].innerHTML = `FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive ? ' · via ExchangeRate-API · fetched ' + newFxTime + ' · just now' : ' · <span style="color:var(--accent)">offline fallback rate</span>'}`;
+          const infoLines = infoEl.querySelectorAll('.value-card-meta-row');
+          if (infoLines[0]) infoLines[0].textContent = `Prices via Scryfall / TCGPlayer · fetched ${newPriceTime} · just now`;
+          if (infoLines[1]) infoLines[1].textContent = `FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive ? ' · via ExchangeRate-API · just now' : ' · offline fallback'}`;
 
           // Reset button after delay
           setTimeout(() => {
@@ -6009,7 +6650,7 @@ document.head.appendChild(manifestLink);
         if (packEvts.length > 0) {
           const packValue = packEvts.reduce((s, e) => { const c = getCardByNumber(e.cn); return s + (c ? (parseFloat(c.price_usd) || 0) : 0); }, 0);
           journeyHTML += '<div class="journey-chip" style="width:100%;margin-bottom:6px">' +
-            '<span>📦</span><span>Opened pack · ' + packEvts.length + ' cards · <span style="color:var(--owned-border)">+$' + packValue.toFixed(2) + '</span></span>' +
+            '<span>' + PACK_ICON_SVG + '</span><span>Opened pack · ' + packEvts.length + ' cards · <span style="color:var(--owned-border)">+RM ' + (packValue * USD_TO_MYR).toFixed(2) + '</span></span>' +
           '</div>';
         }
 
@@ -6569,6 +7210,11 @@ document.head.appendChild(manifestLink);
       const y = (e.clientY - rect.top) / rect.height - 0.5;
       slot.style.transform = `perspective(600px) rotateX(${(-y * 8).toFixed(1)}deg) rotateY(${(x * 8).toFixed(1)}deg) scale(1.03)`;
       slot.style.transition = 'transform 0.1s ease';
+      // Drive foil band position from cursor on foil-owned slots
+      if (slot.classList.contains('slot-foil-owned')) {
+        slot.style.setProperty('--foil-x', (20 + (x + 0.5) * 60) + '%');
+        slot.style.setProperty('--foil-y', (20 + (y + 0.5) * 60) + '%');
+      }
     });
     document.addEventListener('mouseleave', e => {
       if (e.target.classList && e.target.classList.contains('card-slot')) {
@@ -6611,6 +7257,28 @@ document.head.appendChild(manifestLink);
     setTimeout(() => { card3d.style.transition = 'none'; }, 600);
   });
 
+  // ── Foil mouse-responsive effect (modal card) ──
+  const vizEl = document.getElementById('card-visualizer');
+  const modalFoilEl = document.getElementById('modal-foil-overlay');
+  vizEl.addEventListener('mousemove', function(e) {
+    if (!card3d.classList.contains('foil-owned')) return;
+    var rect = vizEl.getBoundingClientRect();
+    var mx = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    var my = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    var bx = (20 + (e.clientX - rect.left) / rect.width * 60).toFixed(1);
+    var by = (20 + (e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    modalFoilEl.style.setProperty('--foil-mx', mx + '%');
+    modalFoilEl.style.setProperty('--foil-my', my + '%');
+    modalFoilEl.style.setProperty('--foil-bx', bx + '%');
+    modalFoilEl.style.setProperty('--foil-by', by + '%');
+  });
+  vizEl.addEventListener('mouseleave', function() {
+    modalFoilEl.style.removeProperty('--foil-mx');
+    modalFoilEl.style.removeProperty('--foil-my');
+    modalFoilEl.style.removeProperty('--foil-bx');
+    modalFoilEl.style.removeProperty('--foil-by');
+  });
+
   // ── Full-screen Inspect View ──
   const inspectOverlay = document.getElementById('inspect-overlay');
   const inspect3d = document.getElementById('inspect-3d');
@@ -6622,6 +7290,18 @@ document.head.appendChild(manifestLink);
     requestAnimationFrame(() => {
       inspect3d.style.transform = `rotateX(${inspRotX}deg) rotateY(${inspRotY}deg)`;
       inspectShine.style.background = `radial-gradient(circle at ${50 + inspRotY * 0.5}% ${50 - inspRotX * 0.5}%, rgba(255,255,255,0.22) 0%, transparent 60%)`;
+      // Drive foil band position from rotation
+      var inspFoil = document.getElementById('inspect-foil-overlay');
+      if (inspFoil && inspect3d.classList.contains('foil-owned')) {
+        var mx = (50 + inspRotY * 0.6).toFixed(1);
+        var my = (50 - inspRotX * 0.6).toFixed(1);
+        var bx = (50 + inspRotY * 0.8).toFixed(1);
+        var by = (50 - inspRotX * 0.8).toFixed(1);
+        inspFoil.style.setProperty('--foil-mx', mx + '%');
+        inspFoil.style.setProperty('--foil-my', my + '%');
+        inspFoil.style.setProperty('--foil-bx', bx + '%');
+        inspFoil.style.setProperty('--foil-by', by + '%');
+      }
     });
   }
 
@@ -6635,11 +7315,24 @@ document.head.appendChild(manifestLink);
     document.getElementById('inspect-img').src = card.image_normal || card.image_small;
     document.getElementById('inspect-back-img').src = card.image_back_normal || card.image_back_small || MTG_CARD_BACK;
 
-    // Foil classes
-    inspect3d.classList.toggle('foil-owned', hasFoil(card.collector_number));
+    // Foil classes — mirror the modal's current foil state
+    const card3dHasFoil = document.getElementById('card-3d')?.classList.contains('foil-owned');
+    inspect3d.classList.toggle('foil-owned', !!card3dHasFoil);
     inspect3d.classList.remove('foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
-    const slotClass = getFoilSlotClass(card);
-    if (slotClass && hasFoil(card.collector_number)) inspect3d.classList.add(slotClass);
+    if (card3dHasFoil) {
+      const slotClass = getFoilSlotClass(card);
+      if (slotClass) inspect3d.classList.add(slotClass);
+    }
+    // Generate unique surge foil canvas pattern for inspect view
+    var _iFoilEl = document.getElementById('inspect-foil-overlay');
+    if (_iFoilEl) {
+      if (card3dHasFoil && isSurgeFoil(card)) {
+        var _iSeed = parseInt(card.collector_number) || 42;
+        _iFoilEl.style.setProperty('--surge-foil-card', 'url(' + generateSurgeFoilURL(520, 728, _iSeed) + ')');
+      } else {
+        _iFoilEl.style.removeProperty('--surge-foil-card');
+      }
+    }
 
     document.getElementById('inspect-hint').style.display = '';
     inspectOverlay.classList.add('visible');
@@ -6721,14 +7414,14 @@ document.head.appendChild(manifestLink);
     if (isChocoboTrack(v)) return 'Chocobo Track Foil';
     if (fe.includes('extendedart')) return 'Extended Art';
     if (isShowcase(v)) return 'Showcase';
-    if (allCards.includes(v)) return 'Foil';
+    if (mainSetCNs.has(v.collector_number)) return 'Foil';
     return 'Collector Variant';
   }
 
   function buildFoilInfoHTML(card) {
     var rows = [];
     var cn = card.collector_number;
-    var isVariantCard = !allCards.includes(card);
+    var isVariantCard = !mainSetCNs.has(card.collector_number);
     var collEnabled = binderConfig.scope && binderConfig.scope.collectorBinder;
 
     // Find the card family: main card + all variants sharing oracle_id
@@ -6887,7 +7580,7 @@ document.head.appendChild(manifestLink);
   function openModal(card) {
     _currentModalCard = card;
     const isOwned = ownedSet.has(card.collector_number);
-    const isVariant = !allCards.includes(card);
+    const isVariant = !mainSetCNs.has(card.collector_number);
     const p = getPlacement(card);
 
     rotX = 0; rotY = 0; isFlipped = false;
@@ -6910,8 +7603,8 @@ document.head.appendChild(manifestLink);
     function priceChip(label, usd, myr, cls, cn, isFoilPrice) {
       return `<div class="modal-price-chip" data-price-cn="${esc(cn)}"${isFoilPrice ? ' data-price-foil' : ''}>
         <div class="price-label">${label}</div>
-        <div class="price-val ${cls}">$${usd.toFixed(2)}</div>
-        <div class="price-sub">RM ${myr.toFixed(2)}</div>
+        <div class="price-val ${cls}">RM ${myr.toFixed(2)}</div>
+        <div class="price-sub">$${usd.toFixed(2)}</div>
       </div>`;
     }
 
@@ -6955,6 +7648,7 @@ document.head.appendChild(manifestLink);
           localStorage.removeItem(CACHE_KEY);
           localStorage.removeItem(VARIANT_KEY);
           allCards = await loadCards();
+          rebuildLookups();
           await fetchVariants();
           // Re-open the modal with fresh data
           const freshCard = getCardByNumber(card.collector_number);
@@ -7108,13 +7802,30 @@ document.head.appendChild(manifestLink);
       }
     }
 
-    // Foil shimmer overlay — apply variant-specific class for distinct effects
+    // Foil shimmer overlay — only show on inherently foil-only cards at open.
+    // Cards with both regular + foil finishes default to regular view;
+    // user clicks the foil preview pill to see foil effect.
     const card3dEl = document.getElementById('card-3d');
     if (card3dEl) {
-      card3dEl.classList.toggle('foil-owned', hasFoil(card.collector_number));
+      const hasNonfoilFinish = (card.finishes || []).includes('nonfoil');
+      const showFoilOnOpen = hasFoil(card.collector_number) && !hasNonfoilFinish;
+      card3dEl.classList.toggle('foil-owned', showFoilOnOpen);
       card3dEl.classList.remove('foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
-      const slotClass = getFoilSlotClass(card);
-      if (slotClass && hasFoil(card.collector_number)) card3dEl.classList.add(slotClass);
+      if (showFoilOnOpen) {
+        const slotClass = getFoilSlotClass(card);
+        if (slotClass) card3dEl.classList.add(slotClass);
+      }
+      // Generate unique surge foil canvas pattern for this card
+      var _mFoilEl = document.getElementById('modal-foil-overlay');
+      if (_mFoilEl) {
+        if (showFoilOnOpen && isSurgeFoil(card)) {
+          var _seed = parseInt(card.collector_number) || 42;
+          var _url = generateSurgeFoilURL(520, 728, _seed);
+          _mFoilEl.style.setProperty('--surge-foil-card', 'url(' + _url + ')');
+        } else {
+          _mFoilEl.style.removeProperty('--surge-foil-card');
+        }
+      }
     }
 
     // Foil type info panel
@@ -7152,6 +7863,7 @@ document.head.appendChild(manifestLink);
     setTimeout(() => {
       overlay.classList.remove('visible', 'closing');
       if (document.getElementById('tab-binder').classList.contains('active')) renderSpread();
+      if (document.getElementById('tab-collector')?.classList.contains('active')) renderCollectorTab();
       // Return to pack modal if we were adding from pack mode
       if (wasPackMode && currentPack) {
         packModalOverlay.classList.remove('dimmed');
@@ -7235,6 +7947,14 @@ document.head.appendChild(manifestLink);
           const slotClass = getFoilSlotClass(previewCard);
           if (slotClass) card3dEl.classList.add(slotClass);
         }
+        // Generate unique surge foil pattern for foil preview
+        var _pFoilEl = document.getElementById('modal-foil-overlay');
+        if (_pFoilEl && previewCard && isSurgeFoil(previewCard)) {
+          var _pSeed = parseInt(previewCard.collector_number) || 42;
+          _pFoilEl.style.setProperty('--surge-foil-card', 'url(' + generateSurgeFoilURL(520, 728, _pSeed) + ')');
+        } else if (_pFoilEl) {
+          _pFoilEl.style.removeProperty('--surge-foil-card');
+        }
       }
 
       // Update active styling — only the matching foil pill is active (re-query after possible openModal rebuild)
@@ -7263,13 +7983,11 @@ document.head.appendChild(manifestLink);
       _foilPreviewActive = false;
       const card3dEl = document.getElementById('card-3d');
       if (card3dEl) {
-        card3dEl.classList.toggle('foil-owned', hasFoil(targetCN));
-        card3dEl.classList.remove('foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
-        if (hasFoil(targetCN)) {
-          const tc = getCardByNumber(targetCN);
-          const sc = tc ? getFoilSlotClass(tc) : '';
-          if (sc) card3dEl.classList.add(sc);
-        }
+        // User clicked the regular pill — always remove foil shimmer
+        card3dEl.classList.remove('foil-owned', 'foil-variant-surge', 'foil-variant-neon', 'foil-variant-collector');
+        // Clear any surge foil canvas pattern
+        const _cFoilEl = document.getElementById('modal-foil-overlay');
+        if (_cFoilEl) _cFoilEl.style.removeProperty('--surge-foil-card');
       }
       // Update active states on all chips
       const allChips = chip.parentElement.querySelectorAll('.foil-chip');
@@ -7288,7 +8006,7 @@ document.head.appendChild(manifestLink);
     _foilPreviewActive = false;
     // Already viewing this card — just reveal the actions for it
     if (_currentModalCard && _currentModalCard.collector_number === targetCN) {
-      const isVar = !allCards.includes(_currentModalCard);
+      const isVar = !mainSetCNs.has(_currentModalCard.collector_number);
       const _hasNonfoil = (_currentModalCard.finishes || []).includes('nonfoil');
       const _inherentFoil = isVar && !_hasNonfoil && (isSurgeFoil(_currentModalCard) || isChocoboTrack(_currentModalCard));
       showModalBtn(document.getElementById('modal-toggle'), !(isVar && !_hasNonfoil));
@@ -7301,7 +8019,7 @@ document.head.appendChild(manifestLink);
     if (!targetCard) return;
     openModal(targetCard);
     // Navigated to a variant — show appropriate button
-    const isVar = !allCards.includes(targetCard);
+    const isVar = !mainSetCNs.has(targetCard.collector_number);
     const _tHasNonfoil = (targetCard.finishes || []).includes('nonfoil');
     const _tInherentFoil = isVar && !_tHasNonfoil && (isSurgeFoil(targetCard) || isChocoboTrack(targetCard));
     showModalBtn(document.getElementById('modal-toggle'), !(isVar && !_tHasNonfoil));
@@ -7457,26 +8175,23 @@ document.head.appendChild(manifestLink);
         const data = JSON.parse(reader.result);
 
         // Support new full-payload format (same as Gist sync)
-        const validCN = /^\d+[a-z]?$/;
         if (data.collection?.owned) {
-          const filtered = data.collection.owned.filter(cn => typeof cn === 'string' && validCN.test(cn));
-          ownedSet = new Set(filtered);
+          ownedSet = new Set(sanitizeOwned(data.collection.owned));
         } else if (Array.isArray(data.owned)) {
           // Legacy format — owned array only
-          const filtered = data.owned.filter(cn => typeof cn === 'string' && validCN.test(cn));
-          ownedSet = new Set(filtered);
+          ownedSet = new Set(sanitizeOwned(data.owned));
         } else {
           showToast('Invalid file format.'); return;
         }
 
-        if (data.packs?.packs && Array.isArray(data.packs.packs)) boosterPacks = data.packs.packs;
-        if (data.timeline?.events && Array.isArray(data.timeline.events)) timelineEvents = data.timeline.events;
+        if (data.packs?.packs) boosterPacks = sanitizePacks(data.packs.packs);
+        if (data.timeline?.events) timelineEvents = sanitizeTimeline(data.timeline.events);
         if (data.binderConfig) {
-          binderConfig = data.binderConfig;
-          localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(binderConfig));
+          const safeCfg = sanitizeBinderConfig(data.binderConfig);
+          if (safeCfg) { binderConfig = safeCfg; localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(binderConfig)); }
         }
         if (data.foil) {
-          foilOwned = data.foil;
+          foilOwned = sanitizeFoil(data.foil);
           localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
         }
 
@@ -7569,6 +8284,7 @@ document.head.appendChild(manifestLink);
               const main = allCards.find(c => c.oracle_id === variant.oracle_id);
               if (main) variant.variant_of = main.collector_number;
             }
+            rebuildLookups();
             renderAll(); // refresh any active tab that uses variant data
             applyDiscoverPulses();
             return;
@@ -7622,6 +8338,7 @@ document.head.appendChild(manifestLink);
       localStorage.setItem(VARIANT_KEY, JSON.stringify({ fetchedAt, cards }));
 
       variantCards = cards;
+      rebuildLookups();
 
       renderAll(); // refresh any active tab that uses variant data
       applyDiscoverPulses();
@@ -7693,7 +8410,7 @@ document.head.appendChild(manifestLink);
           <div class="stat-label">Foils</div>
         </div>
         <div class="stat-pill">
-          <div class="stat-num" style="color:var(--owned-border)">$${collValue.toFixed(0)}</div>
+          <div class="stat-num" style="color:var(--owned-border)">RM ${(collValue * USD_TO_MYR).toFixed(0)}</div>
           <div class="stat-label">Value</div>
         </div>
       </div>`;
@@ -7769,7 +8486,7 @@ document.head.appendChild(manifestLink);
 
       const slotsHTML = pageCards.map((card, idx) => {
         const isFoilOwned = hasFoil(card.collector_number);
-        const isNonfoilOwned = ownedSet.has(card.collector_number) && !allCards.includes(card);
+        const isNonfoilOwned = ownedSet.has(card.collector_number) && !mainSetCNs.has(card.collector_number);
         const isAnyOwned = isFoilOwned || isNonfoilOwned;
         const variantClass = isFoilOwned ? getFoilSlotClass(card) : '';
         const delayClass = isFoilOwned ? `foil-delay-${(idx % 2) + 1}` : '';
@@ -7777,7 +8494,7 @@ document.head.appendChild(manifestLink);
         const imgStyle = isAnyOwned
           ? 'width:100%;height:100%;object-fit:cover;border-radius:4px'
           : 'width:100%;height:100%;object-fit:cover;border-radius:4px;filter:grayscale(0.75) brightness(0.45);opacity:0.55';
-        const isVariant = !allCards.includes(card);
+        const isVariant = !mainSetCNs.has(card.collector_number);
         const label = isVariant ? getFoilVariantLabel(card) : (isFoilOwned ? 'FOIL' : '');
         const lblColor = variantColor(label);
         const imgSrc = card.image_normal || card.image_small;
@@ -7839,8 +8556,7 @@ document.head.appendChild(manifestLink);
       const slot = e.target.closest('.card-slot[data-cn]');
       if (slot) {
         const cn = slot.dataset.cn;
-        const card = allCards.find(c => c.collector_number === cn)
-                  || variantCards.find(c => c.collector_number === cn);
+        const card = getCardByNumber(cn);
         if (card) openModal(card);
         return;
       }
@@ -7849,10 +8565,15 @@ document.head.appendChild(manifestLink);
 
     const searchEl = el.querySelector('.coll-search-input');
     if (searchEl) {
+      let _collSearchTimer = null;
       searchEl.addEventListener('input', function() {
-        searchQuery = this.value; resetPage(); persist(); renderCollectorTab();
-        const newSearch = el.querySelector('.coll-search-input');
-        if (newSearch) { newSearch.focus(); newSearch.selectionStart = newSearch.selectionEnd = newSearch.value.length; }
+        searchQuery = this.value; persist();
+        clearTimeout(_collSearchTimer);
+        _collSearchTimer = setTimeout(() => {
+          resetPage(); renderCollectorTab();
+          const newSearch = el.querySelector('.coll-search-input');
+          if (newSearch) { newSearch.focus(); newSearch.selectionStart = newSearch.selectionEnd = newSearch.value.length; }
+        }, 150);
       });
     }
   }
@@ -7873,6 +8594,7 @@ document.head.appendChild(manifestLink);
         const vp = JSON.parse(localStorage.getItem(VARIANT_KEY));
         if (vp?.cards?.length) variantCards = vp.cards;
       } catch {}
+      rebuildLookups();
       const loadingEl = document.getElementById('loading-screen');
       loadingEl.classList.add('skeleton-fade-out');
       setTimeout(() => {
@@ -7895,6 +8617,7 @@ document.head.appendChild(manifestLink);
     try {
       await loadFxRate();
       allCards = await loadCards();
+      rebuildLookups();
       fetchVariants(); // always load variants (needed for search, portfolio, dashboard)
       ownedSet = loadCollection();
       loadFoil();
@@ -7942,6 +8665,7 @@ document.head.appendChild(manifestLink);
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(VARIANT_KEY);
       allCards = await loadCards();
+      rebuildLookups();
       await fetchVariants();
       renderAll();
       applyDiscoverPulses();

@@ -71,6 +71,10 @@ Everything lives in `index.html` — no build step, no external JS files. The sc
 - Card prices: `prices.usd` and `prices.usd_foil` from TCGPlayer via Scryfall. FX rate from open.er-api.com (cached 12h).
 - Docs: https://scryfall.com/docs/api
 
+## Git / Commits
+
+When committing and pushing, only stage the actual application files (`index.html`, `.gitignore`, `CLAUDE.md`). Never commit screenshots, images, media, node_modules, spec docs, or other dev artifacts. The `.gitignore` is configured to exclude these, but always double-check `git status` before staging.
+
 ## Cloud Sync
 
 - Collection data syncs to a private GitHub Gist via the GitHub API.
