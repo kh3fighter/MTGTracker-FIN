@@ -230,13 +230,19 @@
     line-height: 1;
   }
   .search-page-close:hover { color: var(--text); }
+  .search-page-input-dock {
+    position: sticky; bottom: 0;
+    background: var(--ff-panel);
+    border-top: 1px solid var(--ff-border);
+    padding: 10px 16px max(10px, calc(68px + env(safe-area-inset-bottom, 0px)));
+    flex-shrink: 0; z-index: 2;
+  }
   .search-page-input-wrap {
     display: flex; align-items: center; gap: 8px;
     background: var(--surface);
     border: 2px solid var(--ff-border);
     border-radius: 12px;
     padding: 10px 14px;
-    margin: 0 16px 16px;
     transition: border-color 0.2s;
   }
   .search-page-input-wrap:focus-within {
@@ -253,7 +259,7 @@
   .search-page-input-wrap input::placeholder {
     color: var(--text-muted); opacity: 0.6;
   }
-  .search-page-body { padding: 0 16px 100px; }
+  .search-page-body { padding: 0 16px 16px; flex: 1; overflow-y: auto; }
   .search-section-label {
     font-size: 0.68rem; text-transform: uppercase;
     letter-spacing: 0.08em; color: var(--text-muted);
@@ -3773,10 +3779,6 @@ document.head.appendChild(manifestLink);
         <span class="search-page-title">Search</span>
         <button class="search-page-close" id="search-page-close" aria-label="Close search">&times;</button>
       </div>
-      <div class="search-page-input-wrap">
-        <svg class="search-page-icon" width="16" height="16" viewBox="0 0 512 512"><path fill="currentColor" d="M208 48C117.2 48 44 121.2 44 212s73.2 164 164 164c37.8 0 72.7-12.8 100.5-34.3l115.4 115.4c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6L331.1 319.1C355.5 290.1 370 252.8 370 212 370 121.2 296.8 48 208 48zm0 40c68.5 0 124 55.5 124 124s-55.5 124-124 124S84 280.5 84 212 139.5 88 208 88zm-12 44c-4.4 0-8 3.6-8 8 0 4.4 3.6 8 8 8 35.3 0 64 28.7 64 64 0 4.4 3.6 8 8 8s8-3.6 8-8c0-44.2-35.8-80-80-80z"/></svg>
-        <input type="search" id="search-page-input" placeholder="Search cards by name or #..." autocomplete="off" inputmode="search" aria-label="Search cards" style="font-size:16px;">
-      </div>
       <div id="search-page-blank" class="search-page-body">
         <div class="search-quick-actions" id="search-quick-actions">
           <div class="search-section-label">Quick Actions</div>
@@ -3814,6 +3816,12 @@ document.head.appendChild(manifestLink);
       <div id="search-page-results" class="search-page-body" style="display:none;">
         <div id="search-results-count" class="search-results-count"></div>
         <div id="search-results-grid" class="search-results-grid"></div>
+      </div>
+      <div class="search-page-input-dock">
+        <div class="search-page-input-wrap">
+          <svg class="search-page-icon" width="16" height="16" viewBox="0 0 512 512"><path fill="currentColor" d="M208 48C117.2 48 44 121.2 44 212s73.2 164 164 164c37.8 0 72.7-12.8 100.5-34.3l115.4 115.4c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6L331.1 319.1C355.5 290.1 370 252.8 370 212 370 121.2 296.8 48 208 48zm0 40c68.5 0 124 55.5 124 124s-55.5 124-124 124S84 280.5 84 212 139.5 88 208 88zm-12 44c-4.4 0-8 3.6-8 8 0 4.4 3.6 8 8 8 35.3 0 64 28.7 64 64 0 4.4 3.6 8 8 8s8-3.6 8-8c0-44.2-35.8-80-80-80z"/></svg>
+          <input type="search" id="search-page-input" placeholder="Search cards by name or #..." autocomplete="off" inputmode="search" aria-label="Search cards" style="font-size:16px;">
+        </div>
       </div>
     </div>
 
