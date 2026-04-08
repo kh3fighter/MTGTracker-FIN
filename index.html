@@ -8261,11 +8261,12 @@ document.head.appendChild(manifestLink);
     const isFoilOwned = hasFoil(card.collector_number);
 
     const canBeFoil = (card.finishes || []).includes('foil');
-    let _showToggle = false, _showFoilToggle = false;
+    const foilToggleBtn = document.getElementById('modal-foil-toggle');
+    const typeAlreadyFoil = isVariant && variantType.toLowerCase().includes('foil');
+    const foilLabel = isVariant ? (typeAlreadyFoil ? variantType : `${variantType} Foil`) : 'Foil';
 
     // ── Regular (nonfoil) toggle button — follows card.finishes ──
     if (isPack) {
-      _showToggle = true;
       if (isOwned) {
         toggleBtn.textContent = 'Already Owned';
         toggleBtn.className = 'btn btn-secondary';
@@ -8278,7 +8279,6 @@ document.head.appendChild(manifestLink);
         toggleBtn.onclick = () => addToPackAndReturn(card.collector_number, false);
       }
     } else if (hasNonfoil) {
-      _showToggle = true;
       toggleBtn.disabled = false;
       if (isVariant) {
         toggleBtn.textContent = isOwned ? `Remove ${variantType}` : `Add ${variantType}`;
@@ -8293,14 +8293,17 @@ document.head.appendChild(manifestLink);
         openModal(card);
       };
     } else {
-      _showToggle = false; // nonfoil not available per Scryfall finishes
+      // Nonfoil not available — grey out
+      toggleBtn.textContent = 'Regular Not Available';
+      toggleBtn.className = 'btn btn-secondary';
+      toggleBtn.disabled = true;
+      toggleBtn.onclick = null;
     }
+    showModalBtn(toggleBtn, !isPack || true);
 
     // ── Foil toggle button — follows card.finishes ──
-    const foilToggleBtn = document.getElementById('modal-foil-toggle');
     if (foilToggleBtn) {
       if (isPack && canBeFoil) {
-        _showFoilToggle = true;
         const typeAlreadyFoilPack = isVariant && variantType.toLowerCase().includes('foil');
         const packFoilLabel = isVariant ? (typeAlreadyFoilPack ? variantType : `${variantType} Foil`) : 'Foil';
         if (isFoilOwned) {
@@ -8314,13 +8317,9 @@ document.head.appendChild(manifestLink);
           foilToggleBtn.disabled = false;
           foilToggleBtn.onclick = () => addToPackAndReturn(card.collector_number, true);
         }
+        showModalBtn(foilToggleBtn, true);
       } else if (canBeFoil && !isPack) {
-        _showFoilToggle = !hasNonfoil || (isVariant && !hasNonfoil);
-        // For main-set cards with both finishes, foil shows via foil preview pill instead
-        if (!isVariant && hasNonfoil) _showFoilToggle = false;
         foilToggleBtn.disabled = false;
-        const typeAlreadyFoil = isVariant && variantType.toLowerCase().includes('foil');
-        const foilLabel = isVariant ? (typeAlreadyFoil ? variantType : `${variantType} Foil`) : 'Foil';
         if (isFoilOwned) {
           foilToggleBtn.textContent = `Remove ${foilLabel}`;
           foilToggleBtn.className = 'btn btn-danger';
@@ -8333,14 +8332,19 @@ document.head.appendChild(manifestLink);
           else addFoil(card.collector_number);
           openModal(card);
         };
+        // Show foil button for foil-only variants; for cards with both finishes, foil preview pill handles it
+        showModalBtn(foilToggleBtn, !hasNonfoil);
+      } else if (!canBeFoil && !isPack) {
+        // Foil not available — grey out
+        foilToggleBtn.textContent = 'Foil Not Available';
+        foilToggleBtn.className = 'btn btn-secondary';
+        foilToggleBtn.disabled = true;
+        foilToggleBtn.onclick = null;
+        showModalBtn(foilToggleBtn, isVariant);
       } else {
-        _showFoilToggle = false;
-        foilToggleBtn.disabled = false;
+        showModalBtn(foilToggleBtn, false);
       }
     }
-    // Apply visibility after className is set (so it doesn't get wiped)
-    showModalBtn(toggleBtn, _showToggle);
-    showModalBtn(foilToggleBtn, _showFoilToggle);
 
     // Pack mode helper text
     const existingHelper = document.querySelector('.pack-helper-text');
@@ -8356,12 +8360,14 @@ document.head.appendChild(manifestLink);
     // Collector hint — context-sensitive, follows Scryfall finishes
     const variantHint = document.getElementById('modal-variant-hint');
     if (variantHint) {
-      if (isVariant && !hasNonfoil && !isPack) {
-        // Foil-only variant — inform user regular is not available
-        variantHint.innerHTML = '<span class="hint-icon">i</span> Regular not available — this variant is foil only';
+      const finishList = (card.finishes || []).join(', ');
+      if (isVariant && !hasNonfoil && canBeFoil && !isPack) {
+        variantHint.innerHTML = '<span class="hint-icon">i</span> Regular not available \u2014 #' + esc(card.collector_number) + ' only has ' + esc(foilLabel.toLowerCase()) + ' only';
+        variantHint.classList.add('visible');
+      } else if (isVariant && hasNonfoil && !canBeFoil && !isPack) {
+        variantHint.innerHTML = '<span class="hint-icon">i</span> Foil not available \u2014 #' + esc(card.collector_number) + ' only has nonfoil only';
         variantHint.classList.add('visible');
       } else if (isVariant && !isPack) {
-        // Variant with nonfoil — goes to collector
         variantHint.innerHTML = '<span class="hint-icon">i</span> Goes to Collector collection, not main binder';
         variantHint.classList.add('visible');
       } else {
@@ -8570,26 +8576,10 @@ document.head.appendChild(manifestLink);
       return;
     }
     _foilPreviewActive = false;
-    // Already viewing this card — just reveal the actions for it
-    if (_currentModalCard && _currentModalCard.collector_number === targetCN) {
-      const isVar = !mainSetCNs.has(_currentModalCard.collector_number);
-      const _hasNonfoil = (_currentModalCard.finishes || []).includes('nonfoil');
-      showModalBtn(document.getElementById('modal-toggle'), _hasNonfoil);
-      showModalBtn(document.getElementById('modal-foil-toggle'), !_hasNonfoil);
-      if (!_hasNonfoil) highlightPriceChips(targetCN, true);
-      else highlightPriceChipsByCn(targetCN);
-      return;
-    }
     const targetCard = getCardByNumber(targetCN);
     if (!targetCard) return;
+    // openModal handles all button visibility, hints, and price highlighting
     openModal(targetCard);
-    // Navigated to a variant — show appropriate button
-    const isVar = !mainSetCNs.has(targetCard.collector_number);
-    const _tHasNonfoil = (targetCard.finishes || []).includes('nonfoil');
-    showModalBtn(document.getElementById('modal-toggle'), _tHasNonfoil);
-    showModalBtn(document.getElementById('modal-foil-toggle'), !_tHasNonfoil);
-    if (!_tHasNonfoil) highlightPriceChips(targetCard.collector_number, true);
-    else highlightPriceChipsByCn(targetCard.collector_number);
   });
 
   document.getElementById('sheet-backdrop').addEventListener('click', closeSheet);
