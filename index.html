@@ -615,12 +615,12 @@
   }
   .bnav-btn.active svg { filter: drop-shadow(0 0 6px var(--accent)); }
   .search-fab {
-    flex: 1; display: flex; flex-direction: column;
+    grid-column: 3; display: flex; flex-direction: column;
     align-items: center; justify-content: flex-end;
     background: none; border: none;
     padding: 0 4px 8px; cursor: pointer;
-    border-radius: 0; min-height: 56px; min-width: 44px;
-    gap: 0; position: relative;
+    min-height: 56px;
+    gap: 0; position: relative; z-index: 2;
   }
   .search-fab-circle {
     width: 48px; height: 48px; border-radius: 50%;
@@ -2144,7 +2144,8 @@
     /* Tab nav — hide top pills, show bottom nav */
     .tabs { display: none !important; }
     .bottom-nav {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr 60px 1fr 1fr;
       position: fixed; bottom: 0; left: 0; right: 0;
       background: var(--ff-panel);
       border-top: 1px solid var(--ff-border);
