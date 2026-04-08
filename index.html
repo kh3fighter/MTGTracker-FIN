@@ -466,16 +466,6 @@
     text-transform: uppercase; letter-spacing: 0.18em;
     font-weight: 600; margin-top: 2px;
   }
-  .subtitle {
-    color: var(--text-muted); font-size: clamp(0.65rem, 1.5vw, 0.82rem);
-    margin-bottom: clamp(10px, 2vw, 16px);
-    display: flex; align-items: center; justify-content: center;
-    gap: clamp(4px, 1vw, 6px);
-  }
-  .subtitle .sep {
-    width: clamp(3px, 0.5vw, 4px); height: clamp(3px, 0.5vw, 4px);
-    border-radius: 50%; background: var(--surface3); display: inline-block;
-  }
 
 
   /* Sync modal */
@@ -531,25 +521,6 @@
   }
 
   /* ── Progress ── */
-  .progress-wrap {
-    display: flex; align-items: center; gap: 12px;
-    max-width: 500px; margin: 0 auto;
-  }
-  .progress-bar {
-    flex: 1; height: 12px; background: var(--slot-bg);
-    border-radius: 6px; overflow: hidden;
-    border: 1px solid var(--ff-border);
-  }
-  .progress-fill {
-    height: 100%; background: linear-gradient(90deg, #3d5a9e, #5b7fc7);
-    border-radius: 5px; transition: width 0.4s ease;
-    box-shadow: 0 0 8px rgba(60,90,170,0.25);
-  }
-  [data-theme="light"] .progress-fill {
-    background: linear-gradient(90deg, #cc8822, #eebb55);
-    box-shadow: none;
-  }
-  .progress-text { font-size: clamp(0.75rem, 1.8vw, 0.9rem); white-space: nowrap; font-weight: 600; }
 
   /* ── Tabs ── */
   .tabs {
@@ -6655,11 +6626,7 @@ document.head.appendChild(manifestLink);
 
   // ── Rendering: Progress ──
   function renderProgress() {
-    const total = allCards.length;
-    const owned = ownedSet.size;
-    const pct = total ? (owned / total * 100) : 0;
-    document.getElementById('progress-fill').style.width = pct.toFixed(1) + '%';
-    document.getElementById('progress-text').textContent = `${owned} / ${total} (${pct.toFixed(1)}%)`;
+    updateHUDStats();
   }
 
   // ── Rendering: Dashboard ──
@@ -9257,18 +9224,18 @@ document.head.appendChild(manifestLink);
       setTimeout(() => {
         loadingEl.style.display = 'none';
         document.getElementById('main-content').style.display = '';
+        // Render after main-content is visible
+        updateHUDStats();
+        // Auto-navigate to Settings on first run
+        if (!binderConfig.configured) {
+          switchTab('settings');
+        } else {
+          applyConfigToTabs();
+          renderDashboard();
+        }
+        renderProgress();
+        applyDiscoverPulses();
       }, 300);
-      renderProgress();
-      renderDashboard();
-      updateHUDStats();
-      // Auto-navigate to Settings on first run
-      if (!binderConfig.configured) {
-        const settingsBtn = document.querySelector('[data-tab="settings"]');
-        if (settingsBtn) settingsBtn.click();
-      } else {
-        applyConfigToTabs();
-      }
-      applyDiscoverPulses();
     } catch (err) {
       const hasCachedData = !!localStorage.getItem(CACHE_KEY);
       const ls = document.getElementById('loading-screen');
