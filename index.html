@@ -5360,7 +5360,7 @@ document.head.appendChild(manifestLink);
     updateLoadingProgress(10, 'Fetching card data from Scryfall...');
     while (hasMore) {
       const resp = await fetch(
-        `https://api.scryfall.com/cards/search?q=set:fin+is:booster+game:paper+lang:en&unique=prints&order=set&page=${page}`
+        `https://api.scryfall.com/cards/search?q=set:fin+is:booster+game:paper+lang:en&unique=prints&order=collector_number&page=${page}`
       );
       if (!resp.ok) throw new Error(`Scryfall API error: ${resp.status}`);
       const data = await resp.json();
@@ -6203,7 +6203,10 @@ document.head.appendChild(manifestLink);
   const searchPageClose = document.getElementById('search-page-close');
   const searchFab = document.getElementById('search-fab');
 
+  let searchCloseTimer = null;
+
   function openSearchPage() {
+    clearTimeout(searchCloseTimer);
     searchPage.classList.add('animating');
     searchPage.offsetHeight; // force reflow
     searchPage.classList.add('open');
@@ -6214,13 +6217,13 @@ document.head.appendChild(manifestLink);
   }
 
   function closeSearchPage() {
-    searchPage.classList.remove('open');
     searchPage.classList.add('animating');
+    searchPage.classList.remove('open');
     document.body.style.overflow = '';
     searchPageInput.value = '';
     clearSearchResults();
     clearSearchChips();
-    setTimeout(() => { searchPage.classList.remove('animating'); }, 300);
+    searchCloseTimer = setTimeout(() => { searchPage.classList.remove('animating'); }, 300);
   }
 
   function isSearchPageOpen() {
@@ -6270,9 +6273,10 @@ document.head.appendChild(manifestLink);
       if (!isDragging) return;
       isDragging = false;
       const dy = currentY - startY;
-      searchPage.style.transition = '';
+      searchPage.style.transition = 'transform 0.2s ease-out';
       searchPage.style.transform = '';
       if (dy > 80) closeSearchPage();
+      else setTimeout(() => { searchPage.style.transition = ''; }, 200);
     }, { passive: true });
   })();
 
@@ -6397,6 +6401,10 @@ document.head.appendChild(manifestLink);
         '</div>' +
       '</div>';
     }).join('');
+    if (results.length > 60) {
+      gridEl.insertAdjacentHTML('beforeend',
+        '<div style="grid-column:1/-1;text-align:center;padding:12px;color:var(--text-muted);font-size:0.72rem">Showing 60 of ' + results.length + ' results. Refine your search to see more.</div>');
+    }
   }
 
   // Debounced search input
@@ -9025,7 +9033,7 @@ document.head.appendChild(manifestLink);
       let hasMore = true;
       while (hasMore) {
         const resp = await fetch(
-          `https://api.scryfall.com/cards/search?q=set:fin+game:paper+-is:booster+lang:en&unique=prints&order=set&page=${page}`
+          `https://api.scryfall.com/cards/search?q=set:fin+game:paper+-is:booster+lang:en&unique=prints&order=collector_number&page=${page}`
         );
         if (!resp.ok) throw new Error(`Scryfall variant API error: ${resp.status}`);
         const data = await resp.json();
