@@ -4864,7 +4864,7 @@ document.head.appendChild(manifestLink);
           gistConfig.token = token;
           gistConfig.gistId = data.id;
           saveGistConfig();
-          updateSyncDot('ok');
+          updateSyncDot('connected');
           showToast('Connected to GitHub Gist!');
           renderSettings();
         } catch (e) {
@@ -5159,8 +5159,8 @@ document.head.appendChild(manifestLink);
   function applyDiscoverPulses() {
     const d = loadDiscovered();
     const features = [
-      { id: 'sync', selector: '#sync-btn' },
-      { id: 'theme', selector: '#theme-toggle' },
+      { id: 'sync', selector: '#sync-chip' },
+      { id: 'theme', selector: '#cmd-trigger' },
     ];
     if (binderConfig.scope?.collectorBinder) {
       features.push({ id: 'collector', selector: '#tab-btn-collector' });
@@ -5360,11 +5360,7 @@ document.head.appendChild(manifestLink);
     syncTimer = setTimeout(gistPush, 5000);
   }
 
-  // Sync button click
-  document.getElementById('sync-btn').addEventListener('click', () => {
-    markDiscovered('sync');
-    openSyncModal();
-  });
+  // Sync button click (now handled by command deck sync chip listener)
 
   // Sync modal
   function openSyncModal() {
