@@ -735,6 +735,21 @@
   .recent-item .rnum { color: var(--text-muted); }
   .dash-card-full { grid-column: 1 / -1; }
 
+  /* Activity card */
+  .activity-list { display: flex; flex-direction: column; gap: 4px; }
+  .activity-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0; font-size: 0.78rem;
+  }
+  .activity-icon { font-weight: 700; width: 16px; text-align: center; flex-shrink: 0; }
+  .activity-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-time { color: var(--text-muted); font-size: 0.68rem; flex-shrink: 0; }
+  .activity-view-all {
+    text-align: center; color: var(--accent); font-size: 0.75rem;
+    cursor: pointer; padding: 8px 0 0; font-weight: 600;
+  }
+  .activity-view-all:hover { text-decoration: underline; }
+
   /* Price source badges */
   .price-sources {
     display: flex; flex-wrap: wrap; gap: 6px;
@@ -3992,6 +4007,19 @@ document.head.appendChild(manifestLink);
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
+  function getRelativeTime(date) {
+    const now = Date.now();
+    const diff = now - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return days + 'd ago';
+    return date.toLocaleDateString();
+  }
+
   // ── State ──
   const CACHE_KEY = 'fin-card-data-v6';
   const COLLECTION_KEY = 'fin-collection';
@@ -6006,6 +6034,7 @@ document.head.appendChild(manifestLink);
     if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
     if (document.getElementById('tab-timeline').classList.contains('active')) renderTimeline();
     if (document.getElementById('tab-collector')?.classList.contains('active')) renderCollectorTab();
+    if (isSearchPageOpen()) applySearchFilters();
   }
 
   function removeCard(cn) {
@@ -6019,6 +6048,7 @@ document.head.appendChild(manifestLink);
     if (document.getElementById('tab-portfolio').classList.contains('active')) renderPortfolio();
     if (document.getElementById('tab-timeline').classList.contains('active')) renderTimeline();
     if (document.getElementById('tab-collector')?.classList.contains('active')) renderCollectorTab();
+    if (isSearchPageOpen()) applySearchFilters();
     const card = getCardByNumber(cn);
     const name = card ? displayNameText(card) : '#' + cn;
     showToast('Removed ' + name, 4000, {
@@ -6817,7 +6847,7 @@ document.head.appendChild(manifestLink);
         }).join('')}</div>`
       : `<div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:0.82rem">
           Open a pack or search for cards to get started
-          <br><button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();document.getElementById('header-search-btn').click()">Add Cards</button>
+          <br><button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();if(typeof openSearchPage==='function'&&window.innerWidth<=700){openSearchPage()}else{document.getElementById('header-search-btn').click()}">Add Cards</button>
         </div>`;
 
     // Binder mini-map
@@ -6825,6 +6855,34 @@ document.head.appendChild(manifestLink);
       const bg = s === 'complete' ? 'var(--owned-border)' : s === 'partial' ? 'rgba(91,127,199,0.4)' : 'var(--chart-empty)';
       return `<div style="width:14px;height:10px;border-radius:2px;background:${bg}" title="Page ${i + 1}: ${s}"></div>`;
     }).join('');
+
+    // Recent Activity card
+    const activityRarityColors = { mythic:'#e8702a', rare:'#c9a14e', uncommon:'#72b5b5', common:'#777' };
+    const recentEvts = timelineEvents.slice().reverse().slice(0, 10);
+    const activityCardHTML = timelineEvents.length > 0 ? `
+      <div class="dash-card" style="grid-column:1/-1;margin-top:var(--sp-3)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
+          <h3 style="margin:0">Recent Activity</h3>
+          <span style="font-size:0.68rem;color:var(--text-muted)">${timelineEvents.length} total</span>
+        </div>
+        <div class="activity-list">
+          ${recentEvts.map(evt => {
+            const card = getCardByNumber(evt.cn);
+            const name = card ? displayNameText(card) : '#' + evt.cn;
+            const icon = evt.type === 'add' ? '+' : evt.type === 'remove' ? '\u2212' : '\uD83D\uDCE6';
+            const ago = getRelativeTime(new Date(evt.date));
+            const rc = card ? (activityRarityColors[card.rarity] || '#888') : '#888';
+            const ic = evt.type === 'add' ? '#4a9' : evt.type === 'remove' ? '#e55' : '#c0a0ff';
+            return '<div class="activity-row">' +
+              '<span class="activity-icon" style="color:' + ic + '">' + icon + '</span>' +
+              '<span class="activity-name" style="color:' + rc + '">' + esc(name) + '</span>' +
+              '<span class="activity-time">' + esc(ago) + '</span>' +
+              '</div>';
+          }).join('')}
+        </div>
+        ${timelineEvents.length > 10 ? '<div class="activity-view-all" id="activity-view-all">View All (' + timelineEvents.length + ')</div>' : ''}
+      </div>` : '';
+
 
     dash.innerHTML = `
       <div class="dash-card" style="margin-bottom:var(--sp-3)">
@@ -6866,6 +6924,8 @@ document.head.appendChild(manifestLink);
           <div style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:var(--text-muted)"><div style="width:8px;height:6px;border-radius:1px;background:var(--chart-empty)"></div>Empty</div>
         </div>
       </div>
+
+      ${activityCardHTML}
     `;
 
     // Wire session card clicks
@@ -6875,6 +6935,29 @@ document.head.appendChild(manifestLink);
         if (card) openModal(card);
       });
     });
+
+    const viewAllBtn = document.getElementById('activity-view-all');
+    if (viewAllBtn) {
+      viewAllBtn.addEventListener('click', () => {
+        const listEl = viewAllBtn.previousElementSibling;
+        const allEvts = timelineEvents.slice().reverse();
+        const rarityColorsMap = { mythic:'#e8702a', rare:'#c9a14e', uncommon:'#72b5b5', common:'#777' };
+        listEl.innerHTML = allEvts.map(evt => {
+          const card = getCardByNumber(evt.cn);
+          const name = card ? displayNameText(card) : '#' + evt.cn;
+          const icon = evt.type === 'add' ? '+' : evt.type === 'remove' ? '\u2212' : '\uD83D\uDCE6';
+          const ago = getRelativeTime(new Date(evt.date));
+          const rc = card ? (rarityColorsMap[card.rarity] || '#888') : '#888';
+          const ic = evt.type === 'add' ? '#4a9' : evt.type === 'remove' ? '#e55' : '#c0a0ff';
+          return '<div class="activity-row">' +
+            '<span class="activity-icon" style="color:' + ic + '">' + icon + '</span>' +
+            '<span class="activity-name" style="color:' + rc + '">' + esc(name) + '</span>' +
+            '<span class="activity-time">' + esc(ago) + '</span>' +
+            '</div>';
+        }).join('');
+        viewAllBtn.style.display = 'none';
+      });
+    }
   }
 
   // ── Rendering: Portfolio ──
@@ -7009,7 +7092,7 @@ document.head.appendChild(manifestLink);
       <span class="empty-state-icon">&#128176;</span>
       <div class="empty-state-title">No cards in collection yet</div>
       <div class="empty-state-desc">Add cards to see your portfolio valuation, top cards, and value trends.</div>
-      <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();document.getElementById('header-search-btn').click()">Add Cards</button>
+      <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();if(typeof openSearchPage==='function'&&window.innerWidth<=700){openSearchPage()}else{document.getElementById('header-search-btn').click()}">Add Cards</button>
     </div>` : '';
     el.innerHTML = `
       <div class="dashboard">
@@ -7248,7 +7331,7 @@ document.head.appendChild(manifestLink);
       journeyHTML = '<div style="text-align:center;padding:32px 0;color:var(--text-muted)">' +
         '<div style="font-size:2rem;margin-bottom:8px">📭</div>' +
         '<div style="font-size:0.9rem;font-weight:600;margin-bottom:4px">Your collection journey starts here</div>' +
-        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();document.getElementById(\'header-search-btn\').click()">Add Your First Card</button>' +
+        '<button class="btn btn-primary" style="margin-top:8px;font-size:0.78rem;padding:6px 14px" onclick="event.stopPropagation();if(typeof openSearchPage===\'function\'&&window.innerWidth<=700){openSearchPage()}else{document.getElementById(\'header-search-btn\').click()}">Add Your First Card</button>' +
       '</div>';
     } else {
       journeyHTML = '<div class="journey-timeline">';
@@ -8777,8 +8860,13 @@ document.head.appendChild(manifestLink);
       const dx = e.changedTouches[0].clientX - touchStartX;
       if (Math.abs(dx) < 50) return;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (isSearchPageOpen()) return;
       const visibleTabs = TAB_ORDER.filter(t => {
-        const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+        if (isMobile()) {
+          const bnav = document.querySelector('.bnav-btn[data-tab="' + t + '"]');
+          return bnav && bnav.style.display !== 'none';
+        }
+        const btn = document.querySelector('.tab-btn[data-tab="' + t + '"]');
         return btn && btn.style.display !== 'none';
       });
       const curIdx = visibleTabs.indexOf(TAB_ORDER[currentTabIndex]);
