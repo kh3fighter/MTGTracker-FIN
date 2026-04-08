@@ -8081,29 +8081,44 @@ document.head.appendChild(manifestLink);
       rows.push('<div class="foil-row">' + left + right + '</div>');
     }
 
-    // 2. Variant rows — each variant gets a row with optional foil pill
+    // 2. Variant rows — each variant gets a row; foil-only variants get a single pill
     if (variants.length > 0) {
       variants.forEach(function(v) {
-        var vOwned = hasFoil(v.collector_number);
         var baseLabel = getVariantLabel(v);
         var label = baseLabel + ' #' + v.collector_number;
         var isActive = cn === v.collector_number && !_foilPreviewActive;
-        var isInherentFoil = isSurgeFoil(v) || isChocoboTrack(v);
-        var left = chip(
-          (vOwned ? 'owned' : 'unowned') + (isActive ? ' active' : ''),
-          'data-switch-cn="' + esc(v.collector_number) + '"',
-          vdot(v), esc(label), vOwned
-        );
-        var right = '';
-        if (!isInherentFoil && v.price_usd_foil > 0 && v.price_usd_foil !== v.price_usd) {
-          var vfOwned = hasFoil(v.collector_number);
-          right = chip(
-            vfOwned ? 'owned' : 'unowned',
-            'data-foil-preview="' + esc(v.collector_number) + '"',
-            vdotFoil(v), esc(label), vfOwned
+        var vHasNonfoil = (v.finishes || []).includes('nonfoil');
+        var vHasFoil = (v.finishes || []).includes('foil');
+        var isFoilOnly = !vHasNonfoil && vHasFoil;
+
+        if (isFoilOnly) {
+          // Single pill — this variant only exists as foil
+          var vOwned = hasFoil(v.collector_number);
+          var left = chip(
+            (vOwned ? 'owned' : 'unowned') + (isActive ? ' active' : ''),
+            'data-switch-cn="' + esc(v.collector_number) + '"',
+            vdot(v), esc(label), vOwned
           );
+          rows.push('<div class="foil-row">' + left + '</div>');
+        } else {
+          // Two pills — regular + foil preview
+          var rOwned = ownedSet.has(v.collector_number);
+          var left = chip(
+            (rOwned ? 'owned' : 'unowned') + (isActive ? ' active' : ''),
+            'data-switch-cn="' + esc(v.collector_number) + '"',
+            vdot(v), esc(label), rOwned
+          );
+          var right = '';
+          if (vHasFoil && v.price_usd_foil > 0 && v.price_usd_foil !== v.price_usd) {
+            var vfOwned = hasFoil(v.collector_number);
+            right = chip(
+              vfOwned ? 'owned' : 'unowned',
+              'data-foil-preview="' + esc(v.collector_number) + '"',
+              vdotFoil(v), esc(label), vfOwned
+            );
+          }
+          rows.push('<div class="foil-row">' + left + right + '</div>');
         }
-        rows.push('<div class="foil-row">' + left + right + '</div>');
       });
     } else if (!collEnabled) {
       rows.push(
