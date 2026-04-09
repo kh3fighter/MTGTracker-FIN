@@ -6489,6 +6489,7 @@ document.head.appendChild(manifestLink);
   var scannerSearchFallback = document.getElementById('scanner-search-fallback');
   var scannerDone = document.getElementById('scanner-done');
   var scannerCloseBtn = document.getElementById('scanner-close');
+  var scannerViewfinder = document.querySelector('.scanner-viewfinder');
 
   var scanStream = null;
   var scanWorker = null;
@@ -6498,6 +6499,7 @@ document.head.appendChild(manifestLink);
   var scanSessionAdds = [];
   var scanNameMap = null;
   var scanPaused = false;
+  var scanBusy = false;
 
   function openScannerModal() {
     if (!allCards || allCards.length === 0) {
@@ -6508,6 +6510,7 @@ document.head.appendChild(manifestLink);
     scanFailCount = 0;
     scanCooldown = false;
     scanPaused = false;
+    scanBusy = false;
     scannerLastAdd.textContent = '';
     scannerCountEl.textContent = '';
     scannerSearchFallback.style.display = 'none';
@@ -6546,6 +6549,14 @@ document.head.appendChild(manifestLink);
       console.error('Camera error:', err);
       scannerStatus.textContent = 'Camera access denied. Please allow camera access in your browser settings.';
       scannerStatus.className = 'scanner-status warning';
+      scannerSearchFallback.textContent = 'Try Again';
+      scannerSearchFallback.style.display = '';
+      scannerSearchFallback.onclick = function() {
+        scannerSearchFallback.style.display = 'none';
+        scannerSearchFallback.textContent = 'Search manually';
+        scannerSearchFallback.onclick = null;
+        startCamera();
+      };
     });
   }
 
@@ -6598,8 +6609,9 @@ document.head.appendChild(manifestLink);
   }
 
   function scanFrame() {
-    if (!scanWorker || !scanStream || scanCooldown || scanPaused) return;
+    if (!scanWorker || !scanStream || scanCooldown || scanPaused || scanBusy) return;
     if (scannerVideo.readyState < 2) return;
+    scanBusy = true;
 
     var vw = scannerVideo.videoWidth;
     var vh = scannerVideo.videoHeight;
@@ -6617,6 +6629,7 @@ document.head.appendChild(manifestLink);
     ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
     scanWorker.recognize(scannerCanvas).then(function(result) {
+      scanBusy = false;
       var text = result.data.text.trim();
       if (!text || text.length < 2) {
         onScanFail();
@@ -6629,6 +6642,7 @@ document.head.appendChild(manifestLink);
       }
       onScanSuccess(match);
     }).catch(function() {
+      scanBusy = false;
       onScanFail();
     });
   }
@@ -6647,8 +6661,9 @@ document.head.appendChild(manifestLink);
 
   function addScannedCard(card) {
     var cn = card.collector_number;
-    // Duplicate guard: don't re-add if it was the last scanned card
-    if (scanSessionAdds.length > 0 && scanSessionAdds[scanSessionAdds.length - 1] === cn) {
+    // Duplicate guard: skip if among last 3 scanned cards
+    var recentAdds = scanSessionAdds.slice(-3);
+    if (recentAdds.indexOf(cn) !== -1) {
       return;
     }
 
@@ -6685,6 +6700,9 @@ document.head.appendChild(manifestLink);
 
   scannerSearchFallback.addEventListener('click', function() {
     scanPaused = true;
+    scannerViewfinder.classList.add('dimmed');
+    // Temporarily raise search overlay above scanner (z-index 900)
+    searchOverlay.style.zIndex = '950';
     openSearchModal();
 
     var searchCloseCheck = setInterval(function() {
@@ -6694,6 +6712,8 @@ document.head.appendChild(manifestLink);
         scannerSearchFallback.style.display = 'none';
         scannerStatus.textContent = 'Align card name in the box above';
         scannerStatus.className = 'scanner-status';
+        scannerViewfinder.classList.remove('dimmed');
+        searchOverlay.style.zIndex = '';
         clearInterval(searchCloseCheck);
       }
     }, 300);
@@ -6705,7 +6725,6 @@ document.head.appendChild(manifestLink);
   var variantTitle = document.getElementById('scanner-variant-title');
   var variantRow = document.getElementById('scanner-variant-row');
   var variantSkip = document.getElementById('scanner-variant-skip');
-  var scannerViewfinder = document.querySelector('.scanner-viewfinder');
 
   function showVariantPicker(matchName, cards) {
     scanPaused = true;
@@ -6766,9 +6785,10 @@ document.head.appendChild(manifestLink);
   scannerCloseBtn.addEventListener('click', closeScannerModal);
   scannerDone.addEventListener('click', closeScannerModal);
 
-  // Escape key closes scanner
+  // Escape key closes scanner (but not if search modal is open on top)
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && scannerOverlay.classList.contains('open')) {
+      if (isSearchModalOpen()) return; // let the search handler close search first
       var vp = document.getElementById('scanner-variant-picker');
       if (vp && vp.style.display !== 'none') {
         hideVariantPicker();
