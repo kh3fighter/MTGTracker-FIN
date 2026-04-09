@@ -6577,9 +6577,12 @@ document.head.appendChild(manifestLink);
       return;
     }
 
+    scannerStatus.textContent = 'Loading OCR engine...';
     Tesseract.createWorker('eng', 1, {
       langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
-      workerBlobURL: false
+      workerBlobURL: false,
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.0.0'
     }).then(function(worker) {
       scanWorker = worker;
       return worker.setParameters({
@@ -6591,9 +6594,8 @@ document.head.appendChild(manifestLink);
       startScanLoop();
     }).catch(function(err) {
       console.error('Tesseract init error:', err);
-      scannerStatus.textContent = 'OCR engine failed to load';
+      scannerStatus.textContent = 'OCR failed: ' + (err.message || err);
       scannerStatus.className = 'scanner-status warning';
-      showToast('Scanner unavailable — couldn\'t load OCR engine');
     });
   }
 
