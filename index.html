@@ -6096,7 +6096,9 @@ document.head.appendChild(manifestLink);
     searchInput.value = '';
     searchHighlight = -1;
     renderSearchResults('');
-    setTimeout(function() { searchInput.focus(); }, 50);
+    // Focus synchronously to trigger mobile keyboard (setTimeout breaks the
+    // user-interaction trust chain on iOS/Android and suppresses the keyboard)
+    searchInput.focus();
   }
 
   function closeSearchModal() {
