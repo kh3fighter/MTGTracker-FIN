@@ -555,11 +555,33 @@
   .scanner-footer {
     padding: 12px 16px;
     background: rgba(0,0,0,0.8);
-    display: flex; justify-content: center;
+    display: flex; justify-content: center; align-items: center; gap: 16px;
     flex-shrink: 0;
   }
+  .scanner-shutter {
+    background: none; border: none; cursor: pointer; padding: 0;
+    flex-shrink: 0;
+    animation: fadeIn 0.3s ease;
+  }
+  .shutter-ring {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 3px;
+  }
+  .shutter-btn {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .scanner-shutter:active .shutter-btn {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
   .scanner-done {
-    width: 100%; max-width: 300px;
+    flex: 1; max-width: 300px;
     padding: 12px; border-radius: 10px;
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.9rem; font-weight: 700;
@@ -3987,6 +4009,10 @@ document.head.appendChild(manifestLink);
           <button class="scanner-search-fallback" id="scanner-search-fallback" style="display:none">Search manually</button>
         </div>
         <div class="scanner-footer">
+          <button class="scanner-shutter" id="scanner-shutter" style="display:none" aria-label="Take photo">
+            <div class="shutter-ring"><div class="shutter-btn"></div></div>
+          </button>
+          <input type="file" id="scanner-file-input" accept="image/*" capture="environment" style="display:none">
           <button class="btn scanner-done" id="scanner-done">Done</button>
         </div>
       </div>
@@ -6489,6 +6515,8 @@ document.head.appendChild(manifestLink);
   var scannerDone = document.getElementById('scanner-done');
   var scannerCloseBtn = document.getElementById('scanner-close');
   var scannerViewfinder = document.querySelector('.scanner-viewfinder');
+  var scannerShutter = document.getElementById('scanner-shutter');
+  var scannerFileInput = document.getElementById('scanner-file-input');
 
   var scanStream = null;
   var scanWorker = null;
@@ -6515,6 +6543,7 @@ document.head.appendChild(manifestLink);
     scannerLastAdd.textContent = '';
     scannerCountEl.textContent = '';
     scannerSearchFallback.style.display = 'none';
+    document.getElementById('scanner-shutter').style.display = 'none';
     scannerDone.textContent = 'Done';
     scannerStatus.textContent = 'Initializing camera...';
     scannerStatus.className = 'scanner-status';
@@ -6749,6 +6778,7 @@ document.head.appendChild(manifestLink);
   function onScanSuccess(match) {
     scanFailCount = 0;
     scannerSearchFallback.style.display = 'none';
+    if (scannerShutter) scannerShutter.style.display = 'none';
 
     var cards = match.cards;
     if (cards.length === 1) {
@@ -6790,9 +6820,9 @@ document.head.appendChild(manifestLink);
 
   function onScanFail() {
     scanFailCount++;
-    if (scanFailCount >= 6) {
-      scannerStatus.textContent = 'Can\'t read card';
-      scannerStatus.className = 'scanner-status warning';
+    if (scanFailCount >= 4) {
+      // Show shutter button for photo capture
+      showShutterButton();
       scannerSearchFallback.style.display = '';
     }
   }
@@ -6818,6 +6848,142 @@ document.head.appendChild(manifestLink);
     }, 300);
     setTimeout(function() { clearInterval(searchCloseCheck); }, 60000);
   });
+
+  // ── OCR Scanner: Photo Capture (shutter button) ──
+
+  // Show shutter button after repeated scan failures
+  function showShutterButton() {
+    scannerShutter.style.display = '';
+    scannerStatus.textContent = 'Tap shutter to take a photo for better scan';
+    scannerStatus.className = 'scanner-status warning';
+  }
+
+  scannerShutter.addEventListener('click', function() {
+    // Trigger native camera via file input
+    scannerFileInput.click();
+  });
+
+  scannerFileInput.addEventListener('change', function(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    scannerStatus.textContent = 'Processing photo...';
+    scannerStatus.className = 'scanner-status';
+
+    var img = new Image();
+    img.onload = function() {
+      processPhotoCapture(img);
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+    // Reset input so same file can be re-selected
+    scannerFileInput.value = '';
+  });
+
+  function processPhotoCapture(img) {
+    if (!scanWorker) {
+      scannerStatus.textContent = 'OCR engine not ready';
+      scannerStatus.className = 'scanner-status warning';
+      return;
+    }
+
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+
+    // Process full image — high res photo from native camera
+    scannerCanvas.width = iw;
+    scannerCanvas.height = ih;
+    var ctx = scannerCanvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, iw, ih);
+
+    scanPaused = true;
+    scannerStatus.textContent = 'Reading card...';
+
+    // Try collector number first (bottom 10% of image, left 35%)
+    var cnCropX = Math.floor(iw * 0.05);
+    var cnCropY = Math.floor(ih * 0.91);
+    var cnCropW = Math.floor(iw * 0.35);
+    var cnCropH = Math.floor(ih * 0.07);
+
+    var cnCanvas = document.createElement('canvas');
+    cnCanvas.width = cnCropW * 2;
+    cnCanvas.height = cnCropH * 2;
+    var cnCtx = cnCanvas.getContext('2d');
+    cnCtx.drawImage(img, cnCropX, cnCropY, cnCropW, cnCropH, 0, 0, cnCropW * 2, cnCropH * 2);
+
+    // Threshold for white-on-black
+    var cnImg = cnCtx.getImageData(0, 0, cnCropW * 2, cnCropH * 2);
+    var cd = cnImg.data;
+    for (var px = 0; px < cd.length; px += 4) {
+      var gray = cd[px] * 0.299 + cd[px+1] * 0.587 + cd[px+2] * 0.114;
+      var val = gray > 120 ? 0 : 255;
+      cd[px] = cd[px+1] = cd[px+2] = val;
+    }
+    cnCtx.putImageData(cnImg, 0, 0);
+
+    // Try collector number scan
+    scanWorker.setParameters({
+      tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+      tessedit_char_whitelist: '0123456789CURM '
+    }).then(function() {
+      return scanWorker.recognize(cnCanvas);
+    }).then(function(result) {
+      var text = result.data.text.trim();
+      scannerCountEl.textContent = 'Photo CN: "' + text + '"';
+
+      // Try 4-digit collector numbers
+      var nums = text.match(/\d{3,4}/g) || [];
+      for (var i = 0; i < nums.length; i++) {
+        var cn = nums[i];
+        if (cn.length === 4) cn = cn.substring(1);
+        var card = getCardByNumber(cn);
+        if (card) {
+          scanPaused = false;
+          onScanSuccess({ name: card.name, cards: [card], score: 1.0 });
+          return;
+        }
+      }
+      // Try smaller numbers padded
+      var smallNums = text.match(/\d{1,3}/g) || [];
+      for (var si = 0; si < smallNums.length; si++) {
+        var sn = smallNums[si];
+        while (sn.length < 3) sn = '0' + sn;
+        var scard = getCardByNumber(sn);
+        if (scard) {
+          scanPaused = false;
+          onScanSuccess({ name: scard.name, cards: [scard], score: 1.0 });
+          return;
+        }
+      }
+
+      // Collector number failed — try full image for card name
+      return scanWorker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+        tessedit_char_whitelist: ''
+      }).then(function() {
+        return scanWorker.recognize(scannerCanvas);
+      });
+    }).then(function(result) {
+      if (!result) return; // already matched via CN
+      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
+      scannerCountEl.textContent = 'Photo Name: "' + text.substring(0, 50) + '"';
+
+      var match = fuzzyMatchCardName(text, scanNameMap);
+      if (match) {
+        scanPaused = false;
+        onScanSuccess(match);
+      } else {
+        scanPaused = false;
+        scannerStatus.textContent = 'Could not identify card — try again or search';
+        scannerStatus.className = 'scanner-status warning';
+        scannerSearchFallback.style.display = '';
+      }
+    }).catch(function(err) {
+      scanPaused = false;
+      console.error('Photo scan error:', err);
+      scannerStatus.textContent = 'Scan failed — try again';
+      scannerStatus.className = 'scanner-status warning';
+    });
+  }
 
   // ── OCR Scanner: Variant Picker ──
   var variantPicker = document.getElementById('scanner-variant-picker');
