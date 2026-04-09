@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; worker-src blob:; child-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://paddlejs.bj.bcebos.com https://api.ocr.space; worker-src blob:; child-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FIN Binder Tracker</title>
 <!-- iOS PWA -->
@@ -18,7 +18,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -6547,8 +6546,9 @@ document.head.appendChild(manifestLink);
   var scannerFileInput = document.getElementById('scanner-file-input');
 
   var scanStream = null;
-  var scanWorker = null;
   var scanInterval = null;
+  var paddleOcrReady = false;
+  var OCR_SPACE_KEY = 'K81821864988957';
   var scanCooldown = false;
   var scanFailCount = 0;
   var scanSessionAdds = [];
@@ -6586,10 +6586,6 @@ document.head.appendChild(manifestLink);
     document.body.style.overflow = '';
     stopCamera();
     stopScanLoop();
-    if (scanWorker) {
-      scanWorker.terminate().catch(function() {});
-      scanWorker = null;
-    }
     hideVariantPicker();
   }
 
@@ -6601,7 +6597,7 @@ document.head.appendChild(manifestLink);
       scannerVideo.srcObject = stream;
       scannerVideo.onloadedmetadata = function() {
         scannerStatus.textContent = 'Loading OCR engine...';
-        initTesseract();
+        initOCR();
       };
     }).catch(function(err) {
       console.error('Camera error:', err);
@@ -6627,50 +6623,36 @@ document.head.appendChild(manifestLink);
   }
 
   // ── OCR Scanner: Tesseract Init & Scan Loop ──
-  function initTesseract() {
-    if (typeof Tesseract === 'undefined') {
-      scannerStatus.textContent = 'OCR engine unavailable';
-      scannerStatus.className = 'scanner-status warning';
-      showToast('Scanner unavailable — couldn\'t load OCR engine');
-      return;
-    }
+  // ── OCR Engine: Paddle.js (primary) + OCR.space API (fallback) ──
 
+  function initOCR() {
     scannerStatus.textContent = 'Loading OCR engine...';
 
-    // Timeout guard: if worker creation hangs (Safari private mode), fail gracefully
-    var initTimedOut = false;
-    var initTimeout = setTimeout(function() {
-      initTimedOut = true;
-      scannerStatus.textContent = 'OCR engine timed out — use manual search';
-      scannerStatus.className = 'scanner-status warning';
-      scannerSearchFallback.style.display = '';
-    }, 15000);
-
-    Tesseract.createWorker('eng', 1, {
-      langPath: 'https://tessdata.projectnaptha.com/4.0.0'
-    }).then(function(worker) {
-      if (initTimedOut) { worker.terminate(); return; }
-      clearTimeout(initTimeout);
-      scanWorker = worker;
-      return worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.AUTO });
-    }).then(function() {
-      if (initTimedOut) return;
-      scannerStatus.textContent = 'Hold card steady in the frame';
-      scannerStatus.className = 'scanner-status';
-      startScanLoop();
-    }).catch(function(err) {
-      if (initTimedOut) return;
-      clearTimeout(initTimeout);
-      console.error('Tesseract init error:', err);
-      scannerStatus.textContent = 'OCR failed: ' + (err.message || err);
-      scannerStatus.className = 'scanner-status warning';
-      scannerSearchFallback.style.display = '';
-    });
+    // Try loading Paddle.js OCR via dynamic ESM import
+    import('https://cdn.jsdelivr.net/npm/@paddlejs-models/ocr@1.1.1/+esm')
+      .then(function(ocr) {
+        window.paddleOcr = ocr;
+        scannerStatus.textContent = 'Initializing models...';
+        return ocr.init();
+      })
+      .then(function() {
+        paddleOcrReady = true;
+        scannerStatus.textContent = 'Hold card steady in the frame';
+        scannerStatus.className = 'scanner-status';
+        startScanLoop();
+      })
+      .catch(function(err) {
+        console.warn('Paddle.js failed, using OCR.space fallback:', err);
+        paddleOcrReady = false;
+        scannerStatus.textContent = 'Using cloud OCR';
+        scannerStatus.className = 'scanner-status';
+        startScanLoop();
+      });
   }
 
   function startScanLoop() {
     if (scanInterval) return;
-    scanInterval = setInterval(scanFrame, 1500);
+    scanInterval = setInterval(scanFrame, 2000);
   }
 
   function stopScanLoop() {
@@ -6680,8 +6662,29 @@ document.head.appendChild(manifestLink);
     }
   }
 
+  // OCR.space API call
+  function ocrSpaceRecognize(base64Img) {
+    var formData = new FormData();
+    formData.append('base64Image', base64Img);
+    formData.append('language', 'eng');
+    formData.append('OCREngine', '2');
+    formData.append('scale', 'true');
+    formData.append('isTable', 'false');
+    return fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: { 'apikey': OCR_SPACE_KEY },
+      body: formData
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ParsedResults && data.ParsedResults[0]) {
+          return data.ParsedResults[0].ParsedText || '';
+        }
+        return '';
+      });
+  }
+
   function scanFrame() {
-    if (!scanWorker || !scanStream || scanCooldown || scanPaused || scanBusy) return;
+    if (!scanStream || scanCooldown || scanPaused || scanBusy) return;
     if (scannerVideo.readyState < 2) return;
     scanBusy = true;
 
@@ -6689,37 +6692,45 @@ document.head.appendChild(manifestLink);
     var vh = scannerVideo.videoHeight;
     if (!vw || !vh) { scanBusy = false; return; }
 
-    // Capture the entire video frame — let Tesseract read everything
+    // Capture full video frame
     scannerCanvas.width = vw;
     scannerCanvas.height = vh;
     var ctx = scannerCanvas.getContext('2d');
     ctx.drawImage(scannerVideo, 0, 0, vw, vh);
 
-    scanWorker.recognize(scannerCanvas).then(function(result) {
+    var ocrPromise;
+    if (paddleOcrReady) {
+      // Paddle.js: pass canvas element directly
+      ocrPromise = window.paddleOcr.recognize(scannerCanvas)
+        .then(function(res) { return (res.text || []).join(' '); });
+    } else {
+      // OCR.space fallback: send base64 JPEG
+      var base64 = scannerCanvas.toDataURL('image/jpeg', 0.8);
+      ocrPromise = ocrSpaceRecognize(base64);
+    }
+
+    ocrPromise.then(function(text) {
       scanBusy = false;
-      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
+      text = (text || '').trim().replace(/[\n\r]+/g, ' ');
       if (!text || text.length < 2) {
         onScanFail();
         return;
       }
 
       lastScanText = text;
-      scannerCountEl.textContent = 'Read: "' + text.substring(0, 50) + '"';
+      var engine = paddleOcrReady ? 'Paddle' : 'Cloud';
+      scannerCountEl.textContent = engine + ': "' + text.substring(0, 50) + '"';
 
-      // Always try BOTH strategies on every OCR result
-
-      // Strategy 1: Extract collector number (FIN uses exactly 4 zero-padded digits: 0001-0681)
-      // Only match 4-digit sequences to avoid false positives from mana costs, P/T, etc.
+      // Strategy 1: Extract collector number (FIN: 4 zero-padded digits, 0001-0681)
       var nums = text.match(/\b\d{4}\b/g) || [];
       for (var ni = 0; ni < nums.length; ni++) {
         var cn4 = nums[ni];
-        var cn = cn4.substring(1); // "0122" -> "122"
+        var cn = cn4.substring(1);
         var cnNum = parseInt(cn4, 10);
-        // FIN set range: 0001-0681
         if (cnNum < 1 || cnNum > 681) continue;
         var card = getCardByNumber(cn);
         if (card) {
-          scannerCountEl.textContent = 'Matched CN #' + cn4 + ': ' + card.name;
+          scannerCountEl.textContent = engine + ' → CN #' + cn4 + ': ' + card.name;
           onScanSuccess({ name: card.name, cards: [card], score: 1.0 });
           return;
         }
@@ -6728,14 +6739,15 @@ document.head.appendChild(manifestLink);
       // Strategy 2: Fuzzy match card name
       var match = fuzzyMatchCardName(text, scanNameMap);
       if (match) {
-        scannerCountEl.textContent = 'Match: "' + match.name + '" (' + Math.round(match.score * 100) + '%)';
+        scannerCountEl.textContent = engine + ' → "' + match.name + '" (' + Math.round(match.score * 100) + '%)';
         onScanSuccess(match);
         return;
       }
 
       onScanFail();
-    }).catch(function() {
+    }).catch(function(err) {
       scanBusy = false;
+      console.error('OCR error:', err);
       onScanFail();
     });
   }
@@ -6854,12 +6866,6 @@ document.head.appendChild(manifestLink);
   });
 
   function processPhotoCapture(img) {
-    if (!scanWorker) {
-      scannerStatus.textContent = 'OCR engine not ready';
-      scannerStatus.className = 'scanner-status warning';
-      return;
-    }
-
     scanPaused = true;
     scannerStatus.textContent = 'Processing photo...';
     scannerStatus.className = 'scanner-status';
@@ -6867,8 +6873,7 @@ document.head.appendChild(manifestLink);
     var iw = img.naturalWidth;
     var ih = img.naturalHeight;
 
-    // Scale down to max 2000px on longest side — iOS Safari has canvas memory limits
-    // A 48MP photo (8064x6048) will crash canvas; 2000px is safe and enough for OCR
+    // Scale down for iOS canvas memory limits
     var scale = 1;
     var maxDim = Math.max(iw, ih);
     if (maxDim > 2000) scale = 2000 / maxDim;
@@ -6879,18 +6884,33 @@ document.head.appendChild(manifestLink);
     scannerCanvas.height = sh;
     var ctx = scannerCanvas.getContext('2d');
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, sw, sh);
-
     scannerCountEl.textContent = 'Photo: ' + iw + 'x' + ih + ' → ' + sw + 'x' + sh;
 
-    // Run OCR on the full scaled image — let Tesseract find all text
-    scanWorker.setParameters({
-      tessedit_pageseg_mode: Tesseract.PSM.AUTO
-    }).then(function() {
-      scannerStatus.textContent = 'Reading all text...';
-      return scanWorker.recognize(scannerCanvas);
-    }).then(function(result) {
-      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
-      scannerCountEl.textContent = 'Read: "' + text.substring(0, 60) + '"';
+    // Use OCR.space for photos (higher quality, full res) — Paddle.js as fallback
+    var ocrPromise;
+    var base64 = scannerCanvas.toDataURL('image/jpeg', 0.85);
+    scannerStatus.textContent = 'Reading text...';
+
+    ocrPromise = ocrSpaceRecognize(base64).then(function(text) {
+      if (text && text.trim().length > 2) return { text: text, engine: 'Cloud' };
+      // OCR.space failed — try Paddle.js if available
+      if (paddleOcrReady) {
+        return window.paddleOcr.recognize(scannerCanvas)
+          .then(function(res) { return { text: (res.text || []).join(' '), engine: 'Paddle' }; });
+      }
+      return { text: '', engine: 'none' };
+    }).catch(function() {
+      // API failed — try Paddle.js
+      if (paddleOcrReady) {
+        return window.paddleOcr.recognize(scannerCanvas)
+          .then(function(res) { return { text: (res.text || []).join(' '), engine: 'Paddle' }; });
+      }
+      return { text: '', engine: 'none' };
+    });
+
+    ocrPromise.then(function(result) {
+      var text = (result.text || '').trim().replace(/[\n\r]+/g, ' ');
+      scannerCountEl.textContent = result.engine + ': "' + text.substring(0, 60) + '"';
 
       if (!text || text.length < 2) {
         scanPaused = false;
@@ -6899,32 +6919,29 @@ document.head.appendChild(manifestLink);
         return;
       }
 
-      // Strategy 1: Find collector number (exactly 4 zero-padded digits, range 0001-0681)
+      // Try collector number
       var allNums = text.match(/\b\d{4}\b/g) || [];
       for (var i = 0; i < allNums.length; i++) {
         var cn4 = allNums[i];
-        var cn = cn4.substring(1);
         var cnNum = parseInt(cn4, 10);
         if (cnNum < 1 || cnNum > 681) continue;
+        var cn = cn4.substring(1);
         var card = getCardByNumber(cn);
         if (card) {
           scanPaused = false;
-          scannerCountEl.textContent = 'Matched CN #' + cn4 + ': ' + card.name;
           onScanSuccess({ name: card.name, cards: [card], score: 1.0 });
           return;
         }
       }
 
-      // Strategy 2: Fuzzy match card name from OCR text
+      // Try fuzzy name match
       var match = fuzzyMatchCardName(text, scanNameMap);
       if (match) {
         scanPaused = false;
-        scannerCountEl.textContent = 'Matched name: ' + match.name + ' (' + Math.round(match.score * 100) + '%)';
         onScanSuccess(match);
         return;
       }
 
-      // Nothing worked
       scanPaused = false;
       scannerStatus.textContent = 'Could not identify card — try again or search';
       scannerStatus.className = 'scanner-status warning';
