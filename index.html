@@ -6578,24 +6578,40 @@ document.head.appendChild(manifestLink);
     }
 
     scannerStatus.textContent = 'Loading OCR engine...';
+
+    // Timeout guard: if worker creation hangs (Safari private mode), fail gracefully
+    var initTimedOut = false;
+    var initTimeout = setTimeout(function() {
+      initTimedOut = true;
+      scannerStatus.textContent = 'OCR engine timed out — use manual search';
+      scannerStatus.className = 'scanner-status warning';
+      scannerSearchFallback.style.display = '';
+    }, 15000);
+
     Tesseract.createWorker('eng', 1, {
       langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
       workerBlobURL: false,
       workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
       corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.0.0'
     }).then(function(worker) {
+      if (initTimedOut) { worker.terminate(); return; }
+      clearTimeout(initTimeout);
       scanWorker = worker;
       return worker.setParameters({
         tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
       });
     }).then(function() {
+      if (initTimedOut) return;
       scannerStatus.textContent = 'Align card name in the box above';
       scannerStatus.className = 'scanner-status';
       startScanLoop();
     }).catch(function(err) {
+      if (initTimedOut) return;
+      clearTimeout(initTimeout);
       console.error('Tesseract init error:', err);
       scannerStatus.textContent = 'OCR failed: ' + (err.message || err);
       scannerStatus.className = 'scanner-status warning';
+      scannerSearchFallback.style.display = '';
     });
   }
 
