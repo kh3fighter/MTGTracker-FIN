@@ -6671,7 +6671,7 @@ document.head.appendChild(manifestLink);
 
   function startScanLoop() {
     if (scanInterval) return;
-    scanInterval = setInterval(scanFrame, 1000);
+    scanInterval = setInterval(scanFrame, 1500);
   }
 
   function stopScanLoop() {
@@ -6691,65 +6691,26 @@ document.head.appendChild(manifestLink);
     var vh = scannerVideo.videoHeight;
     if (!vw || !vh) { scanBusy = false; return; }
 
+    // Capture the full card area matching the guide rect
     // Guide rect: centered, 65% width, 5:7 aspect ratio
-    // Card assumed to fill this region
     var cardW = Math.floor(vw * 0.65);
     var cardH = Math.floor(cardW * 1.4); // 5:7 ratio
     var cardX = Math.floor((vw - cardW) / 2);
     var cardY = Math.floor((vh - cardH) / 2);
 
-    // Alternate strategies each cycle
-    var useNumberScan = (scanCycle % 2 === 0);
-    var cropX, cropY, cropW, cropH, paramPromise;
+    // Clamp to video bounds
+    if (cardY < 0) cardY = 0;
+    if (cardY + cardH > vh) cardH = vh - cardY;
 
-    if (useNumberScan) {
-      // COLLECTOR NUMBER: bottom 8% of card, left 25%
-      // FIN format: "M 0122 FFV" in Gotham Medium, white on black
-      cropX = cardX;
-      cropY = cardY + Math.floor(cardH * 0.92);
-      cropW = Math.floor(cardW * 0.30);
-      cropH = Math.floor(cardH * 0.06);
-      paramPromise = scanWorker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
-        tessedit_char_whitelist: '0123456789CURM '
-      });
-    } else {
-      // CARD NAME: top 8% of card, centered 80%
-      // In Beleren Bold — less reliable but worth trying
-      cropX = cardX + Math.floor(cardW * 0.10);
-      cropY = cardY + Math.floor(cardH * 0.04);
-      cropW = Math.floor(cardW * 0.80);
-      cropH = Math.floor(cardH * 0.06);
-      paramPromise = scanWorker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
-        tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ,.\'-:'
-      });
-    }
-
-    // Upscale 4x for tiny text
-    var scaleF = 4;
-    var outW = Math.max(cropW * scaleF, 100);
-    var outH = Math.max(cropH * scaleF, 40);
-    scannerCanvas.width = outW;
-    scannerCanvas.height = outH;
+    // Draw full card area to canvas — no tiny crops, give Tesseract the whole card
+    scannerCanvas.width = cardW;
+    scannerCanvas.height = cardH;
     var ctx = scannerCanvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+    ctx.drawImage(scannerVideo, cardX, cardY, cardW, cardH, 0, 0, cardW, cardH);
 
-    if (useNumberScan) {
-      // Preprocessing for white text on black: threshold to clean binary
-      var imgData = ctx.getImageData(0, 0, outW, outH);
-      var d = imgData.data;
-      for (var px = 0; px < d.length; px += 4) {
-        var gray = d[px] * 0.299 + d[px+1] * 0.587 + d[px+2] * 0.114;
-        // White text on black bg: threshold at 120, keep as black text on white
-        var val = gray > 120 ? 0 : 255;
-        d[px] = d[px+1] = d[px+2] = val;
-      }
-      ctx.putImageData(imgData, 0, 0);
-    }
-
-    paramPromise.then(function() {
+    scanWorker.setParameters({
+      tessedit_pageseg_mode: Tesseract.PSM.AUTO
+    }).then(function() {
       return scanWorker.recognize(scannerCanvas);
     }).then(function(result) {
       scanBusy = false;
@@ -6936,8 +6897,7 @@ document.head.appendChild(manifestLink);
 
     // Run OCR on the full scaled image — let Tesseract find all text
     scanWorker.setParameters({
-      tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-      tessedit_char_whitelist: ''
+      tessedit_pageseg_mode: Tesseract.PSM.AUTO
     }).then(function() {
       scannerStatus.textContent = 'Reading all text...';
       return scanWorker.recognize(scannerCanvas);
