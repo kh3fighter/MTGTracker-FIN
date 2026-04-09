@@ -6914,101 +6914,78 @@ document.head.appendChild(manifestLink);
       return;
     }
 
+    scanPaused = true;
+    scannerStatus.textContent = 'Processing photo...';
+    scannerStatus.className = 'scanner-status';
+
     var iw = img.naturalWidth;
     var ih = img.naturalHeight;
 
-    // Process full image — high res photo from native camera
-    scannerCanvas.width = iw;
-    scannerCanvas.height = ih;
+    // Scale down to max 2000px on longest side — iOS Safari has canvas memory limits
+    // A 48MP photo (8064x6048) will crash canvas; 2000px is safe and enough for OCR
+    var scale = 1;
+    var maxDim = Math.max(iw, ih);
+    if (maxDim > 2000) scale = 2000 / maxDim;
+    var sw = Math.floor(iw * scale);
+    var sh = Math.floor(ih * scale);
+
+    scannerCanvas.width = sw;
+    scannerCanvas.height = sh;
     var ctx = scannerCanvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, iw, ih);
+    ctx.drawImage(img, 0, 0, iw, ih, 0, 0, sw, sh);
 
-    scanPaused = true;
-    scannerStatus.textContent = 'Reading card...';
+    scannerCountEl.textContent = 'Photo: ' + iw + 'x' + ih + ' → ' + sw + 'x' + sh;
 
-    // Try collector number first (bottom 10% of image, left 35%)
-    var cnCropX = Math.floor(iw * 0.05);
-    var cnCropY = Math.floor(ih * 0.91);
-    var cnCropW = Math.floor(iw * 0.35);
-    var cnCropH = Math.floor(ih * 0.07);
-
-    var cnCanvas = document.createElement('canvas');
-    cnCanvas.width = cnCropW * 2;
-    cnCanvas.height = cnCropH * 2;
-    var cnCtx = cnCanvas.getContext('2d');
-    cnCtx.drawImage(img, cnCropX, cnCropY, cnCropW, cnCropH, 0, 0, cnCropW * 2, cnCropH * 2);
-
-    // Threshold for white-on-black
-    var cnImg = cnCtx.getImageData(0, 0, cnCropW * 2, cnCropH * 2);
-    var cd = cnImg.data;
-    for (var px = 0; px < cd.length; px += 4) {
-      var gray = cd[px] * 0.299 + cd[px+1] * 0.587 + cd[px+2] * 0.114;
-      var val = gray > 120 ? 0 : 255;
-      cd[px] = cd[px+1] = cd[px+2] = val;
-    }
-    cnCtx.putImageData(cnImg, 0, 0);
-
-    // Try collector number scan
+    // Run OCR on the full scaled image — let Tesseract find all text
     scanWorker.setParameters({
-      tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
-      tessedit_char_whitelist: '0123456789CURM '
+      tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+      tessedit_char_whitelist: ''
     }).then(function() {
-      return scanWorker.recognize(cnCanvas);
+      scannerStatus.textContent = 'Reading all text...';
+      return scanWorker.recognize(scannerCanvas);
     }).then(function(result) {
-      var text = result.data.text.trim();
-      scannerCountEl.textContent = 'Photo CN: "' + text + '"';
+      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
+      scannerCountEl.textContent = 'Read: "' + text.substring(0, 60) + '"';
 
-      // Try 4-digit collector numbers
-      var nums = text.match(/\d{3,4}/g) || [];
-      for (var i = 0; i < nums.length; i++) {
-        var cn = nums[i];
+      if (!text || text.length < 2) {
+        scanPaused = false;
+        scannerStatus.textContent = 'No text found — try a clearer photo';
+        scannerStatus.className = 'scanner-status warning';
+        return;
+      }
+
+      // Strategy 1: Find collector number (4-digit zero-padded FIN format)
+      var allNums = text.match(/\d{3,4}/g) || [];
+      for (var i = 0; i < allNums.length; i++) {
+        var cn = allNums[i];
         if (cn.length === 4) cn = cn.substring(1);
         var card = getCardByNumber(cn);
         if (card) {
           scanPaused = false;
+          scannerCountEl.textContent = 'Matched CN #' + cn + ': ' + card.name;
           onScanSuccess({ name: card.name, cards: [card], score: 1.0 });
           return;
         }
       }
-      // Try smaller numbers padded
-      var smallNums = text.match(/\d{1,3}/g) || [];
-      for (var si = 0; si < smallNums.length; si++) {
-        var sn = smallNums[si];
-        while (sn.length < 3) sn = '0' + sn;
-        var scard = getCardByNumber(sn);
-        if (scard) {
-          scanPaused = false;
-          onScanSuccess({ name: scard.name, cards: [scard], score: 1.0 });
-          return;
-        }
-      }
 
-      // Collector number failed — try full image for card name
-      return scanWorker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.AUTO,
-        tessedit_char_whitelist: ''
-      }).then(function() {
-        return scanWorker.recognize(scannerCanvas);
-      });
-    }).then(function(result) {
-      if (!result) return; // already matched via CN
-      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
-      scannerCountEl.textContent = 'Photo Name: "' + text.substring(0, 50) + '"';
-
+      // Strategy 2: Fuzzy match card name from OCR text
       var match = fuzzyMatchCardName(text, scanNameMap);
       if (match) {
         scanPaused = false;
+        scannerCountEl.textContent = 'Matched name: ' + match.name + ' (' + Math.round(match.score * 100) + '%)';
         onScanSuccess(match);
-      } else {
-        scanPaused = false;
-        scannerStatus.textContent = 'Could not identify card — try again or search';
-        scannerStatus.className = 'scanner-status warning';
-        scannerSearchFallback.style.display = '';
+        return;
       }
+
+      // Nothing worked
+      scanPaused = false;
+      scannerStatus.textContent = 'Could not identify card — try again or search';
+      scannerStatus.className = 'scanner-status warning';
+      scannerSearchFallback.style.display = '';
     }).catch(function(err) {
       scanPaused = false;
       console.error('Photo scan error:', err);
-      scannerStatus.textContent = 'Scan failed — try again';
+      scannerStatus.textContent = 'Error: ' + (err.message || err);
       scannerStatus.className = 'scanner-status warning';
     });
   }
