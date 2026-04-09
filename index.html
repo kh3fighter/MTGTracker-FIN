@@ -375,6 +375,202 @@
   [data-theme="light"] .search-chip:hover { filter: brightness(0.9); }
   [data-theme="light"] .search-empty { color: var(--text-muted); }
 
+  /* ── Scanner Modal ── */
+  .scanner-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 900;
+    flex-direction: column;
+  }
+  .scanner-overlay.open {
+    display: flex;
+  }
+  .scanner-modal {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    background: #000;
+  }
+  .scanner-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.8);
+    flex-shrink: 0;
+    z-index: 2;
+  }
+  .scanner-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scanner-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem; font-weight: 700;
+    color: #e07838;
+    letter-spacing: 0.12em;
+  }
+  .scanner-viewfinder {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: #111;
+  }
+  .scanner-viewfinder video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .scanner-viewfinder.dimmed video {
+    opacity: 0.3;
+    filter: blur(2px);
+  }
+  .scanner-guide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 8%;
+    pointer-events: none;
+  }
+  .scanner-guide-rect {
+    width: 70%; height: 48px;
+    border: 2px dashed #e07838;
+    border-radius: 8px;
+    box-shadow: 0 0 0 4000px rgba(0,0,0,0.35);
+  }
+  .scanner-guide-label {
+    margin-top: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.04em;
+  }
+
+  /* Variant picker overlay */
+  .scanner-variant-picker {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(8px);
+    padding: 16px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+    z-index: 5;
+    animation: fadeIn 0.2s ease;
+  }
+  .scanner-variant-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    color: #fff;
+    text-align: center;
+  }
+  .scanner-variant-row {
+    display: flex; gap: 12px;
+    overflow-x: auto;
+    padding: 4px 0;
+    max-width: 100%;
+  }
+  .scanner-variant-card {
+    flex-shrink: 0;
+    width: 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .scanner-variant-card:hover { transform: scale(1.05); }
+  .scanner-variant-card img {
+    width: 80px; height: 112px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 2px solid transparent;
+  }
+  .scanner-variant-card.owned img {
+    border-color: var(--owned-border, #4aad5e);
+  }
+  .scanner-variant-card .variant-cn {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.65rem; color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+  }
+  .scanner-variant-card .variant-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.6rem; font-weight: 600;
+    color: #e07838;
+    margin-top: 2px;
+  }
+  .scanner-variant-skip {
+    background: none; border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem; font-weight: 600;
+    padding: 6px 20px; border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .scanner-variant-skip:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+  /* Status area */
+  .scanner-status-area {
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.8);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .scanner-status {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem; font-weight: 600;
+    color: rgba(255,255,255,0.8);
+  }
+  .scanner-status.success { color: #4aad5e; }
+  .scanner-status.warning { color: #e07838; }
+  .scanner-last-add {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .scanner-count {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+  }
+  .scanner-search-fallback {
+    margin-top: 8px;
+    background: rgba(224,120,56,0.15);
+    border: 1px solid rgba(224,120,56,0.4);
+    color: #e07838;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem; font-weight: 600;
+    padding: 8px 20px; border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .scanner-search-fallback:hover { background: rgba(224,120,56,0.25); }
+
+  .scanner-footer {
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.8);
+    display: flex; justify-content: center;
+    flex-shrink: 0;
+  }
+  .scanner-done {
+    width: 100%; max-width: 300px;
+    padding: 12px; border-radius: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem; font-weight: 700;
+    background: var(--accent, #5b7fc7);
+    color: #fff; border: none;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+  }
+  .scanner-done:hover { filter: brightness(1.1); }
+
   .search-results {
     overflow-y: auto;
     flex: 1;
@@ -3761,6 +3957,38 @@ document.head.appendChild(manifestLink);
         </div>
         <div class="search-results" id="search-results">
           <div class="search-empty">Type to search 309+ cards</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanner Modal -->
+    <div class="scanner-overlay" id="scanner-overlay">
+      <div class="scanner-modal">
+        <div class="scanner-header">
+          <button class="scanner-close" id="scanner-close" aria-label="Close scanner">&times;</button>
+          <span class="scanner-title">SCAN MODE</span>
+        </div>
+        <div class="scanner-viewfinder">
+          <video id="scanner-video" autoplay playsinline muted></video>
+          <canvas id="scanner-canvas" style="display:none"></canvas>
+          <div class="scanner-guide">
+            <div class="scanner-guide-rect"></div>
+            <div class="scanner-guide-label">Align card name here</div>
+          </div>
+          <div class="scanner-variant-picker" id="scanner-variant-picker" style="display:none">
+            <div class="scanner-variant-title" id="scanner-variant-title"></div>
+            <div class="scanner-variant-row" id="scanner-variant-row"></div>
+            <button class="scanner-variant-skip" id="scanner-variant-skip">Skip</button>
+          </div>
+        </div>
+        <div class="scanner-status-area">
+          <div class="scanner-status" id="scanner-status">Initializing camera...</div>
+          <div class="scanner-last-add" id="scanner-last-add"></div>
+          <div class="scanner-count" id="scanner-count"></div>
+          <button class="scanner-search-fallback" id="scanner-search-fallback" style="display:none">Search manually</button>
+        </div>
+        <div class="scanner-footer">
+          <button class="btn scanner-done" id="scanner-done">Done</button>
         </div>
       </div>
     </div>
