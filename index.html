@@ -6809,9 +6809,14 @@ document.head.appendChild(manifestLink);
     if (scannerShutter) scannerShutter.style.display = 'none';
 
     var cards = match.cards;
-    if (cards.length === 1) {
-      addScannedCard(cards[0]);
+    var singleCard = cards.length === 1 ? cards[0] : null;
+    var canBeFoil = singleCard && (singleCard.finishes || []).includes('foil');
+
+    if (singleCard && !canBeFoil) {
+      // Only one version, no foil option — auto-add
+      addScannedCard(singleCard);
     } else {
+      // Multiple variants OR card can be foil — let user choose
       showVariantPicker(match.name, cards);
     }
   }
