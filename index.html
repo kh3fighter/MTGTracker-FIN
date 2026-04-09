@@ -434,11 +434,11 @@
     display: flex; flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding-top: 8%;
+    padding-top: 5%;
     pointer-events: none;
   }
   .scanner-guide-rect {
-    width: 70%; height: 48px;
+    width: 80%; height: 18vh;
     border: 2px dashed #e07838;
     border-radius: 8px;
     box-shadow: 0 0 0 4000px rgba(0,0,0,0.35);
@@ -6631,26 +6631,40 @@ document.head.appendChild(manifestLink);
 
     var vw = scannerVideo.videoWidth;
     var vh = scannerVideo.videoHeight;
-    if (!vw || !vh) return;
+    if (!vw || !vh) { scanBusy = false; return; }
 
-    // Crop to guide rectangle region: top 15%, centered 70% width
-    var cropX = Math.floor(vw * 0.15);
-    var cropY = Math.floor(vh * 0.04);
-    var cropW = Math.floor(vw * 0.70);
-    var cropH = Math.floor(vh * 0.12);
+    // Crop to guide rectangle region — must match CSS guide position
+    // Guide: centered 80% width, starts at 8% from top, 15% tall
+    var cropX = Math.floor(vw * 0.10);
+    var cropY = Math.floor(vh * 0.05);
+    var cropW = Math.floor(vw * 0.80);
+    var cropH = Math.floor(vh * 0.18);
 
     scannerCanvas.width = cropW;
     scannerCanvas.height = cropH;
     var ctx = scannerCanvas.getContext('2d');
     ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
+    // Preprocess: convert to high-contrast grayscale for better OCR
+    var imgData = ctx.getImageData(0, 0, cropW, cropH);
+    var d = imgData.data;
+    for (var px = 0; px < d.length; px += 4) {
+      var gray = d[px] * 0.299 + d[px+1] * 0.587 + d[px+2] * 0.114;
+      // Sharpen contrast: threshold at 128
+      var val = gray > 128 ? 255 : 0;
+      d[px] = d[px+1] = d[px+2] = val;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
     scanWorker.recognize(scannerCanvas).then(function(result) {
       scanBusy = false;
-      var text = result.data.text.trim();
+      var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
       if (!text || text.length < 2) {
         onScanFail();
         return;
       }
+      // Show what OCR reads for debugging
+      scannerCountEl.textContent = 'OCR: "' + text.substring(0, 40) + '"';
       var match = fuzzyMatchCardName(text, scanNameMap);
       if (!match) {
         onScanFail();
