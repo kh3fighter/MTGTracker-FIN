@@ -6652,8 +6652,7 @@ document.head.appendChild(manifestLink);
       if (initTimedOut) { worker.terminate(); return; }
       clearTimeout(initTimeout);
       scanWorker = worker;
-      // Don't set PSM/whitelist here — we switch per scan cycle
-      return Promise.resolve();
+      return worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.AUTO });
     }).then(function() {
       if (initTimedOut) return;
       scannerStatus.textContent = 'Hold card steady in the frame';
@@ -6685,34 +6684,18 @@ document.head.appendChild(manifestLink);
     if (!scanWorker || !scanStream || scanCooldown || scanPaused || scanBusy) return;
     if (scannerVideo.readyState < 2) return;
     scanBusy = true;
-    scanCycle++;
 
     var vw = scannerVideo.videoWidth;
     var vh = scannerVideo.videoHeight;
     if (!vw || !vh) { scanBusy = false; return; }
 
-    // Capture the full card area matching the guide rect
-    // Guide rect: centered, 65% width, 5:7 aspect ratio
-    var cardW = Math.floor(vw * 0.65);
-    var cardH = Math.floor(cardW * 1.4); // 5:7 ratio
-    var cardX = Math.floor((vw - cardW) / 2);
-    var cardY = Math.floor((vh - cardH) / 2);
-
-    // Clamp to video bounds
-    if (cardY < 0) cardY = 0;
-    if (cardY + cardH > vh) cardH = vh - cardY;
-
-    // Draw full card area to canvas — no tiny crops, give Tesseract the whole card
-    scannerCanvas.width = cardW;
-    scannerCanvas.height = cardH;
+    // Capture the entire video frame — let Tesseract read everything
+    scannerCanvas.width = vw;
+    scannerCanvas.height = vh;
     var ctx = scannerCanvas.getContext('2d');
-    ctx.drawImage(scannerVideo, cardX, cardY, cardW, cardH, 0, 0, cardW, cardH);
+    ctx.drawImage(scannerVideo, 0, 0, vw, vh);
 
-    scanWorker.setParameters({
-      tessedit_pageseg_mode: Tesseract.PSM.AUTO
-    }).then(function() {
-      return scanWorker.recognize(scannerCanvas);
-    }).then(function(result) {
+    scanWorker.recognize(scannerCanvas).then(function(result) {
       scanBusy = false;
       var text = result.data.text.trim().replace(/[\n\r]+/g, ' ');
       if (!text || text.length < 2) {
