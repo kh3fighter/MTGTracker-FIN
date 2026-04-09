@@ -4033,6 +4033,15 @@ document.head.appendChild(manifestLink);
           <div class="scanner-status" id="scanner-status">Initializing camera...</div>
           <div class="scanner-last-add" id="scanner-last-add"></div>
           <div class="scanner-count" id="scanner-count"></div>
+          <div id="scanner-key-prompt" style="display:none;padding:12px;text-align:center">
+            <div style="font-family:'Rajdhani',sans-serif;font-size:0.85rem;font-weight:600;color:#e07838;margin-bottom:8px">OCR.space API key required for cloud OCR</div>
+            <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-bottom:10px">Local OCR engine unavailable. Enter your free API key to scan cards.</div>
+            <input type="text" id="scanner-key-input" placeholder="Paste your API key" autocomplete="off" style="width:100%;max-width:280px;padding:8px 12px;font-size:0.85rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;outline:none;margin-bottom:8px;font-family:monospace;text-align:center">
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:6px">
+              <button id="scanner-key-save" style="padding:8px 20px;border-radius:8px;background:#e07838;color:#fff;border:none;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer">Save &amp; Scan</button>
+            </div>
+            <a href="https://ocr.space/ocrapi/freekey" target="_blank" rel="noopener" style="font-size:0.72rem;color:rgba(255,255,255,0.5);text-decoration:underline">Get a free API key at ocr.space</a>
+          </div>
           <button class="scanner-search-fallback" id="scanner-search-fallback" style="display:none">Search manually</button>
         </div>
         <div class="scanner-footer">
@@ -4312,6 +4321,7 @@ document.head.appendChild(manifestLink);
   const FOIL_KEY         = 'fin-foil-collection';
   const VARIANT_KEY      = 'fin-variant-data-v2';
   const VARIANT_TTL      = 7 * 24 * 60 * 60 * 1000;
+  const OCR_KEY          = 'fin-ocr-key';
 
   const BINDER_PRESETS = [
     { label: '4-pocket (2×2)',          rows: 2, cols: 2 },
@@ -4330,7 +4340,8 @@ document.head.appendChild(manifestLink);
     // Check cache
     try {
       const cached = JSON.parse(localStorage.getItem(FX_KEY) || '{}');
-      if (cached.rate && cached.fetchedAt && Date.now() - cached.fetchedAt < FX_TTL) {
+      if (typeof cached.rate === 'number' && isFinite(cached.rate) && cached.rate > 0
+          && cached.fetchedAt && Date.now() - cached.fetchedAt < FX_TTL) {
         USD_TO_MYR = cached.rate;
         fxFetchedAt = cached.fetchedAt;
         fxIsLive = true;
@@ -4366,11 +4377,11 @@ document.head.appendChild(manifestLink);
           delete cfg.scope.foilBinder;
           localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(cfg));
         }
-        return cfg;
+        return sanitizeBinderConfig(cfg) || cfg;
       }
     } catch (e) {}
     return {
-      gridRows: 3, gridCols: 3, slotsPerPage: 9, pageCount: 34,
+      gridRows: 3, gridCols: 3, slotsPerPage: 9, pageCount: 35,
       presetName: '9-pocket (3×3)',
       scope: { mainSet: true, collectorBinder: false },
       configured: false,
@@ -4379,7 +4390,8 @@ document.head.appendChild(manifestLink);
 
   function saveConfig(cfg) {
     binderConfig = cfg;
-    localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(cfg));
+    try { localStorage.setItem(BINDER_CONFIG_KEY, JSON.stringify(cfg)); }
+    catch (e) { console.warn('Save config failed (quota?):', e); }
   }
 
   function calcPageCount(slotsPerPage) {
@@ -4398,12 +4410,13 @@ document.head.appendChild(manifestLink);
   function loadFoil() {
     try {
       const raw = localStorage.getItem(FOIL_KEY);
-      if (raw) foilOwned = JSON.parse(raw);
+      if (raw) foilOwned = sanitizeFoil(JSON.parse(raw));
     } catch (e) { foilOwned = {}; }
   }
 
   function saveFoil() {
-    localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
+    try { localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned)); }
+    catch (e) { console.warn('Save foil failed (quota?):', e); }
     scheduleSyncPush();
   }
 
@@ -4807,6 +4820,22 @@ document.head.appendChild(manifestLink);
       syncHTML +
       '</div>' +
 
+      // ── Card Scanner ──
+      '<div class="settings-section">' +
+      '<div class="settings-section-header">' +
+        '<div class="settings-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>' +
+        '<div><div class="settings-section-title">Card Scanner</div>' +
+        '<div class="settings-section-sub">OCR.space cloud fallback key</div></div>' +
+      '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:var(--sp-2)">The scanner uses a local OCR engine first. If unavailable, it falls back to OCR.space (free, 25K/month).</div>' +
+      '<label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">OCR.space API Key</label>' +
+      '<input type="password" id="sf-ocr-key" placeholder="Paste your API key" autocomplete="off" value="' + esc(getOcrSpaceKey()) + '" style="width:100%;padding:10px 12px;font-size:0.9rem;background:var(--slot-bg);border:2px solid var(--surface2);border-radius:8px;color:var(--text);outline:none;margin-bottom:8px;font-family:monospace">' +
+      '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px">' +
+        '<a href="https://ocr.space/ocrapi/freekey" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">Get a free API key</a> &mdash; 25,000 requests/month' +
+      '</div>' +
+      (getOcrSpaceKey() ? '<div style="font-size:0.72rem;color:var(--text-muted)">' + getOcrUsageRemaining().toLocaleString() + ' cloud OCR requests remaining this month</div>' : '') +
+      '</div>' +
+
       // ── Appearance ──
       '<div class="settings-section">' +
       '<div class="settings-section-header">' +
@@ -5088,7 +5117,7 @@ document.head.appendChild(manifestLink);
             { label: 'Cancel', className: 'btn-secondary', onClick: function() {} },
             { label: 'Reset Collection', className: 'btn-danger', onClick: function() {
               ownedSet.clear();
-              localStorage.setItem(COLLECTION_KEY, '[]');
+              localStorage.setItem(COLLECTION_KEY, JSON.stringify({ owned: [] }));
               renderSettings();
               showToast('Collection reset.');
             }}
@@ -5156,6 +5185,13 @@ document.head.appendChild(manifestLink);
           configured: true,
         };
         saveConfig(newCfg);
+        // Save OCR key
+        var ocrKeyInput = document.getElementById('sf-ocr-key');
+        if (ocrKeyInput) {
+          var ocrKey = (ocrKeyInput.value || '').trim();
+          if (ocrKey) { try { localStorage.setItem(OCR_KEY, ocrKey); } catch (e) {} }
+          else { localStorage.removeItem(OCR_KEY); }
+        }
         applyConfigToTabs();
         if (document.getElementById('tab-binder').classList.contains('active')) {
           renderBinder();
@@ -5234,6 +5270,9 @@ document.head.appendChild(manifestLink);
   let currentPage = 0;
   let totalPages = 0;
   let highlightedCN = null;
+  let _scrubAbort = null;
+  let _spreadObserver = null;
+  let _collObserver = null;
   let boosterPacks = [];
   let currentPack = null; // { price, cards: [] }
   let dataFetchedAt = null;
@@ -5686,7 +5725,8 @@ document.head.appendChild(manifestLink);
     }
     const cards = await fetchFromScryfall();
     dataFetchedAt = Date.now();
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: dataFetchedAt, cards }));
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: dataFetchedAt, cards })); }
+    catch (e) { console.warn('Cache write failed (quota?):', e); }
     return cards;
   }
 
@@ -5698,7 +5738,8 @@ document.head.appendChild(manifestLink);
   }
 
   function saveCollection() {
-    localStorage.setItem(COLLECTION_KEY, JSON.stringify({ owned: [...ownedSet] }));
+    try { localStorage.setItem(COLLECTION_KEY, JSON.stringify({ owned: [...ownedSet] })); }
+    catch (e) { console.warn('Save collection failed (quota?):', e); }
     scheduleSyncPush();
     updateHUDStats();
   }
@@ -5724,7 +5765,8 @@ document.head.appendChild(manifestLink);
   }
 
   function savePacks() {
-    localStorage.setItem(PACKS_KEY, JSON.stringify({ packs: boosterPacks }));
+    try { localStorage.setItem(PACKS_KEY, JSON.stringify({ packs: boosterPacks })); }
+    catch (e) { console.warn('Save packs failed (quota?):', e); }
     scheduleSyncPush();
   }
 
@@ -5736,7 +5778,8 @@ document.head.appendChild(manifestLink);
   }
 
   function saveTimeline() {
-    localStorage.setItem(TIMELINE_KEY, JSON.stringify({ events: timelineEvents }));
+    try { localStorage.setItem(TIMELINE_KEY, JSON.stringify({ events: timelineEvents })); }
+    catch (e) { console.warn('Save timeline failed (quota?):', e); }
     scheduleSyncPush();
   }
 
@@ -6548,7 +6591,7 @@ document.head.appendChild(manifestLink);
   var scanStream = null;
   var scanInterval = null;
   var paddleOcrReady = false;
-  var OCR_SPACE_KEY = 'K81821864988957';
+  function getOcrSpaceKey() { return localStorage.getItem(OCR_KEY) || ''; }
   var scanCooldown = false;
   var scanFailCount = 0;
   var scanSessionAdds = [];
@@ -6571,6 +6614,7 @@ document.head.appendChild(manifestLink);
     scannerLastAdd.textContent = '';
     scannerCountEl.textContent = '';
     scannerSearchFallback.style.display = 'none';
+    document.getElementById('scanner-key-prompt').style.display = 'none';
     document.getElementById('scanner-shutter').style.display = 'none';
     scannerDone.textContent = 'Done';
     scannerStatus.textContent = 'Initializing camera...';
@@ -6648,9 +6692,14 @@ document.head.appendChild(manifestLink);
       .catch(function(err) {
         console.warn('Paddle.js failed, using OCR.space fallback:', err);
         paddleOcrReady = false;
-        scannerStatus.textContent = 'Using cloud OCR';
-        scannerStatus.className = 'scanner-status';
-        startScanLoop();
+        if (getOcrSpaceKey()) {
+          scannerStatus.textContent = 'Using cloud OCR';
+          scannerStatus.className = 'scanner-status';
+          startScanLoop();
+        } else {
+          scannerStatus.textContent = '';
+          document.getElementById('scanner-key-prompt').style.display = '';
+        }
       });
   }
 
@@ -6681,6 +6730,10 @@ document.head.appendChild(manifestLink);
   }
 
   function ocrSpaceRecognize(base64Img) {
+    var apiKey = getOcrSpaceKey();
+    if (!apiKey) {
+      return Promise.reject(new Error('NO_OCR_KEY'));
+    }
     var remaining = getOcrUsageRemaining();
     if (remaining <= 0) {
       return Promise.reject(new Error('OCR.space monthly limit reached'));
@@ -6693,7 +6746,7 @@ document.head.appendChild(manifestLink);
     formData.append('isTable', 'false');
     return fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
-      headers: { 'apikey': OCR_SPACE_KEY },
+      headers: { 'apikey': apiKey },
       body: formData
     }).then(function(r) { return r.json(); })
       .then(function(data) {
@@ -7111,6 +7164,18 @@ document.head.appendChild(manifestLink);
     });
   })();
 
+  // Scanner API key save handler
+  document.getElementById('scanner-key-save').addEventListener('click', function() {
+    var keyInput = document.getElementById('scanner-key-input');
+    var key = (keyInput.value || '').trim();
+    if (!key) { keyInput.style.borderColor = '#e74c3c'; return; }
+    try { localStorage.setItem(OCR_KEY, key); } catch (e) {}
+    document.getElementById('scanner-key-prompt').style.display = 'none';
+    scannerStatus.textContent = 'Using cloud OCR';
+    scannerStatus.className = 'scanner-status';
+    startScanLoop();
+  });
+
   // ── OCR Scanner: Fuzzy Matching ──
 
   function normalizeCardName(name) {
@@ -7182,19 +7247,19 @@ document.head.appendChild(manifestLink);
     var bestWinScore = 0;
     for (var winSize = Math.min(5, words.length); winSize >= 1; winSize--) {
       for (var wi = 0; wi <= words.length - winSize; wi++) {
-        var window = words.slice(wi, wi + winSize).join(' ');
-        if (window.length < 3) continue;
+        var phrase = words.slice(wi, wi + winSize).join(' ');
+        if (phrase.length < 3) continue;
 
         // Exact window match
-        if (nameMap.has(window)) {
-          return { name: window, cards: nameMap.get(window), score: 1.0 };
+        if (nameMap.has(phrase)) {
+          return { name: phrase, cards: nameMap.get(phrase), score: 1.0 };
         }
 
         // Window is a substring of a card name (e.g. "hunt the mark" inside "sidequest hunt the mark")
         nameMap.forEach(function(cards, name) {
-          if (window.length >= 4 && name.includes(window)) {
-            var subScore = window.length / name.length;
-            if (subScore >= 0.4 && (subScore > bestWinScore || window.length > bestWinScore * 20)) {
+          if (phrase.length >= 4 && name.includes(phrase)) {
+            var subScore = phrase.length / name.length;
+            if (subScore >= 0.4 && (subScore > bestWinScore || phrase.length > bestWinScore * 20)) {
               bestWinScore = subScore;
               bestWin = { name: name, cards: cards, score: subScore + 0.1 };
             }
@@ -7272,23 +7337,34 @@ document.head.appendChild(manifestLink);
 
   function closePackModal(force) {
     if (!force && currentPack && currentPack.cards.length > 0) {
-      if (!confirm(`Discard this pack? ${currentPack.cards.length} card(s) will be removed from your binder.`)) return;
-      for (const entry of currentPack.cards) {
-        const cn = typeof entry === 'string' ? entry : entry.cn;
-        ownedSet.delete(cn);
-        if (hasFoil(cn)) removeFoil(cn);
-      }
-      saveCollection();
-      renderProgress();
+      showConfirmDialog(
+        'Discard Pack?',
+        currentPack.cards.length + ' card(s) will be removed from your binder.',
+        function() {
+          for (const entry of currentPack.cards) {
+            const cn = typeof entry === 'string' ? entry : entry.cn;
+            ownedSet.delete(cn);
+            if (hasFoil(cn)) removeFoil(cn);
+          }
+          saveCollection();
+          renderProgress();
+          _finishClosePackModal();
+        }
+      );
+      return;
     }
+    _finishClosePackModal();
+  }
+  function _finishClosePackModal() {
     currentPack = null;
     packModalOverlay.classList.remove('visible', 'dimmed');
     document.body.style.overflow = '';
+    // PACK_ICON_SVG is a trusted static constant defined in this file
     packModalTitle.innerHTML = PACK_ICON_SVG + 'Open Booster Pack';
     packModalPrice.textContent = '';
-    packModalSearchArea.innerHTML = '';
-    packModalBody.innerHTML = '';
-    packModalFooter.innerHTML = '';
+    packModalSearchArea.textContent = '';
+    packModalBody.textContent = '';
+    packModalFooter.textContent = '';
   }
 
   // Pack button click handled by search modal chip-pack
@@ -7866,15 +7942,14 @@ document.head.appendChild(manifestLink);
     const addEvents = timelineEvents.filter(e => e.type === 'add');
     const dailyValues = {};
     const seenForChart = new Set();
+    let cumVal = 0;
     for (const evt of addEvents) {
-      seenForChart.add(evt.cn);
-      const day = evt.date.slice(0, 10);
-      let cumVal = 0;
-      for (const cn of seenForChart) {
-        const c = getCardByNumber(cn);
+      if (!seenForChart.has(evt.cn)) {
+        seenForChart.add(evt.cn);
+        const c = getCardByNumber(evt.cn);
         if (c) cumVal += c.price_usd || 0;
       }
-      dailyValues[day] = cumVal;
+      dailyValues[evt.date.slice(0, 10)] = cumVal;
     }
     const chartDays = Object.keys(dailyValues).sort();
     let growthChartHTML = '';
@@ -7938,7 +8013,7 @@ document.head.appendChild(manifestLink);
           </div>
           <div class="value-card-meta" id="portfolio-meta-panel">
             <div class="value-card-meta-row">Prices via Scryfall / TCGPlayer · fetched ${esc(priceTime)}${dataFetchedAt ? ' · ' + esc(timeAgo(new Date(dataFetchedAt))) : ''}</div>
-            <div class="value-card-meta-row">FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive ? ' · via ExchangeRate-API · ' + esc(timeAgo(new Date(fxFetchedAt))) : ' · offline fallback'}</div>
+            <div class="value-card-meta-row">FX: 1 USD = ${USD_TO_MYR.toFixed(4)} MYR${fxIsLive && fxFetchedAt ? ' · via ExchangeRate-API · ' + esc(timeAgo(new Date(fxFetchedAt))) : ' · offline fallback'}</div>
             <div style="margin-top:6px">${refreshIcon}</div>
           </div>
           <button class="value-card-meta-toggle" id="portfolio-meta-toggle" type="button">
@@ -8445,22 +8520,25 @@ document.head.appendChild(manifestLink);
       scrubTrack.addEventListener('click', (e) => scrubToPosition(e.clientX));
 
       let scrubDragging = false;
-      scrubThumb.addEventListener('mousedown', (e) => { scrubDragging = true; e.preventDefault(); });
-      document.addEventListener('mousemove', function scrubMouseMove(e) {
+      if (_scrubAbort) _scrubAbort.abort();
+      _scrubAbort = new AbortController();
+      const scrubSig = { signal: _scrubAbort.signal };
+      scrubThumb.addEventListener('mousedown', (e) => { scrubDragging = true; e.preventDefault(); }, scrubSig);
+      document.addEventListener('mousemove', (e) => {
         if (!scrubDragging) return;
         scrubToPosition(e.clientX);
-      });
-      document.addEventListener('mouseup', function scrubMouseUp() {
+      }, scrubSig);
+      document.addEventListener('mouseup', () => {
         scrubDragging = false;
-      });
-      scrubThumb.addEventListener('touchstart', () => { scrubDragging = true; }, { passive: true });
-      document.addEventListener('touchmove', function scrubTouchMove(e) {
+      }, scrubSig);
+      scrubThumb.addEventListener('touchstart', () => { scrubDragging = true; }, { passive: true, ...scrubSig });
+      document.addEventListener('touchmove', (e) => {
         if (!scrubDragging || !e.touches.length) return;
         scrubToPosition(e.touches[0].clientX);
-      }, { passive: true });
-      document.addEventListener('touchend', function scrubTouchEnd() {
+      }, { passive: true, ...scrubSig });
+      document.addEventListener('touchend', () => {
         scrubDragging = false;
-      });
+      }, scrubSig);
     }
   }
 
@@ -8611,16 +8689,17 @@ document.head.appendChild(manifestLink);
     }
 
     // Lazy load images
-    const observer = new IntersectionObserver((entries) => {
+    if (_spreadObserver) _spreadObserver.disconnect();
+    _spreadObserver = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
           const img = e.target;
           if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
-          observer.unobserve(img);
+          _spreadObserver.unobserve(img);
         }
       });
     });
-    spread.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+    spread.querySelectorAll('img[data-src]').forEach(img => _spreadObserver.observe(img));
   }
 
   // Build a single binder page element for a given 0-indexed page number (no DOM side effects)
@@ -9228,7 +9307,7 @@ document.head.appendChild(manifestLink);
     }
 
     const scryfallLink = document.getElementById('scryfall-link');
-    if (card.scryfall_uri) {
+    if (card.scryfall_uri && /^https:\/\/scryfall\.com\//i.test(card.scryfall_uri)) {
       scryfallLink.href = card.scryfall_uri;
       scryfallLink.style.display = '';
     } else {
@@ -9895,7 +9974,8 @@ document.head.appendChild(manifestLink);
       }
 
       const fetchedAt = Date.now();
-      localStorage.setItem(VARIANT_KEY, JSON.stringify({ fetchedAt, cards }));
+      try { localStorage.setItem(VARIANT_KEY, JSON.stringify({ fetchedAt, cards })); }
+      catch (e) { console.warn('Variant cache write failed (quota?):', e); }
 
       variantCards = cards;
       rebuildLookups();
@@ -10103,12 +10183,13 @@ document.head.appendChild(manifestLink);
       </div>`;
 
     // ── Lazy load images ──
-    const observer = new IntersectionObserver(entries => {
+    if (_collObserver) _collObserver.disconnect();
+    _collObserver = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if (e.isIntersecting) { e.target.src = e.target.dataset.src; observer.unobserve(e.target); }
+        if (e.isIntersecting) { e.target.src = e.target.dataset.src; _collObserver.unobserve(e.target); }
       });
     });
-    el.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+    el.querySelectorAll('img[data-src]').forEach(img => _collObserver.observe(img));
 
     // ── Event delegation ──
     if (el._onCollEvent) el.removeEventListener('click', el._onCollEvent);
@@ -10117,7 +10198,7 @@ document.head.appendChild(manifestLink);
         collPage = Math.max(0, collPage - 1); persist(); renderCollectorTab(); return;
       }
       if (e.target.closest('#coll-next-page')) {
-        collPage++; persist(); renderCollectorTab(); return;
+        if (collPage < tp - 1) { collPage++; persist(); renderCollectorTab(); } return;
       }
       const typeBtn = e.target.closest('.coll-filter-type');
       if (typeBtn) {
@@ -10196,7 +10277,7 @@ document.head.appendChild(manifestLink);
       allCards = await loadCards();
       updateLoadingProgress(80, 'Building card index...');
       rebuildLookups();
-      fetchVariants(); // always load variants (needed for search, portfolio, dashboard)
+      fetchVariants().catch(() => {}); // fire-and-forget; errors handled inside fetchVariants
       ownedSet = loadCollection();
       loadFoil();
       boosterPacks = loadPacks();
