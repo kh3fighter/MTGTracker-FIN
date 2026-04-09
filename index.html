@@ -337,6 +337,11 @@
     border-color: rgba(74,173,94,0.25);
     background: rgba(74,173,94,0.08);
   }
+  .search-chip-scan {
+    color: #e07838;
+    border-color: rgba(224,120,56,0.3);
+    background: rgba(224,120,56,0.08);
+  }
 
   /* Light mode overrides */
   [data-theme="light"] .search-overlay {
@@ -361,6 +366,11 @@
     color: #2d7a3e;
     border-color: rgba(45,122,62,0.35);
     background: rgba(45,122,62,0.08);
+  }
+  [data-theme="light"] .search-chip-scan {
+    color: #b05a20;
+    border-color: rgba(176,90,32,0.35);
+    background: rgba(176,90,32,0.08);
   }
   [data-theme="light"] .search-chip:hover { filter: brightness(0.9); }
   [data-theme="light"] .search-empty { color: var(--text-muted); }
@@ -3744,6 +3754,10 @@ document.head.appendChild(manifestLink);
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
             Sync
           </button>
+          <button class="search-chip search-chip-scan" id="chip-scan" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Scan
+          </button>
         </div>
         <div class="search-results" id="search-results">
           <div class="search-empty">Type to search 309+ cards</div>
@@ -6236,6 +6250,20 @@ document.head.appendChild(manifestLink);
     closeSearchModal();
     openSyncModal();
   });
+
+  function openScannerModal() { showToast('Scanner coming soon...'); }
+
+  // Scan chip — show only if camera API is available
+  (function() {
+    var chipScan = document.getElementById('chip-scan');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      chipScan.style.display = '';
+    }
+    chipScan.addEventListener('click', function() {
+      closeSearchModal();
+      openScannerModal();
+    });
+  })();
 
   // Global keyboard shortcut: Ctrl+K or / to open search modal
   document.addEventListener('keydown', function(e) {
