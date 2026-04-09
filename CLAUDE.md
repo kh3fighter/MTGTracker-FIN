@@ -25,6 +25,8 @@ Everything lives in `index.html` — no build step, no external JS files. The sc
   - `fin-binder-config` — binder setup (gridRows, gridCols, slotsPerPage, pageCount, scope flags)
   - `fin-foil-collection` — foil ownership map `{ collector_number: ['foil'] }`
   - `fin-variant-data-v2` — collector booster variant card cache (7-day TTL)
+  - `fin-hash-db` — perceptual hash index for visual card matching `{ version, hashes: { cn: hex } }`
+  - `fin-ocr-usage` — OCR.space monthly usage counter
 
 - **Data layer**: Fetches FIN set from Scryfall (`/cards/search?q=set:fin+is:booster+game:paper+lang:en&unique=prints`), caches 7 days. Optional second fetch for collector variants (`-is:booster+lang:en&unique=prints`) linked via `oracle_id`. The `unique=prints` parameter is critical — without it Scryfall deduplicates by `oracle_id`, hiding variant printings. Cards carry `finishes`, `frame_effects`, `promo_types`, and `foil_only` flags.
 - **Collector number sorting**: Handles non-numeric suffixes (e.g. `99b`) via `collectorKey()` parser. Binder slot placement is derived from array index after sorting.
@@ -32,6 +34,7 @@ Everything lives in `index.html` — no build step, no external JS files. The sc
 - **Tab navigation**: Dual nav system — desktop pill tray (`.tabs` with `.tab-btn`) and mobile bottom nav bar (`.bottom-nav` with `.bnav-btn`). Shared `switchTab(tabName)` handler wires both. `applyConfigToTabs()` shows/hides conditional tabs based on `binderConfig.scope`.
 - **Tabs**: Dashboard, Portfolio, Timeline, Binder, Collector (conditional), Settings.
 - **Booster Pack Mode**: Simulates opening packs, logs pulls to `fin-booster-packs` and `fin-timeline`.
+- **Card Scanner**: Three-engine scan mode picker — Visual Match (dhash perceptual image hashing, offline), Tesseract OCR (local WASM text recognition), OCR.space (cloud API). Mode picker shown on scan open. Visual Match precomputes dhash of all card images from Scryfall `image_uris.small` (cached in `fin-hash-db`), crops the viewfinder guide rect region from the camera feed, and matches via Hamming distance. OCR modes use collector number regex + fuzzy name matching.
 - **PWA**: Manifest and icons generated at runtime via canvas; supports iOS/Android home-screen install.
 - **Celebration**: Rarity-tiered fanfare animations on card adds. Foil adds trigger `celebrateFoil()` — rainbow burst particle effect and shimmer toast.
 
