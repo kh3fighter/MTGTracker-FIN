@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; worker-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; worker-src blob:; child-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FIN Binder Tracker</title>
 <!-- iOS PWA -->
@@ -6578,7 +6578,8 @@ document.head.appendChild(manifestLink);
     }
 
     Tesseract.createWorker('eng', 1, {
-      langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast'
+      langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast',
+      workerBlobURL: false
     }).then(function(worker) {
       scanWorker = worker;
       return worker.setParameters({
