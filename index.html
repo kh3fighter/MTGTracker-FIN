@@ -6265,6 +6265,80 @@ document.head.appendChild(manifestLink);
     });
   })();
 
+  // ── OCR Scanner: Fuzzy Matching ──
+
+  function normalizeCardName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  }
+
+  function levenshtein(a, b) {
+    var m = a.length, n = b.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
+    var prev = [];
+    var curr = [];
+    for (var j = 0; j <= n; j++) prev[j] = j;
+    for (var i = 1; i <= m; i++) {
+      curr[0] = i;
+      for (var j2 = 1; j2 <= n; j2++) {
+        var cost = a[i - 1] === b[j2 - 1] ? 0 : 1;
+        curr[j2] = Math.min(prev[j2] + 1, curr[j2 - 1] + 1, prev[j2 - 1] + cost);
+      }
+      var tmp = prev; prev = curr; curr = tmp;
+    }
+    return prev[n];
+  }
+
+  function fuzzyMatchCardName(ocrText, nameMap) {
+    var norm = normalizeCardName(ocrText);
+    if (norm.length < 2) return null;
+
+    // 1. Exact match
+    if (nameMap.has(norm)) return { name: norm, cards: nameMap.get(norm), score: 1.0 };
+
+    // 2. Substring — OCR read is contained in a card name or vice versa
+    var bestSub = null;
+    var bestSubLen = 0;
+    nameMap.forEach(function(cards, name) {
+      if (name.includes(norm) || norm.includes(name)) {
+        var overlap = Math.min(norm.length, name.length);
+        if (overlap > bestSubLen) {
+          bestSubLen = overlap;
+          bestSub = { name: name, cards: cards, score: overlap / Math.max(norm.length, name.length) };
+        }
+      }
+    });
+    if (bestSub && bestSub.score >= 0.7) return bestSub;
+
+    // 3. Levenshtein distance
+    var bestLev = null;
+    var bestScore = 0;
+    nameMap.forEach(function(cards, name) {
+      var maxLen = Math.max(norm.length, name.length);
+      if (maxLen === 0) return;
+      var dist = levenshtein(norm, name);
+      var score = 1 - (dist / maxLen);
+      if (score > bestScore) {
+        bestScore = score;
+        bestLev = { name: name, cards: cards, score: score };
+      }
+    });
+    if (bestLev && bestLev.score >= 0.7) return bestLev;
+
+    return null;
+  }
+
+  function buildNameMap() {
+    var map = new Map();
+    var all = allCards.concat(variantCards);
+    all.forEach(function(card) {
+      var norm = normalizeCardName(card.name);
+      if (!map.has(norm)) map.set(norm, []);
+      map.get(norm).push(card);
+    });
+    return map;
+  }
+
   // Global keyboard shortcut: Ctrl+K or / to open search modal
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isSearchModalOpen()) {
