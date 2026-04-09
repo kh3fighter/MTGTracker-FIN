@@ -6557,10 +6557,152 @@ document.head.appendChild(manifestLink);
     scannerVideo.srcObject = null;
   }
 
+  // ── OCR Scanner: Tesseract Init & Scan Loop ──
+  function initTesseract() {
+    if (typeof Tesseract === 'undefined') {
+      scannerStatus.textContent = 'OCR engine unavailable';
+      scannerStatus.className = 'scanner-status warning';
+      showToast('Scanner unavailable — couldn\'t load OCR engine');
+      return;
+    }
+
+    Tesseract.createWorker('eng', 1, {
+      langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast'
+    }).then(function(worker) {
+      scanWorker = worker;
+      return worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
+      });
+    }).then(function() {
+      scannerStatus.textContent = 'Align card name in the box above';
+      scannerStatus.className = 'scanner-status';
+      startScanLoop();
+    }).catch(function(err) {
+      console.error('Tesseract init error:', err);
+      scannerStatus.textContent = 'OCR engine failed to load';
+      scannerStatus.className = 'scanner-status warning';
+      showToast('Scanner unavailable — couldn\'t load OCR engine');
+    });
+  }
+
+  function startScanLoop() {
+    if (scanInterval) return;
+    scanInterval = setInterval(scanFrame, 800);
+  }
+
+  function stopScanLoop() {
+    if (scanInterval) {
+      clearInterval(scanInterval);
+      scanInterval = null;
+    }
+  }
+
+  function scanFrame() {
+    if (!scanWorker || !scanStream || scanCooldown || scanPaused) return;
+    if (scannerVideo.readyState < 2) return;
+
+    var vw = scannerVideo.videoWidth;
+    var vh = scannerVideo.videoHeight;
+    if (!vw || !vh) return;
+
+    // Crop to guide rectangle region: top 15%, centered 70% width
+    var cropX = Math.floor(vw * 0.15);
+    var cropY = Math.floor(vh * 0.04);
+    var cropW = Math.floor(vw * 0.70);
+    var cropH = Math.floor(vh * 0.12);
+
+    scannerCanvas.width = cropW;
+    scannerCanvas.height = cropH;
+    var ctx = scannerCanvas.getContext('2d');
+    ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    scanWorker.recognize(scannerCanvas).then(function(result) {
+      var text = result.data.text.trim();
+      if (!text || text.length < 2) {
+        onScanFail();
+        return;
+      }
+      var match = fuzzyMatchCardName(text, scanNameMap);
+      if (!match) {
+        onScanFail();
+        return;
+      }
+      onScanSuccess(match);
+    }).catch(function() {
+      onScanFail();
+    });
+  }
+
+  function onScanSuccess(match) {
+    scanFailCount = 0;
+    scannerSearchFallback.style.display = 'none';
+
+    var cards = match.cards;
+    if (cards.length === 1) {
+      addScannedCard(cards[0]);
+    } else {
+      showVariantPicker(match.name, cards);
+    }
+  }
+
+  function addScannedCard(card) {
+    var cn = card.collector_number;
+    // Duplicate guard: don't re-add if it was the last scanned card
+    if (scanSessionAdds.length > 0 && scanSessionAdds[scanSessionAdds.length - 1] === cn) {
+      return;
+    }
+
+    var alreadyOwned = ownedSet.has(cn);
+    addCard(cn);
+    scanSessionAdds.push(cn);
+
+    var label = displayNameText(card);
+    scannerStatus.textContent = 'Added: ' + label + (alreadyOwned ? ' (already owned)' : '');
+    scannerStatus.className = 'scanner-status success';
+    scannerLastAdd.textContent = 'Last: ' + label;
+    scannerCountEl.textContent = scanSessionAdds.length + ' card' + (scanSessionAdds.length !== 1 ? 's' : '') + ' scanned';
+    scannerDone.textContent = 'Done (' + scanSessionAdds.length + ' scanned)';
+
+    // Cooldown to prevent double-adds
+    scanCooldown = true;
+    setTimeout(function() {
+      scanCooldown = false;
+      if (scannerOverlay.classList.contains('open')) {
+        scannerStatus.textContent = 'Align card name in the box above';
+        scannerStatus.className = 'scanner-status';
+      }
+    }, 1500);
+  }
+
+  function onScanFail() {
+    scanFailCount++;
+    if (scanFailCount >= 6) {
+      scannerStatus.textContent = 'Can\'t read card';
+      scannerStatus.className = 'scanner-status warning';
+      scannerSearchFallback.style.display = '';
+    }
+  }
+
+  scannerSearchFallback.addEventListener('click', function() {
+    scanPaused = true;
+    openSearchModal();
+
+    var searchCloseCheck = setInterval(function() {
+      if (!isSearchModalOpen()) {
+        scanPaused = false;
+        scanFailCount = 0;
+        scannerSearchFallback.style.display = 'none';
+        scannerStatus.textContent = 'Align card name in the box above';
+        scannerStatus.className = 'scanner-status';
+        clearInterval(searchCloseCheck);
+      }
+    }, 300);
+    setTimeout(function() { clearInterval(searchCloseCheck); }, 60000);
+  });
+
   // Stubs for functions defined in later tasks
-  function initTesseract() { scannerStatus.textContent = 'OCR engine loading... (stub)'; }
-  function stopScanLoop() {}
   function hideVariantPicker() {}
+  function showVariantPicker() {}
 
   // Close button and Done button
   scannerCloseBtn.addEventListener('click', closeScannerModal);
