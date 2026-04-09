@@ -6589,13 +6589,13 @@ document.head.appendChild(manifestLink);
     }, 15000);
 
     Tesseract.createWorker('eng', 1, {
-      langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast'
+      langPath: 'https://tessdata.projectnaptha.com/4.0.0'
     }).then(function(worker) {
       if (initTimedOut) { worker.terminate(); return; }
       clearTimeout(initTimeout);
       scanWorker = worker;
       return worker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
       });
     }).then(function() {
       if (initTimedOut) return;
@@ -6645,13 +6645,13 @@ document.head.appendChild(manifestLink);
     var ctx = scannerCanvas.getContext('2d');
     ctx.drawImage(scannerVideo, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-    // Preprocess: convert to high-contrast grayscale for better OCR
+    // Preprocess: grayscale + boost contrast (let Tesseract handle binarization)
     var imgData = ctx.getImageData(0, 0, cropW, cropH);
     var d = imgData.data;
     for (var px = 0; px < d.length; px += 4) {
       var gray = d[px] * 0.299 + d[px+1] * 0.587 + d[px+2] * 0.114;
-      // Sharpen contrast: threshold at 128
-      var val = gray > 128 ? 255 : 0;
+      // Boost contrast: stretch toward extremes
+      var val = Math.min(255, Math.max(0, (gray - 128) * 1.8 + 128));
       d[px] = d[px+1] = d[px+2] = val;
     }
     ctx.putImageData(imgData, 0, 0);
