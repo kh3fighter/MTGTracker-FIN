@@ -4553,14 +4553,6 @@ if ('serviceWorker' in navigator) {
     return Math.ceil(total / slotsPerPage);
   }
 
-  function getActiveCardCount() {
-    var cv = document.getElementById('wiz-cv');
-    var cvEnabled = cv ? cv.checked : binderConfig.scope.collectorBinder;
-    var base = allCards.length || 309;
-    var variants = (cvEnabled && variantCards.length > 0) ? variantCards.length : 0;
-    return base + variants;
-  }
-
   function loadFoil() {
     try {
       const raw = localStorage.getItem(FOIL_KEY);
@@ -4778,8 +4770,13 @@ if ('serviceWorker' in navigator) {
     var el = document.getElementById('wiz-step2-summary');
     if (!el) return;
     var pages = calcPageCount(binderConfig.slotsPerPage);
-    var count = getActiveCardCount();
-    el.innerHTML = 'Tracking <span class="pop">' + count + '</span> cards across <span class="pop">' + pages + '</span> pages';
+    var base = allCards.length || 309;
+    var cv = document.getElementById('wiz-cv');
+    var cvEnabled = cv ? cv.checked : binderConfig.scope.collectorBinder;
+    var variants = (cvEnabled && variantCards.length > 0) ? variantCards.length : 0;
+    var html = 'Tracking <span class="pop">' + base + '</span> cards across <span class="pop">' + pages + '</span> pages';
+    if (variants > 0) html += ' <span style="font-size:0.72rem;color:var(--text-muted)">+ ' + variants + ' collector variants</span>';
+    el.innerHTML = html;
   }
 
   function advanceWizard(dir) {
@@ -5697,6 +5694,11 @@ if ('serviceWorker' in navigator) {
         foilOwned = sanitizeFoil(payload.foil);
         localStorage.setItem(FOIL_KEY, JSON.stringify(foilOwned));
       }
+
+      // Reset session tracking — cloud data replaces local state
+      packSession = [];
+      // Cancel any pending auto-push so pulled data isn't immediately overwritten
+      clearTimeout(syncTimer);
 
       // Persist without re-triggering sync push
       localStorage.setItem(COLLECTION_KEY, JSON.stringify({ owned: [...ownedSet] }));
