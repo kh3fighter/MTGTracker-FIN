@@ -4871,7 +4871,7 @@ if ('serviceWorker' in navigator) {
 
     // Sync section HTML
     var syncHTML = '';
-    if (gistConfig && gistConfig.gistId) {
+    if (gistConfig && gistConfig.gistId && gistConfig.token) {
       syncHTML =
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">' +
           '<span style="width:8px;height:8px;border-radius:50%;background:var(--owned-border);flex-shrink:0"></span>' +
@@ -4897,8 +4897,8 @@ if ('serviceWorker' in navigator) {
     }
 
     // Sync status for profile card
-    var syncStatusLabel = (gistConfig && gistConfig.gistId) ? 'Cloud Sync Active' : 'Not Connected';
-    var syncDotColor = (gistConfig && gistConfig.gistId) ? 'var(--owned-border)' : 'var(--text-muted)';
+    var syncStatusLabel = (gistConfig && gistConfig.gistId && gistConfig.token) ? 'Cloud Sync Active' : 'Not Connected';
+    var syncDotColor = (gistConfig && gistConfig.gistId && gistConfig.token) ? 'var(--owned-border)' : 'var(--text-muted)';
 
     el.innerHTML = '<div class="settings-wrap">' +
 
@@ -5135,17 +5135,46 @@ if ('serviceWorker' in navigator) {
         var tokenInput = document.getElementById('sf-sync-token');
         var token = tokenInput ? tokenInput.value.trim() : '';
         if (!token) { showToast('Please enter a token.'); return; }
-        syncConnectBtn.textContent = 'Connecting...';
+        syncConnectBtn.textContent = 'Connecting\u2026';
         syncConnectBtn.disabled = true;
+        gistConfig.token = token;
+
         try {
+          // If we have a saved gistId (from prior disconnect), reconnect directly
+          if (gistConfig.gistId) {
+            saveGistConfig();
+            updateSyncDot('connected');
+            showToast('Reconnected to cloud!');
+            renderSettings();
+            return;
+          }
+
+          // Search for existing gist with collection data
+          var searchResp = await fetch('https://api.github.com/gists?per_page=100', {
+            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+          });
+          if (searchResp.ok) {
+            var gists = await searchResp.json();
+            var existing = gists.find(function(g) { return g.files && g.files['fin-binder-data.json']; });
+            if (existing) {
+              gistConfig.gistId = existing.id;
+              saveGistConfig();
+              updateSyncDot('connected');
+              showToast('Found existing collection in cloud!');
+              renderSettings();
+              return;
+            }
+          }
+
+          // No existing gist found — create new one and push current data
+          var payload = buildSyncPayload();
           var resp = await fetch('https://api.github.com/gists', {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description: 'FIN Binder Tracker Data', public: false, files: { 'fin-binder-data.json': { content: '{}' } } })
+            body: JSON.stringify({ description: 'FIN Binder Tracker Data', public: false, files: { 'fin-binder-data.json': { content: JSON.stringify(payload, null, 2) } } })
           });
           if (!resp.ok) throw new Error('GitHub API error');
           var data = await resp.json();
-          gistConfig.token = token;
           gistConfig.gistId = data.id;
           saveGistConfig();
           updateSyncDot('connected');
@@ -5153,6 +5182,7 @@ if ('serviceWorker' in navigator) {
           renderSettings();
         } catch (e) {
           showToast('Connection failed. Check your token.');
+          gistConfig.token = '';
           syncConnectBtn.textContent = 'Save & Connect';
           syncConnectBtn.disabled = false;
         }
@@ -5194,7 +5224,6 @@ if ('serviceWorker' in navigator) {
             { label: 'Cancel', className: 'btn-secondary', onClick: function() {} },
             { label: 'Disconnect', className: 'btn-danger', onClick: function() {
               gistConfig.token = '';
-              gistConfig.gistId = '';
               saveGistConfig();
               updateSyncDot('off');
               showToast('Disconnected from cloud sync.');
@@ -5670,7 +5699,7 @@ if ('serviceWorker' in navigator) {
 
   function renderSyncModalBody() {
     const body = document.getElementById('sync-modal-body');
-    if (gistConfig.gistId) {
+    if (gistConfig.gistId && gistConfig.token) {
       const syncAgo = lastSyncTime ? formatTimeAgo(lastSyncTime) : 'Never';
       body.innerHTML = `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
