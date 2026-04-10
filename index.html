@@ -2,7 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://*.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://api.ocr.space; worker-src 'self' blob:; child-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https://cards.scryfall.io https://svgs.scryfall.io https://gamepedia.cursecdn.com blob: data:; connect-src https://api.scryfall.com https://api.github.com https://open.er-api.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://api.ocr.space; worker-src 'self' blob:; child-src blob:; manifest-src blob:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FIN Binder Tracker</title>
 <!-- iOS PWA -->
@@ -18,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js" integrity="sha384-2BQ3U3OdKOb0Uczxqr41I9UvZkzr4V9Hv8uSzMMZAlmhsFClvdZX5wi5fDCzG+tM" crossorigin="anonymous"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -4473,7 +4474,7 @@ if ('serviceWorker' in navigator) {
 
   // Sanitizer regex patterns (must be before loadConfig which calls sanitizeBinderConfig)
   const VALID_CN = /^\d+[a-z]?$/;
-  const VALID_ISO = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z?$/;
+  const VALID_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z?$/;
   const VALID_PRESET = /^[\w\s\-×()…]+$/;
 
   const BINDER_PRESETS = [
@@ -5886,7 +5887,7 @@ if ('serviceWorker' in navigator) {
   function loadCollection() {
     try {
       const data = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}');
-      return new Set(data.owned || []);
+      return new Set(sanitizeOwned(data.owned || []));
     } catch { return new Set(); }
   }
 
@@ -5913,7 +5914,7 @@ if ('serviceWorker' in navigator) {
   function loadPacks() {
     try {
       const data = JSON.parse(localStorage.getItem(PACKS_KEY) || '{}');
-      return data.packs || [];
+      return sanitizePacks(data.packs || []);
     } catch { return []; }
   }
 
@@ -5926,7 +5927,7 @@ if ('serviceWorker' in navigator) {
   function loadTimeline() {
     try {
       const data = JSON.parse(localStorage.getItem(TIMELINE_KEY) || '{}');
-      return data.events || [];
+      return sanitizeTimeline(data.events || []);
     } catch { return []; }
   }
 
@@ -9628,7 +9629,7 @@ if ('serviceWorker' in navigator) {
 
     function priceChip(label, usd, myr, cls, cn, isFoilPrice) {
       return `<div class="modal-price-chip" data-price-cn="${esc(cn)}"${isFoilPrice ? ' data-price-foil' : ''}>
-        <div class="price-label">${label}</div>
+        <div class="price-label">${esc(label)}</div>
         <div class="price-val ${cls}">RM ${myr.toFixed(2)}</div>
         <div class="price-sub">$${usd.toFixed(2)}</div>
       </div>`;
@@ -10470,7 +10471,7 @@ if ('serviceWorker' in navigator) {
     const rarityMap = { C: 'common', U: 'uncommon', R: 'rare', M: 'mythic' };
     const searchRarityHTML = `
       <div class="coll-search-row">
-        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${searchQuery.replace(/"/g, '&quot;')}">
+        <input type="text" class="coll-search-input" placeholder="Search card name\u2026" value="${esc(searchQuery)}">
         <div class="coll-rarity-group">
           ${rarities.map(r => `<button class="rarity-circle ${r.cls}${activeRarity === r.key ? ' active' : ''} coll-filter-rarity" data-rarity="${r.key}">${r.label}</button>`).join('')}
         </div>

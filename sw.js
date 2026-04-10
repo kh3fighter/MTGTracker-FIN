@@ -85,9 +85,14 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // API calls (Scryfall search, GitHub, exchange rate): network-first
-  if (url.hostname === 'api.scryfall.com' || url.hostname === 'api.github.com' ||
-      url.hostname === 'open.er-api.com' || url.hostname === 'api.ocr.space') {
+  // Sensitive APIs (auth headers / API keys): network-only, never cache
+  if (url.hostname === 'api.github.com' || url.hostname === 'api.ocr.space') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Public APIs (Scryfall, exchange rate): network-first with cache fallback
+  if (url.hostname === 'api.scryfall.com' || url.hostname === 'open.er-api.com') {
     event.respondWith(
       fetch(event.request).catch(function() {
         return caches.match(event.request);
